@@ -1,0 +1,26 @@
+{
+  "name": "offline-biling-software",
+  "version": "1.0.0",
+  "description": "Offline-first desktop billing and POS software",
+  "private": true,
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"npm --prefix frontend run dev -- --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron electron/main.cjs\"",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "build": "npm run frontend:build",
+    "start": "electron electron/main.cjs",
+    "dist": "npm run frontend:build && electron-builder"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "@types/better-sqlite3": "^9.6.0",
+    "concurrently": "^10.0.5",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.1.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  }
+}
