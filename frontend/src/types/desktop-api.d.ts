@@ -1,120 +1,168 @@
-export {};
+import type {
+  Product,
+  ProductInput,
+  ProductUpdateInput,
+} from "../../../shared/types/product";
+
+import type {
+  Category,
+  CategoryInput,
+  CategoryUpdateInput,
+} from "../../../shared/types/category";
+
+interface AppInfo {
+  name: string;
+  version: string;
+  platform: string;
+}
+
+interface DatabaseStatus {
+  success: boolean;
+  path?: string;
+  tableCount?: number;
+  tables?: string[];
+  error?: string;
+}
+
+interface ProductResponse {
+  success: boolean;
+  product?: Product | null;
+  error?: string;
+}
+
+interface ProductListResponse {
+  success: boolean;
+  products?: Product[];
+  error?: string;
+}
+
+interface CategoryResponse {
+  success: boolean;
+  category?: Category | null;
+  error?: string;
+}
+
+interface CategoryListResponse {
+  success: boolean;
+  categories?: Category[];
+  error?: string;
+}
+
+interface ProductGetAllOptions {
+  includeInactive?: boolean;
+  categoryId?: string;
+}
+
+interface ProductSearchOptions {
+  searchTerm?: string;
+  includeInactive?: boolean;
+}
+
+interface CategoryOptions {
+  includeInactive?: boolean;
+}
+
+interface DesktopAPI {
+  // =========================
+  // Application
+  // =========================
+  getAppInfo: () => Promise<AppInfo>;
+
+  // =========================
+  // Database
+  // =========================
+  database: {
+    getStatus: () => Promise<DatabaseStatus>;
+  };
+
+  // =========================
+  // Products
+  // =========================
+  products: {
+    create: (
+      productData: ProductInput
+    ) => Promise<ProductResponse>;
+
+    getById: (
+      id: string
+    ) => Promise<ProductResponse>;
+
+    getBySku: (
+      sku: string
+    ) => Promise<ProductResponse>;
+
+    getByBarcode: (
+      barcode: string
+    ) => Promise<ProductResponse>;
+
+    search: (
+      searchTerm: string,
+      includeInactive?: boolean
+    ) => Promise<ProductListResponse>;
+
+    getAll: (
+      options?: ProductGetAllOptions
+    ) => Promise<ProductListResponse>;
+
+    update: (
+      id: string,
+      data: ProductUpdateInput
+    ) => Promise<ProductResponse>;
+
+    deactivate: (
+      id: string
+    ) => Promise<ProductResponse>;
+
+    activate: (
+      id: string
+    ) => Promise<ProductResponse>;
+
+    getLowStock: () => Promise<ProductListResponse>;
+  };
+
+  // =========================
+  // Categories
+  // =========================
+  categories: {
+    create: (
+      categoryData: CategoryInput
+    ) => Promise<CategoryResponse>;
+
+    getById: (
+      id: string
+    ) => Promise<CategoryResponse>;
+
+    getByName: (
+      name: string
+    ) => Promise<CategoryResponse>;
+
+    getAll: (
+      options?: CategoryOptions
+    ) => Promise<CategoryListResponse>;
+
+    search: (
+      searchText: string,
+      options?: CategoryOptions
+    ) => Promise<CategoryListResponse>;
+
+    update: (
+      categoryData: CategoryUpdateInput
+    ) => Promise<CategoryResponse>;
+
+    deactivate: (
+      id: string
+    ) => Promise<CategoryResponse>;
+
+    activate: (
+      id: string
+    ) => Promise<CategoryResponse>;
+  };
+}
 
 declare global {
   interface Window {
-    desktopAPI: {
-      getAppInfo: () => Promise<{
-        name: string;
-        version: string;
-        platform: string;
-      }>;
-
-      database: {
-        getStatus: () => Promise<{
-          success: boolean;
-          path?: string;
-          tableCount?: number;
-          tables?: string[];
-          error?: string;
-        }>;
-      };
-
-      products: {
-        create: (productData: {
-          name: string;
-          sku: string;
-          barcode?: string | null;
-          categoryId?: string | null;
-          sellingPrice?: number;
-          purchasePrice?: number;
-          gstRate?: number;
-          currentStock?: number;
-          minimumStock?: number;
-          unit?: string;
-          imagePath?: string | null;
-          status?: "ACTIVE" | "INACTIVE";
-          deviceId: string;
-        }) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        getById: (id: string) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        getBySku: (sku: string) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        getByBarcode: (barcode: string) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        search: (
-          searchTerm?: string,
-          includeInactive?: boolean
-        ) => Promise<{
-          success: boolean;
-          products?: unknown[];
-          error?: string;
-        }>;
-
-        getAll: (options?: {
-          includeInactive?: boolean;
-          categoryId?: string | null;
-        }) => Promise<{
-          success: boolean;
-          products?: unknown[];
-          error?: string;
-        }>;
-
-        update: (
-          id: string,
-          data: {
-            name: string;
-            sku: string;
-            barcode?: string | null;
-            categoryId?: string | null;
-            sellingPrice?: number;
-            purchasePrice?: number;
-            gstRate?: number;
-            minimumStock?: number;
-            unit?: string;
-            imagePath?: string | null;
-            status?: "ACTIVE" | "INACTIVE";
-          }
-        ) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        deactivate: (id: string) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        activate: (id: string) => Promise<{
-          success: boolean;
-          product?: unknown;
-          error?: string;
-        }>;
-
-        getLowStock: () => Promise<{
-          success: boolean;
-          products?: unknown[];
-          error?: string;
-        }>;
-      };
-    };
+    desktopAPI: DesktopAPI;
   }
 }
+
+export {};

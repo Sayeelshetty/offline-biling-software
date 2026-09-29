@@ -1,338 +1,224 @@
-import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Link,
+  Route,
+  Routes,
+} from "react-router-dom";
+
+import ProductsPage from "./pages/ProductsPage.tsx";
+import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
+
 import "./App.css";
 
-type AppInfo = {
-  name: string;
-  version: string;
-  platform: string;
-};
-
-type DatabaseStatus = {
-  success: boolean;
-  path?: string;
-  tableCount?: number;
-  tables?: string[];
-  error?: string;
-};
-
-type Product = {
-  id: string;
-  serverId: string | null;
-
-  name: string;
-  sku: string;
-  barcode: string | null;
-
-  categoryId: string | null;
-
-  sellingPrice: number;
-  purchasePrice: number;
-
-  gstRate: number;
-
-  currentStock: number;
-  minimumStock: number;
-
-  unit: string;
-
-  imagePath: string | null;
-
-  status: "ACTIVE" | "INACTIVE";
-
-  createdAt: string;
-  updatedAt: string;
-
-  syncStatus: "PENDING" | "SYNCED" | "FAILED";
-
-  deviceId: string;
-};
-
-type ProductResult = {
-  success: boolean;
-  products?: Product[];
-  error?: string;
-};
-
-type SingleProductResult = {
-  success: boolean;
-  product?: Product | null;
-  error?: string;
-};
-
-function App() {
-  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
-
-  const [databaseStatus, setDatabaseStatus] =
-    useState<DatabaseStatus | null>(null);
-
-  const [products, setProducts] = useState<Product[]>([]);
-
-  const [productStatus, setProductStatus] = useState(
-    "Checking products..."
-  );
-
-  const [isCreating, setIsCreating] = useState(false);
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  async function loadProducts() {
-    try {
-      const info = await window.desktopAPI.getAppInfo();
-
-      const database =
-        await window.desktopAPI.database.getStatus();
-
-      const productResult: ProductResult =
-        await window.desktopAPI.products.getAll();
-
-      setAppInfo(info);
-
-      setDatabaseStatus(database);
-
-      if (productResult.success) {
-        setProducts(productResult.products ?? []);
-
-        setProductStatus(
-          `Product repository working. ${
-            productResult.products?.length ?? 0
-          } products found.`
-        );
-      } else {
-        setProductStatus(
-          `Product repository error: ${productResult.error}`
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load system information:",
-        error
-      );
-
-      setProductStatus(
-        "Failed to communicate with Electron."
-      );
-    }
-  }
-
-  async function createTestProduct() {
-    if (isCreating) {
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-
-      const existingProduct: SingleProductResult =
-        await window.desktopAPI.products.getBySku(
-          "TEST-RICE-001"
-        );
-
-      if (existingProduct.product) {
-        setProductStatus(
-          "Test product already exists. Loading products..."
-        );
-
-        await loadProducts();
-
-        return;
-      }
-
-      const result =
-        await window.desktopAPI.products.create({
-          name: "Test Rice 1kg",
-          sku: "TEST-RICE-001",
-          barcode: "890000000001",
-          categoryId: null,
-          sellingPrice: 60,
-          purchasePrice: 50,
-          gstRate: 5,
-          currentStock: 100,
-          minimumStock: 10,
-          unit: "PCS",
-          imagePath: null,
-          status: "ACTIVE",
-          deviceId: "DEV-LOCAL-001",
-        });
-
-      if (!result.success) {
-        setProductStatus(
-          `Failed to create product: ${result.error}`
-        );
-
-        return;
-      }
-
-      setProductStatus(
-        "Test product created successfully."
-      );
-
-      await loadProducts();
-    } catch (error) {
-      console.error(
-        "Create test product error:",
-        error
-      );
-
-      setProductStatus(
-        "Unexpected error while creating test product."
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  }
-
+function DashboardPage() {
   return (
-    <div className="app">
-      <header className="app-header">
+    <section className="page">
+      <div className="page-header">
         <div>
-          <p className="eyebrow">OFFLINE POS</p>
-
-          <h1>Offline Billing Software</h1>
-
-          <p className="subtitle">
-            Offline-first desktop billing and inventory management
+          <p className="eyebrow">DASHBOARD</p>
+          <h1>Dashboard</h1>
+          <p className="page-description">
+            Overview of your billing and business activity.
           </p>
         </div>
+      </div>
 
-        <div className="status">
-          <span className="status-dot"></span>
-          Electron Desktop
+      <div className="dashboard-grid">
+        <div className="dashboard-card">
+          <span>Today's Sales</span>
+          <strong>₹0</strong>
         </div>
-      </header>
 
-      <main className="content">
-        <section className="card">
-          <p className="label">SYSTEM STATUS</p>
+        <div className="dashboard-card">
+          <span>Bills Generated</span>
+          <strong>0</strong>
+        </div>
 
-          <h2>
-            Electron and SQLite are connected.
-          </h2>
+        <div className="dashboard-card">
+          <span>Pending Payments</span>
+          <strong>₹0</strong>
+        </div>
 
-          {appInfo && (
-            <div className="info-grid">
-              <div className="info-box">
-                <span>Application</span>
-                <strong>{appInfo.name}</strong>
-              </div>
+        <div className="dashboard-card">
+          <span>Low Stock</span>
+          <strong>0</strong>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-              <div className="info-box">
-                <span>Version</span>
-                <strong>{appInfo.version}</strong>
-              </div>
+function AppLayout() {
+  return (
+    <div className="app-layout">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-icon">OB</div>
 
-              <div className="info-box">
-                <span>Platform</span>
-                <strong>{appInfo.platform}</strong>
-              </div>
-            </div>
-          )}
+          <div>
+            <strong>Offline Billing</strong>
+            <span>POS System</span>
+          </div>
+        </div>
 
-          <div className="database-section">
-            <p className="label">DATABASE STATUS</p>
+        <nav className="navigation">
+          <Link to="/">Dashboard</Link>
 
-            {databaseStatus?.success && (
-              <>
-                <div className="info-grid">
-                  <div className="info-box">
-                    <span>Database</span>
-                    <strong>SQLite</strong>
-                  </div>
+          <Link to="/products">
+            Products
+          </Link>
 
-                  <div className="info-box">
-                    <span>Tables</span>
-                    <strong>
-                      {databaseStatus.tableCount}
-                    </strong>
-                  </div>
+          <Link to="/categories">
+            Categories
+          </Link>
 
-                  <div className="info-box">
-                    <span>Status</span>
-                    <strong>Connected</strong>
-                  </div>
-                </div>
+          <Link to="/billing">
+            Billing
+          </Link>
 
-                <div className="tables-section">
-                  <h3>Created Tables</h3>
+          <Link to="/inventory">
+            Inventory
+          </Link>
 
-                  <div className="table-list">
-                    {databaseStatus.tables?.map(
-                      (table) => (
-                        <span key={table}>
-                          {table}
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+          <Link to="/customers">
+            Customers
+          </Link>
+
+          <Link to="/payments">
+            Payments
+          </Link>
+
+          <Link to="/invoices">
+            Invoices
+          </Link>
+
+          <Link to="/reports">
+            Reports
+          </Link>
+        </nav>
+      </aside>
+
+      <div className="main-area">
+        <header className="topbar">
+          <div>
+            <strong>Offline Billing Software</strong>
           </div>
 
-          <div className="product-section">
-            <p className="label">
-              PRODUCT REPOSITORY
-            </p>
-
-            <div className="product-status">
-              <span className="status-dot"></span>
-
-              <strong>{productStatus}</strong>
-            </div>
-
-            <button
-              type="button"
-              onClick={createTestProduct}
-              disabled={isCreating}
-              className="test-button"
-            >
-              {isCreating
-                ? "Creating..."
-                : "Create Test Product"}
-            </button>
-
-            <div className="product-count">
-              <span>Total Products</span>
-
-              <strong>{products.length}</strong>
-            </div>
-
-            {products.length > 0 && (
-              <div className="product-list">
-                {products.map((product) => (
-                  <div
-                    className="product-row"
-                    key={product.id}
-                  >
-                    <div>
-                      <strong>
-                        {product.name}
-                      </strong>
-
-                      <span>
-                        SKU: {product.sku}
-                      </span>
-                    </div>
-
-                    <div>
-                      <strong>
-                        ₹{product.sellingPrice}
-                      </strong>
-
-                      <span>
-                        Stock:{" "}
-                        {product.currentStock}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="connection-status">
+            <span className="status-dot" />
+            Offline Ready
           </div>
-        </section>
-      </main>
+        </header>
+
+        <main className="page-container">
+          <Routes>
+            {/* Dashboard */}
+            <Route
+              path="/"
+              element={<DashboardPage />}
+            />
+
+            {/* Products */}
+            <Route
+              path="/products"
+              element={<ProductsPage />}
+            />
+
+            {/* Categories */}
+            <Route
+              path="/categories"
+              element={<CategoriesPage />}
+            />
+
+            {/* Billing */}
+            <Route
+              path="/billing"
+              element={
+                <section className="page">
+                  <h1>Billing</h1>
+                  <p>
+                    Billing module coming next.
+                  </p>
+                </section>
+              }
+            />
+
+            {/* Inventory */}
+            <Route
+              path="/inventory"
+              element={
+                <section className="page">
+                  <h1>Inventory</h1>
+                  <p>
+                    Inventory module coming later.
+                  </p>
+                </section>
+              }
+            />
+
+            {/* Customers */}
+            <Route
+              path="/customers"
+              element={
+                <section className="page">
+                  <h1>Customers</h1>
+                  <p>
+                    Customer module coming later.
+                  </p>
+                </section>
+              }
+            />
+
+            {/* Payments */}
+            <Route
+              path="/payments"
+              element={
+                <section className="page">
+                  <h1>Payments</h1>
+                  <p>
+                    Payment module coming later.
+                  </p>
+                </section>
+              }
+            />
+
+            {/* Invoices */}
+            <Route
+              path="/invoices"
+              element={
+                <section className="page">
+                  <h1>Invoices</h1>
+                  <p>
+                    Invoice module coming later.
+                  </p>
+                </section>
+              }
+            />
+
+            {/* Reports */}
+            <Route
+              path="/reports"
+              element={
+                <section className="page">
+                  <h1>Reports</h1>
+                  <p>
+                    Reports module coming later.
+                  </p>
+                </section>
+              }
+            />
+          </Routes>
+        </main>
+      </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
+    </BrowserRouter>
   );
 }
 

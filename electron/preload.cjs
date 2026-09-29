@@ -1,22 +1,21 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktopAPI", {
-  /*
-   * Application information
-   */
+  // =========================
+  // Application
+  // =========================
   getAppInfo: () => ipcRenderer.invoke("app:get-info"),
 
-  /*
-   * Database information
-   */
+  // =========================
+  // Database
+  // =========================
   database: {
-    getStatus: () =>
-      ipcRenderer.invoke("database:get-status"),
+    getStatus: () => ipcRenderer.invoke("database:get-status"),
   },
 
-  /*
-   * Product operations
-   */
+  // =========================
+  // Products
+  // =========================
   products: {
     create: (productData) =>
       ipcRenderer.invoke("products:create", productData),
@@ -28,12 +27,9 @@ contextBridge.exposeInMainWorld("desktopAPI", {
       ipcRenderer.invoke("products:get-by-sku", sku),
 
     getByBarcode: (barcode) =>
-      ipcRenderer.invoke(
-        "products:get-by-barcode",
-        barcode
-      ),
+      ipcRenderer.invoke("products:get-by-barcode", barcode),
 
-    search: (searchTerm = "", includeInactive = false) =>
+    search: (searchTerm, includeInactive = false) =>
       ipcRenderer.invoke("products:search", {
         searchTerm,
         includeInactive,
@@ -56,5 +52,38 @@ contextBridge.exposeInMainWorld("desktopAPI", {
 
     getLowStock: () =>
       ipcRenderer.invoke("products:get-low-stock"),
+  },
+
+  // =========================
+  // Categories
+  // =========================
+  categories: {
+    create: (categoryData) =>
+      ipcRenderer.invoke("categories:create", categoryData),
+
+    getById: (id) =>
+      ipcRenderer.invoke("categories:get-by-id", id),
+
+    getByName: (name) =>
+      ipcRenderer.invoke("categories:get-by-name", name),
+
+    getAll: (options = {}) =>
+      ipcRenderer.invoke("categories:get-all", options),
+
+    search: (searchText, options = {}) =>
+      ipcRenderer.invoke(
+        "categories:search",
+        searchText,
+        options
+      ),
+
+    update: (categoryData) =>
+      ipcRenderer.invoke("categories:update", categoryData),
+
+    deactivate: (id) =>
+      ipcRenderer.invoke("categories:deactivate", id),
+
+    activate: (id) =>
+      ipcRenderer.invoke("categories:activate", id),
   },
 });

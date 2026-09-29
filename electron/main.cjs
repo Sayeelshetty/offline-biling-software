@@ -22,6 +22,17 @@ const {
   getLowStockProducts,
 } = require("./database/repositories/product.repository.cjs");
 
+const {
+  createCategory,
+  getCategoryById,
+  getCategoryByName,
+  getAllCategories,
+  searchCategories,
+  updateCategory,
+  deactivateCategory,
+  activateCategory,
+} = require("./database/repositories/category.repository.cjs");
+
 const isDevelopment = !app.isPackaged;
 
 let mainWindow = null;
@@ -115,69 +126,81 @@ ipcMain.handle("database:get-status", () => {
 |--------------------------------------------------------------------------
 */
 
-ipcMain.handle("products:create", (_event, productData) => {
-  try {
-    return {
-      success: true,
-      product: createProduct(productData),
-    };
-  } catch (error) {
-    console.error("Create product error:", error);
+ipcMain.handle(
+  "products:create",
+  (_event, productData) => {
+    try {
+      return {
+        success: true,
+        product: createProduct(productData),
+      };
+    } catch (error) {
+      console.error("Create product error:", error);
 
-    return {
-      success: false,
-      error: error.message,
-    };
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
-});
+);
 
-ipcMain.handle("products:get-by-id", (_event, id) => {
-  try {
-    return {
-      success: true,
-      product: findProductById(id),
-    };
-  } catch (error) {
-    console.error("Find product by ID error:", error);
+ipcMain.handle(
+  "products:get-by-id",
+  (_event, id) => {
+    try {
+      return {
+        success: true,
+        product: findProductById(id),
+      };
+    } catch (error) {
+      console.error("Find product by ID error:", error);
 
-    return {
-      success: false,
-      error: error.message,
-    };
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
-});
+);
 
-ipcMain.handle("products:get-by-sku", (_event, sku) => {
-  try {
-    return {
-      success: true,
-      product: findProductBySku(sku),
-    };
-  } catch (error) {
-    console.error("Find product by SKU error:", error);
+ipcMain.handle(
+  "products:get-by-sku",
+  (_event, sku) => {
+    try {
+      return {
+        success: true,
+        product: findProductBySku(sku),
+      };
+    } catch (error) {
+      console.error("Find product by SKU error:", error);
 
-    return {
-      success: false,
-      error: error.message,
-    };
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
-});
+);
 
-ipcMain.handle("products:get-by-barcode", (_event, barcode) => {
-  try {
-    return {
-      success: true,
-      product: findProductByBarcode(barcode),
-    };
-  } catch (error) {
-    console.error("Find product by barcode error:", error);
+ipcMain.handle(
+  "products:get-by-barcode",
+  (_event, barcode) => {
+    try {
+      return {
+        success: true,
+        product: findProductByBarcode(barcode),
+      };
+    } catch (error) {
+      console.error("Find product by barcode error:", error);
 
-    return {
-      success: false,
-      error: error.message,
-    };
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
-});
+);
 
 ipcMain.handle(
   "products:search",
@@ -301,6 +324,185 @@ ipcMain.handle(
 
 /*
 |--------------------------------------------------------------------------
+| Category IPC
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle(
+  "categories:create",
+  (_event, categoryData) => {
+    try {
+      return {
+        success: true,
+        category: createCategory(categoryData),
+      };
+    } catch (error) {
+      console.error("Create category error:", error);
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:get-by-id",
+  (_event, id) => {
+    try {
+      return {
+        success: true,
+        category: getCategoryById(id),
+      };
+    } catch (error) {
+      console.error("Get category by ID error:", error);
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:get-by-name",
+  (_event, name) => {
+    try {
+      return {
+        success: true,
+        category: getCategoryByName(name),
+      };
+    } catch (error) {
+      console.error(
+        "Get category by name error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:get-all",
+  (_event, options = {}) => {
+    try {
+      return {
+        success: true,
+        categories: getAllCategories(options),
+      };
+    } catch (error) {
+      console.error(
+        "Get all categories error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:search",
+  (_event, searchText, options = {}) => {
+    try {
+      return {
+        success: true,
+        categories: searchCategories(
+          searchText,
+          options
+        ),
+      };
+    } catch (error) {
+      console.error(
+        "Search categories error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:update",
+  (_event, categoryData) => {
+    try {
+      return {
+        success: true,
+        category: updateCategory(categoryData),
+      };
+    } catch (error) {
+      console.error(
+        "Update category error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:deactivate",
+  (_event, id) => {
+    try {
+      return {
+        success: true,
+        category: deactivateCategory(id),
+      };
+    } catch (error) {
+      console.error(
+        "Deactivate category error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "categories:activate",
+  (_event, id) => {
+    try {
+      return {
+        success: true,
+        category: activateCategory(id),
+      };
+    } catch (error) {
+      console.error(
+        "Activate category error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
 | Application Lifecycle
 |--------------------------------------------------------------------------
 */
@@ -321,7 +523,6 @@ app.whenReady().then(() => {
     console.error(error);
 
     app.quit();
-
     return;
   }
 

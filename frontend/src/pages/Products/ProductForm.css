@@ -1,0 +1,131 @@
+.product-form {
+  width: 100%;
+}
+
+.form-header {
+  margin-bottom: 24px;
+}
+
+.form-header h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+  outline: none;
+  background: #ffffff;
+  color: #172033;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.15s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: #667085;
+}
+
+.form-field input:disabled,
+.form-field select:disabled {
+  background: #f2f4f7;
+  cursor: not-allowed;
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 11px;
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.product-form .primary-button,
+.product-form .secondary-button {
+  min-width: 120px;
+  border: none;
+  border-radius: 9px;
+  padding: 11px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.product-form .primary-button {
+  background: #172033;
+  color: #ffffff;
+}
+
+.product-form .primary-button:hover {
+  opacity: 0.9;
+}
+
+.product-form .secondary-button {
+  background: #f2f4f7;
+  color: #344054;
+}
+
+.product-form .secondary-button:hover {
+  background: #e4e7ec;
+}
+
+.product-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field-wide {
+    grid-column: auto;
+  }
+
+  .form-footer {
+    flex-direction: column-reverse;
+  }
+
+  .product-form .primary-button,
+  .product-form .secondary-button {
+    width: 100%;
+  }
+}
