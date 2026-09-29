@@ -1,83 +1,10 @@
-export type ProductStatus = "ACTIVE" | "INACTIVE";
+import type {
+  Product,
+  ProductInput,
+  ProductUpdateInput,
+} from "../types/product";
 
-export interface ProductInput {
-  name: string;
-  sku: string;
-  barcode?: string | null;
-  categoryId?: string | null;
-  sellingPrice?: number;
-  purchasePrice?: number;
-  gstRate?: number;
-  currentStock?: number;
-  minimumStock?: number;
-  unit?: string;
-  imagePath?: string | null;
-  status?: ProductStatus;
-  deviceId: string;
-}
-
-export interface ProductUpdateInput {
-  name: string;
-  sku: string;
-  barcode?: string | null;
-  categoryId?: string | null;
-  sellingPrice?: number;
-  purchasePrice?: number;
-  gstRate?: number;
-  minimumStock?: number;
-  unit?: string;
-  imagePath?: string | null;
-  status?: ProductStatus;
-}
-
-export interface Product {
-  id: string;
-  serverId: string | null;
-
-  name: string;
-  sku: string;
-  barcode: string | null;
-
-  categoryId: string | null;
-
-  sellingPrice: number;
-  purchasePrice: number;
-
-  gstRate: number;
-
-  currentStock: number;
-  minimumStock: number;
-
-  unit: string;
-
-  imagePath: string | null;
-
-  status: ProductStatus;
-
-  createdAt: string;
-  updatedAt: string;
-
-  syncStatus: "PENDING" | "SYNCED" | "FAILED";
-
-  deviceId: string;
-}
-
-interface ProductResponse {
-  success: boolean;
-  product?: Product | null;
-  error?: string;
-}
-
-interface ProductsResponse {
-  success: boolean;
-  products?: Product[];
-  error?: string;
-}
-
-/**
- * Creates a new product in the local SQLite database.
- */
-async function createProduct(
+export async function createProduct(
   productData: ProductInput
 ): Promise<Product> {
   const response =
@@ -85,42 +12,65 @@ async function createProduct(
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error ?? "Failed to create product."
+      response.error || "Failed to create product"
     );
   }
 
-  return response.product as Product;
+  return response.product;
 }
 
-/**
- * Returns all products from the local database.
- */
-async function getAllProducts(options?: {
-  includeInactive?: boolean;
-  categoryId?: string | null;
-}): Promise<Product[]> {
-  const response: ProductsResponse =
-    await window.desktopAPI.products.getAll(
-      options
-    );
+export async function getProductById(
+  id: string
+): Promise<Product | null> {
+  const response =
+    await window.desktopAPI.products.getById(id);
 
   if (!response.success) {
     throw new Error(
-      response.error ?? "Failed to load products."
+      response.error || "Failed to get product"
     );
   }
 
-  return response.products ?? [];
+  return response.product ?? null;
 }
 
-/**
- * Searches products by name, SKU or barcode.
- */
-async function searchProducts(
+export async function getProductBySku(
+  sku: string
+): Promise<Product | null> {
+  const response =
+    await window.desktopAPI.products.getBySku(sku);
+
+  if (!response.success) {
+    throw new Error(
+      response.error ||
+        "Failed to get product by SKU"
+    );
+  }
+
+  return response.product ?? null;
+}
+
+export async function getProductByBarcode(
+  barcode: string
+): Promise<Product | null> {
+  const response =
+    await window.desktopAPI.products.getByBarcode(barcode);
+
+  if (!response.success) {
+    throw new Error(
+      response.error ||
+        "Failed to get product by barcode"
+    );
+  }
+
+  return response.product ?? null;
+}
+
+export async function searchProducts(
   searchTerm: string,
   includeInactive = false
 ): Promise<Product[]> {
-  const response: ProductsResponse =
+  const response =
     await window.desktopAPI.products.search(
       searchTerm,
       includeInactive
@@ -128,154 +78,120 @@ async function searchProducts(
 
   if (!response.success) {
     throw new Error(
-      response.error ?? "Failed to search products."
+      response.error || "Failed to search products"
     );
   }
 
   return response.products ?? [];
 }
 
-/**
- * Finds a product by local ID.
- */
-async function getProductById(
-  id: string
-): Promise<Product | null> {
-  const response: ProductResponse =
-    await window.desktopAPI.products.getById(id);
+export async function getAllProducts(
+  options: {
+    includeInactive?: boolean;
+    categoryId?: string;
+  } = {}
+): Promise<Product[]> {
+  const response =
+    await window.desktopAPI.products.getAll(options);
 
   if (!response.success) {
     throw new Error(
-      response.error ?? "Failed to load product."
+      response.error || "Failed to load products"
     );
   }
 
-  return response.product ?? null;
+  return response.products ?? [];
 }
 
-/**
- * Finds a product by SKU.
- */
-async function getProductBySku(
-  sku: string
-): Promise<Product | null> {
-  const response: ProductResponse =
-    await window.desktopAPI.products.getBySku(sku);
-
-  if (!response.success) {
-    throw new Error(
-      response.error ?? "Failed to find product by SKU."
-    );
-  }
-
-  return response.product ?? null;
-}
-
-/**
- * Finds a product by barcode.
- */
-async function getProductByBarcode(
-  barcode: string
-): Promise<Product | null> {
-  const response: ProductResponse =
-    await window.desktopAPI.products.getByBarcode(
-      barcode
-    );
-
-  if (!response.success) {
-    throw new Error(
-      response.error ??
-        "Failed to find product by barcode."
-    );
-  }
-
-  return response.product ?? null;
-}
-
-/**
- * Updates an existing product.
- */
-async function updateProduct(
+export async function updateProduct(
   id: string,
-  productData: ProductUpdateInput
+  data: ProductUpdateInput
 ): Promise<Product> {
-  const response: ProductResponse =
+  const response =
     await window.desktopAPI.products.update(
       id,
-      productData
+      data
     );
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error ?? "Failed to update product."
+      response.error || "Failed to update product"
     );
   }
 
-  return response.product as Product;
+  return response.product;
 }
 
-/**
- * Deactivates a product.
- */
-async function deactivateProduct(
+export async function deactivateProduct(
   id: string
 ): Promise<Product> {
-  const response: ProductResponse =
+  const response =
     await window.desktopAPI.products.deactivate(id);
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error ??
-        "Failed to deactivate product."
+      response.error || "Failed to deactivate product"
     );
   }
 
-  return response.product as Product;
+  return response.product;
 }
 
-/**
- * Activates a product.
- */
-async function activateProduct(
+export async function activateProduct(
   id: string
 ): Promise<Product> {
-  const response: ProductResponse =
+  const response =
     await window.desktopAPI.products.activate(id);
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error ??
-        "Failed to activate product."
+      response.error || "Failed to activate product"
     );
   }
 
-  return response.product as Product;
+  return response.product;
 }
 
-/**
- * Returns products that have reached their minimum stock.
- */
-async function getLowStockProducts(): Promise<Product[]> {
-  const response: ProductsResponse =
+export async function getLowStockProducts(): Promise<
+  Product[]
+> {
+  const response =
     await window.desktopAPI.products.getLowStock();
 
   if (!response.success) {
     throw new Error(
-      response.error ??
-        "Failed to load low-stock products."
+      response.error ||
+        "Failed to load low-stock products"
     );
   }
 
   return response.products ?? [];
 }
 
+/*
+|--------------------------------------------------------------------------
+| Default Product Service
+|--------------------------------------------------------------------------
+|
+| Existing ProductsPage code uses a default import.
+| Keep this object so both styles work:
+|
+| import productService from "...";
+|
+| and:
+|
+| import { createProduct } from "...";
+|
+|--------------------------------------------------------------------------
+*/
+
 const productService = {
   createProduct,
-  getAllProducts,
-  searchProducts,
   getProductById,
   getProductBySku,
   getProductByBarcode,
+  searchProducts,
+  getAllProducts,
   updateProduct,
   deactivateProduct,
   activateProduct,

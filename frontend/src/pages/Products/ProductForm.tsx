@@ -1,9 +1,21 @@
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+
 import type {
   Product,
   ProductInput,
   ProductUpdateInput,
-} from "../../services/product.service";
+} from "../../types/product";
+
+import type { Category } from "../../types/category";
+
+import {
+  getAllCategories,
+} from "../../services/category.service";
+
 import "./ProductForm.css";
 
 type ProductFormProps = {
@@ -19,6 +31,7 @@ type FormState = {
   name: string;
   sku: string;
   barcode: string;
+  categoryId: string;
   sellingPrice: string;
   purchasePrice: string;
   gstRate: string;
@@ -32,6 +45,7 @@ const DEFAULT_FORM: FormState = {
   name: "",
   sku: "",
   barcode: "",
+  categoryId: "",
   sellingPrice: "",
   purchasePrice: "",
   gstRate: "0",
@@ -47,13 +61,64 @@ function ProductForm({
   onCancel,
   isSubmitting = false,
 }: ProductFormProps) {
-  const [form, setForm] = useState<FormState>(
-    DEFAULT_FORM
-  );
+  const [form, setForm] =
+    useState<FormState>(DEFAULT_FORM);
 
-  const [errors, setErrors] = useState<
-    Record<string, string>
-  >({});
+  const [categories, setCategories] =
+    useState<Category[]>([]);
+
+  const [isLoadingCategories, setIsLoadingCategories] =
+    useState(true);
+
+  const [errors, setErrors] =
+    useState<Record<string, string>>({});
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load Categories
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCategories() {
+      try {
+        setIsLoadingCategories(true);
+
+        const result = await getAllCategories(false);
+
+        if (mounted) {
+          setCategories(result);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load categories:",
+          error
+        );
+
+        if (mounted) {
+          setCategories([]);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingCategories(false);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Populate Form
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
     if (!product) {
@@ -67,6 +132,7 @@ function ProductForm({
       name: product.name,
       sku: product.sku,
       barcode: product.barcode ?? "",
+      categoryId: product.categoryId ?? "",
       sellingPrice: String(product.sellingPrice),
       purchasePrice: String(product.purchasePrice),
       gstRate: String(product.gstRate),
@@ -78,6 +144,12 @@ function ProductForm({
 
     setErrors({});
   }, [product]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Handle Field Changes
+  |--------------------------------------------------------------------------
+  */
 
   function handleChange(
     field: keyof FormState,
@@ -94,18 +166,32 @@ function ProductForm({
     }));
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Validation
+  |--------------------------------------------------------------------------
+  */
+
   function validate() {
     const nextErrors: Record<string, string> = {};
 
     if (!form.name.trim()) {
-      nextErrors.name = "Product name is required.";
+      nextErrors.name =
+        "Product name is required.";
     }
 
     if (!form.sku.trim()) {
       nextErrors.sku = "SKU is required.";
     }
 
-    const sellingPrice = Number(form.sellingPrice);
+    if (!form.categoryId) {
+      nextErrors.categoryId =
+        "Category is required.";
+    }
+
+    const sellingPrice = Number(
+      form.sellingPrice
+    );
 
     if (
       form.sellingPrice === "" ||
@@ -116,7 +202,9 @@ function ProductForm({
         "Enter a valid selling price.";
     }
 
-    const purchasePrice = Number(form.purchasePrice);
+    const purchasePrice = Number(
+      form.purchasePrice
+    );
 
     if (
       form.purchasePrice === "" ||
@@ -168,10 +256,24 @@ function ProductForm({
       nextErrors.unit = "Unit is required.";
     }
 
+    if (
+      !isLoadingCategories &&
+      categories.length === 0
+    ) {
+      nextErrors.categoryId =
+        "Create a category before adding a product.";
+    }
+
     setErrors(nextErrors);
 
     return Object.keys(nextErrors).length === 0;
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Submit
+  |--------------------------------------------------------------------------
+  */
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -186,7 +288,7 @@ function ProductForm({
       name: form.name.trim(),
       sku: form.sku.trim(),
       barcode: form.barcode.trim() || null,
-      categoryId: null,
+      categoryId: form.categoryId || null,
       sellingPrice: Number(form.sellingPrice),
       purchasePrice: Number(form.purchasePrice),
       gstRate: Number(form.gstRate),
@@ -197,7 +299,11 @@ function ProductForm({
     };
 
     if (product) {
-      await onSubmit(baseData);
+      const updateData: ProductUpdateInput = {
+        ...baseData,
+      };
+
+      await onSubmit(updateData);
     } else {
       const createData: ProductInput = {
         ...baseData,
@@ -235,6 +341,8 @@ function ProductForm({
       </div>
 
       <div className="form-grid">
+        {/* Product Name */}
+
         <div className="form-field form-field-wide">
           <label htmlFor="product-name">
             Product Name *
@@ -260,6 +368,8 @@ function ProductForm({
             </span>
           )}
         </div>
+
+        {/* SKU */}
 
         <div className="form-field">
           <label htmlFor="product-sku">
@@ -287,6 +397,8 @@ function ProductForm({
           )}
         </div>
 
+        {/* Barcode */}
+
         <div className="form-field">
           <label htmlFor="product-barcode">
             Barcode
@@ -306,6 +418,52 @@ function ProductForm({
             disabled={isSubmitting}
           />
         </div>
+
+        {/* Category */}
+
+        <div className="form-field">
+          <label htmlFor="product-category">
+            Category *
+          </label>
+
+          <select
+            id="product-category"
+            value={form.categoryId}
+            onChange={(event) =>
+              handleChange(
+                "categoryId",
+                event.target.value
+              )
+            }
+            disabled={
+              isSubmitting ||
+              isLoadingCategories
+            }
+          >
+            <option value="">
+              {isLoadingCategories
+                ? "Loading categories..."
+                : "Select category"}
+            </option>
+
+            {categories.map((category) => (
+              <option
+                key={category.id}
+                value={category.id}
+              >
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          {errors.categoryId && (
+            <span className="field-error">
+              {errors.categoryId}
+            </span>
+          )}
+        </div>
+
+        {/* Purchase Price */}
 
         <div className="form-field">
           <label htmlFor="purchase-price">
@@ -335,6 +493,8 @@ function ProductForm({
           )}
         </div>
 
+        {/* Selling Price */}
+
         <div className="form-field">
           <label htmlFor="selling-price">
             Selling Price *
@@ -362,6 +522,8 @@ function ProductForm({
             </span>
           )}
         </div>
+
+        {/* GST */}
 
         <div className="form-field">
           <label htmlFor="gst-rate">
@@ -392,6 +554,8 @@ function ProductForm({
           )}
         </div>
 
+        {/* Minimum Stock */}
+
         <div className="form-field">
           <label htmlFor="minimum-stock">
             Minimum Stock
@@ -419,6 +583,8 @@ function ProductForm({
             </span>
           )}
         </div>
+
+        {/* Opening Stock */}
 
         {!isEditMode && (
           <div className="form-field">
@@ -449,6 +615,8 @@ function ProductForm({
             )}
           </div>
         )}
+
+        {/* Unit */}
 
         <div className="form-field">
           <label htmlFor="product-unit">
@@ -483,6 +651,8 @@ function ProductForm({
           )}
         </div>
 
+        {/* Status */}
+
         <div className="form-field">
           <label htmlFor="product-status">
             Status
@@ -512,6 +682,8 @@ function ProductForm({
         </div>
       </div>
 
+      {/* Footer */}
+
       <div className="form-footer">
         <button
           type="button"
@@ -525,7 +697,10 @@ function ProductForm({
         <button
           type="submit"
           className="primary-button"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            isLoadingCategories
+          }
         >
           {isSubmitting
             ? "Saving..."

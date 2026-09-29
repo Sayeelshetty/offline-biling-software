@@ -1,22 +1,5 @@
-const crypto = require("crypto");
-
+const { randomUUID } = require("crypto");
 const { getDatabase } = require("../connection.cjs");
-
-/*
-|--------------------------------------------------------------------------
-| Product Row Mapper
-|--------------------------------------------------------------------------
-|
-| SQLite uses snake_case column names.
-| The rest of the application uses camelCase.
-|
-| SQLite:
-| selling_price
-|
-| Application:
-| sellingPrice
-|
-*/
 
 function mapProductRow(row) {
   if (!row) {
@@ -26,34 +9,67 @@ function mapProductRow(row) {
   return {
     id: row.id,
     serverId: row.server_id,
-
     name: row.name,
     sku: row.sku,
     barcode: row.barcode,
-
     categoryId: row.category_id,
-
     sellingPrice: row.selling_price,
     purchasePrice: row.purchase_price,
-
     gstRate: row.gst_rate,
-
     currentStock: row.current_stock,
     minimumStock: row.minimum_stock,
-
     unit: row.unit,
-
     imagePath: row.image_path,
-
     status: row.status,
-
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-
     syncStatus: row.sync_status,
-
     deviceId: row.device_id,
   };
+}
+
+/*
+|--------------------------------------------------------------------------
+| Validation Helpers
+|--------------------------------------------------------------------------
+*/
+
+function validateProductName(name) {
+  if (!name || !name.trim()) {
+    throw new Error("Product name is required");
+  }
+}
+
+function validateSku(sku) {
+  if (!sku || !sku.trim()) {
+    throw new Error("SKU is required");
+  }
+}
+
+function validateDeviceId(deviceId) {
+  if (!deviceId || !deviceId.trim()) {
+    throw new Error("Device ID is required");
+  }
+}
+
+function validateCategoryId(categoryId) {
+  if (categoryId === null || categoryId === undefined || categoryId === "") {
+    return;
+  }
+
+  const database = getDatabase();
+
+  const category = database
+    .prepare(`
+      SELECT id
+      FROM categories
+      WHERE id = ?
+    `)
+    .get(categoryId);
+
+  if (!category) {
+    throw new Error("Selected category was not found");
+  }
 }
 
 /*
@@ -62,36 +78,31 @@ function mapProductRow(row) {
 |--------------------------------------------------------------------------
 */
 
-function createProduct({
-  name,
-  sku,
-  barcode = null,
-  categoryId = null,
-  sellingPrice = 0,
-  purchasePrice = 0,
-  gstRate = 0,
-  currentStock = 0,
-  minimumStock = 0,
-  unit = "PCS",
-  imagePath = null,
-  status = "ACTIVE",
-  deviceId,
-}) {
-  if (!name || !name.trim()) {
-    throw new Error("Product name is required.");
-  }
-
-  if (!sku || !sku.trim()) {
-    throw new Error("SKU is required.");
-  }
-
-  if (!deviceId) {
-    throw new Error("Device ID is required.");
-  }
-
+function createProduct(productData) {
   const database = getDatabase();
 
-  const id = crypto.randomUUID();
+  const {
+    name,
+    sku,
+    barcode = null,
+    categoryId = null,
+    sellingPrice = 0,
+    purchasePrice = 0,
+    gstRate = 0,
+    currentStock = 0,
+    minimumStock = 0,
+    unit = "PCS",
+    imagePath = null,
+    status = "ACTIVE",
+    deviceId,
+  } = productData || {};
+
+  validateProductName(name);
+  validateSku(sku);
+  validateDeviceId(deviceId);
+  validateCategoryId(categoryId);
+
+  const id = randomUUID();
   const now = new Date().toISOString();
 
   const statement = database.prepare(`
@@ -142,18 +153,18 @@ function createProduct({
     name: name.trim(),
     sku: sku.trim(),
     barcode: barcode ? barcode.trim() : null,
-    categoryId,
-    sellingPrice,
-    purchasePrice,
-    gstRate,
-    currentStock,
-    minimumStock,
-    unit,
-    imagePath,
+    categoryId: categoryId || null,
+    sellingPrice: Number(sellingPrice),
+    purchasePrice: Number(purchasePrice),
+    gstRate: Number(gstRate),
+    currentStock: Number(currentStock),
+    minimumStock: Number(minimumStock),
+    unit: unit.trim(),
+    imagePath: imagePath || null,
     status,
     createdAt: now,
     updatedAt: now,
-    deviceId,
+    deviceId: deviceId.trim(),
   });
 
   return findProductById(id);
@@ -161,7 +172,7 @@ function createProduct({
 
 /*
 |--------------------------------------------------------------------------
-| Find Product By ID
+| Find Product
 |--------------------------------------------------------------------------
 */
 
@@ -170,7 +181,25 @@ function findProductById(id) {
 
   const row = database
     .prepare(`
-      SELECT *
+      SELECT
+        id,
+        server_id,
+        name,
+        sku,
+        barcode,
+        category_id,
+        selling_price,
+        purchase_price,
+        gst_rate,
+        current_stock,
+        minimum_stock,
+        unit,
+        image_path,
+        status,
+        created_at,
+        updated_at,
+        sync_status,
+        device_id
       FROM products
       WHERE id = ?
     `)
@@ -179,42 +208,68 @@ function findProductById(id) {
   return mapProductRow(row);
 }
 
-/*
-|--------------------------------------------------------------------------
-| Find Product By SKU
-|--------------------------------------------------------------------------
-*/
-
 function findProductBySku(sku) {
   const database = getDatabase();
 
   const row = database
     .prepare(`
-      SELECT *
+      SELECT
+        id,
+        server_id,
+        name,
+        sku,
+        barcode,
+        category_id,
+        selling_price,
+        purchase_price,
+        gst_rate,
+        current_stock,
+        minimum_stock,
+        unit,
+        image_path,
+        status,
+        created_at,
+        updated_at,
+        sync_status,
+        device_id
       FROM products
-      WHERE sku = ?
+      WHERE LOWER(sku) = LOWER(?)
+      LIMIT 1
     `)
-    .get(sku);
+    .get(sku.trim());
 
   return mapProductRow(row);
 }
-
-/*
-|--------------------------------------------------------------------------
-| Find Product By Barcode
-|--------------------------------------------------------------------------
-*/
 
 function findProductByBarcode(barcode) {
   const database = getDatabase();
 
   const row = database
     .prepare(`
-      SELECT *
+      SELECT
+        id,
+        server_id,
+        name,
+        sku,
+        barcode,
+        category_id,
+        selling_price,
+        purchase_price,
+        gst_rate,
+        current_stock,
+        minimum_stock,
+        unit,
+        image_path,
+        status,
+        created_at,
+        updated_at,
+        sync_status,
+        device_id
       FROM products
       WHERE barcode = ?
+      LIMIT 1
     `)
-    .get(barcode);
+    .get(barcode.trim());
 
   return mapProductRow(row);
 }
@@ -231,32 +286,48 @@ function searchProducts(
 ) {
   const database = getDatabase();
 
-  const searchPattern = `%${searchTerm.trim()}%`;
+  const search = `%${searchTerm.trim()}%`;
 
-  let sql = `
-    SELECT *
+  let query = `
+    SELECT
+      id,
+      server_id,
+      name,
+      sku,
+      barcode,
+      category_id,
+      selling_price,
+      purchase_price,
+      gst_rate,
+      current_stock,
+      minimum_stock,
+      unit,
+      image_path,
+      status,
+      created_at,
+      updated_at,
+      sync_status,
+      device_id
     FROM products
     WHERE (
-      name LIKE @searchPattern
-      OR sku LIKE @searchPattern
-      OR barcode LIKE @searchPattern
+      LOWER(name) LIKE LOWER(@search)
+      OR LOWER(sku) LIKE LOWER(@search)
+      OR LOWER(COALESCE(barcode, '')) LIKE LOWER(@search)
     )
   `;
 
   if (!includeInactive) {
-    sql += `
-      AND status = 'ACTIVE'
-    `;
+    query += ` AND status = 'ACTIVE' `;
   }
 
-  sql += `
-    ORDER BY name ASC
+  query += `
+    ORDER BY name COLLATE NOCASE ASC
   `;
 
   const rows = database
-    .prepare(sql)
+    .prepare(query)
     .all({
-      searchPattern,
+      search,
     });
 
   return rows.map(mapProductRow);
@@ -274,34 +345,53 @@ function getAllProducts({
 } = {}) {
   const database = getDatabase();
 
-  let sql = `
-    SELECT *
-    FROM products
-    WHERE 1 = 1
-  `;
-
+  const conditions = [];
   const parameters = {};
 
   if (!includeInactive) {
-    sql += `
-      AND status = 'ACTIVE'
-    `;
+    conditions.push(`status = 'ACTIVE'`);
   }
 
   if (categoryId) {
-    sql += `
-      AND category_id = @categoryId
-    `;
-
+    conditions.push(`category_id = @categoryId`);
     parameters.categoryId = categoryId;
   }
 
-  sql += `
-    ORDER BY name ASC
+  let query = `
+    SELECT
+      id,
+      server_id,
+      name,
+      sku,
+      barcode,
+      category_id,
+      selling_price,
+      purchase_price,
+      gst_rate,
+      current_stock,
+      minimum_stock,
+      unit,
+      image_path,
+      status,
+      created_at,
+      updated_at,
+      sync_status,
+      device_id
+    FROM products
+  `;
+
+  if (conditions.length > 0) {
+    query += `
+      WHERE ${conditions.join(" AND ")}
+    `;
+  }
+
+  query += `
+    ORDER BY name COLLATE NOCASE ASC
   `;
 
   const rows = database
-    .prepare(sql)
+    .prepare(query)
     .all(parameters);
 
   return rows.map(mapProductRow);
@@ -312,14 +402,28 @@ function getAllProducts({
 | Update Product
 |--------------------------------------------------------------------------
 |
-| Stock is intentionally NOT updated here.
-| Inventory changes must go through stock movements.
+| Note:
+| current_stock is intentionally NOT updated here.
+| Stock should later be changed through inventory
+| stock movements.
 |
+|--------------------------------------------------------------------------
 */
 
-function updateProduct(
-  id,
-  {
+function updateProduct(id, data) {
+  const database = getDatabase();
+
+  if (!id) {
+    throw new Error("Product ID is required");
+  }
+
+  const existingProduct = findProductById(id);
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  const {
     name,
     sku,
     barcode = null,
@@ -330,16 +434,12 @@ function updateProduct(
     minimumStock = 0,
     unit = "PCS",
     imagePath = null,
-    status = "ACTIVE",
-  }
-) {
-  const database = getDatabase();
+    status = existingProduct.status,
+  } = data || {};
 
-  const existingProduct = findProductById(id);
-
-  if (!existingProduct) {
-    throw new Error("Product not found.");
-  }
+  validateProductName(name);
+  validateSku(sku);
+  validateCategoryId(categoryId);
 
   const now = new Date().toISOString();
 
@@ -367,13 +467,13 @@ function updateProduct(
     name: name.trim(),
     sku: sku.trim(),
     barcode: barcode ? barcode.trim() : null,
-    categoryId,
-    sellingPrice,
-    purchasePrice,
-    gstRate,
-    minimumStock,
-    unit,
-    imagePath,
+    categoryId: categoryId || null,
+    sellingPrice: Number(sellingPrice),
+    purchasePrice: Number(purchasePrice),
+    gstRate: Number(gstRate),
+    minimumStock: Number(minimumStock),
+    unit: unit.trim(),
+    imagePath: imagePath || null,
     status,
     updatedAt: now,
   });
@@ -390,10 +490,14 @@ function updateProduct(
 function deactivateProduct(id) {
   const database = getDatabase();
 
+  if (!id) {
+    throw new Error("Product ID is required");
+  }
+
   const existingProduct = findProductById(id);
 
   if (!existingProduct) {
-    throw new Error("Product not found.");
+    throw new Error("Product not found");
   }
 
   const now = new Date().toISOString();
@@ -403,14 +507,11 @@ function deactivateProduct(id) {
       UPDATE products
       SET
         status = 'INACTIVE',
-        updated_at = @updatedAt,
+        updated_at = ?,
         sync_status = 'PENDING'
-      WHERE id = @id
+      WHERE id = ?
     `)
-    .run({
-      id,
-      updatedAt: now,
-    });
+    .run(now, id);
 
   return findProductById(id);
 }
@@ -424,10 +525,14 @@ function deactivateProduct(id) {
 function activateProduct(id) {
   const database = getDatabase();
 
+  if (!id) {
+    throw new Error("Product ID is required");
+  }
+
   const existingProduct = findProductById(id);
 
   if (!existingProduct) {
-    throw new Error("Product not found.");
+    throw new Error("Product not found");
   }
 
   const now = new Date().toISOString();
@@ -437,21 +542,18 @@ function activateProduct(id) {
       UPDATE products
       SET
         status = 'ACTIVE',
-        updated_at = @updatedAt,
+        updated_at = ?,
         sync_status = 'PENDING'
-      WHERE id = @id
+      WHERE id = ?
     `)
-    .run({
-      id,
-      updatedAt: now,
-    });
+    .run(now, id);
 
   return findProductById(id);
 }
 
 /*
 |--------------------------------------------------------------------------
-| Low Stock Products
+| Get Low Stock Products
 |--------------------------------------------------------------------------
 */
 
@@ -460,23 +562,35 @@ function getLowStockProducts() {
 
   const rows = database
     .prepare(`
-      SELECT *
+      SELECT
+        id,
+        server_id,
+        name,
+        sku,
+        barcode,
+        category_id,
+        selling_price,
+        purchase_price,
+        gst_rate,
+        current_stock,
+        minimum_stock,
+        unit,
+        image_path,
+        status,
+        created_at,
+        updated_at,
+        sync_status,
+        device_id
       FROM products
       WHERE
         status = 'ACTIVE'
         AND current_stock <= minimum_stock
-      ORDER BY current_stock ASC, name ASC
+      ORDER BY current_stock ASC, name COLLATE NOCASE ASC
     `)
     .all();
 
   return rows.map(mapProductRow);
 }
-
-/*
-|--------------------------------------------------------------------------
-| Exports
-|--------------------------------------------------------------------------
-*/
 
 module.exports = {
   createProduct,
