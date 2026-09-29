@@ -1,35 +1,94 @@
 import { useEffect, useState } from "react";
 
-import productService, {
-  type Product,
-  type ProductInput,
-  type ProductUpdateInput,
-} from "../services/product.service";
+import type {
+  Product,
+  ProductInput,
+  ProductUpdateInput,
+} from "../types/product";
+
+import type { Category } from "../types/category";
+
+import productService from "../services/product.service";
+import {
+  getAllCategories,
+} from "../services/category.service";
 
 import ProductForm from "../pages/Products/ProductForm";
 import "../pages/Products/ProductsPage.css";
 
 function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(
+    []
+  );
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [categories, setCategories] = useState<
+    Category[]
+  >([]);
 
-  const [statusFilter, setStatusFilter] = useState<
-    "ACTIVE" | "INACTIVE" | "ALL"
-  >("ACTIVE");
+  const [searchTerm, setSearchTerm] =
+    useState("");
 
-  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] =
+    useState<
+      "ACTIVE" | "INACTIVE" | "ALL"
+    >("ACTIVE");
 
-  const [saving, setSaving] = useState(false);
+  const [categoryFilter, setCategoryFilter] =
+    useState("");
 
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] =
+    useState(false);
 
-  const [showForm, setShowForm] = useState(false);
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [message, setMessage] =
+    useState<string | null>(null);
+
+  const [showForm, setShowForm] =
+    useState(false);
 
   const [editingProduct, setEditingProduct] =
     useState<Product | null>(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load Categories
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const result =
+          await getAllCategories(false);
+
+        setCategories(result);
+      } catch (err) {
+        console.error(
+          "Failed to load categories:",
+          err
+        );
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load categories."
+        );
+      }
+    }
+
+    loadCategories();
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load Products
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -39,7 +98,11 @@ function ProductsPage() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [searchTerm, statusFilter]);
+  }, [
+    searchTerm,
+    statusFilter,
+    categoryFilter,
+  ]);
 
   async function loadProducts() {
     try {
@@ -49,25 +112,76 @@ function ProductsPage() {
       const includeInactive =
         statusFilter !== "ACTIVE";
 
-      const trimmedSearch = searchTerm.trim();
+      const trimmedSearch =
+        searchTerm.trim();
 
       let result: Product[];
 
+      /*
+      |--------------------------------------------------------------------------
+      | Search Products
+      |--------------------------------------------------------------------------
+      */
+
       if (trimmedSearch) {
-        result = await productService.searchProducts(
-          trimmedSearch,
-          includeInactive
-        );
+        result =
+          await productService.searchProducts(
+            trimmedSearch,
+            includeInactive
+          );
       } else {
-        result = await productService.getAllProducts({
-          includeInactive,
-        });
+        /*
+        |--------------------------------------------------------------------------
+        | Load Products
+        |--------------------------------------------------------------------------
+        |
+        | When no search term is entered, we can
+        | pass the category directly to SQLite.
+        |
+        |--------------------------------------------------------------------------
+        */
+
+        result =
+          await productService.getAllProducts({
+            includeInactive,
+            categoryId:
+              categoryFilter || undefined,
+          });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Status Filter
+      |--------------------------------------------------------------------------
+      */
 
       if (statusFilter === "INACTIVE") {
         result = result.filter(
           (product) =>
             product.status === "INACTIVE"
+        );
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Category Filter
+      |--------------------------------------------------------------------------
+      |
+      | Search results are filtered here because
+      | the current search API searches by
+      | name, SKU and barcode.
+      |
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        trimmedSearch &&
+        categoryFilter
+      ) {
+        result = result.filter(
+          (product) =>
+            product.categoryId ===
+            categoryFilter
         );
       }
 
@@ -88,6 +202,12 @@ function ProductsPage() {
     }
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Form Actions
+  |--------------------------------------------------------------------------
+  */
+
   function openAddForm() {
     setEditingProduct(null);
     setError(null);
@@ -95,7 +215,9 @@ function ProductsPage() {
     setShowForm(true);
   }
 
-  function openEditForm(product: Product) {
+  function openEditForm(
+    product: Product
+  ) {
     setEditingProduct(product);
     setError(null);
     setMessage(null);
@@ -111,8 +233,16 @@ function ProductsPage() {
     setEditingProduct(null);
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Save Product
+  |--------------------------------------------------------------------------
+  */
+
   async function handleProductSubmit(
-    data: ProductInput | ProductUpdateInput
+    data:
+      | ProductInput
+      | ProductUpdateInput
   ) {
     try {
       setSaving(true);
@@ -158,6 +288,12 @@ function ProductsPage() {
     }
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Deactivate Product
+  |--------------------------------------------------------------------------
+  */
+
   async function handleDeactivate(
     product: Product
   ) {
@@ -196,6 +332,12 @@ function ProductsPage() {
     }
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Activate Product
+  |--------------------------------------------------------------------------
+  */
+
   async function handleActivate(
     product: Product
   ) {
@@ -226,7 +368,15 @@ function ProductsPage() {
     }
   }
 
-  function getStockClass(product: Product) {
+  /*
+  |--------------------------------------------------------------------------
+  | Stock Styling
+  |--------------------------------------------------------------------------
+  */
+
+  function getStockClass(
+    product: Product
+  ) {
     if (product.currentStock <= 0) {
       return "stock-danger";
     }
@@ -241,17 +391,48 @@ function ProductsPage() {
     return "stock-normal";
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Category Name
+  |--------------------------------------------------------------------------
+  */
+
+  function getCategoryName(
+    categoryId: string | null
+  ) {
+    if (!categoryId) {
+      return "—";
+    }
+
+    const category = categories.find(
+      (item) =>
+        item.id === categoryId
+    );
+
+    return category?.name ?? "—";
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Render
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <section className="products-page">
       <div className="products-header">
         <div>
-          <p className="eyebrow">PRODUCTS</p>
+          <p className="eyebrow">
+            PRODUCTS
+          </p>
 
-          <h1>Product Management</h1>
+          <h1>
+            Product Management
+          </h1>
 
           <p className="page-description">
-            Manage products, pricing, stock and product
-            information.
+            Manage products, pricing, stock
+            and product information.
           </p>
         </div>
 
@@ -277,6 +458,8 @@ function ProductsPage() {
       )}
 
       <div className="toolbar">
+        {/* Search */}
+
         <div className="search-wrapper">
           <label htmlFor="product-search">
             Search Products
@@ -287,11 +470,15 @@ function ProductsPage() {
             type="text"
             value={searchTerm}
             onChange={(event) =>
-              setSearchTerm(event.target.value)
+              setSearchTerm(
+                event.target.value
+              )
             }
             placeholder="Search by name, SKU or barcode..."
           />
         </div>
+
+        {/* Status Filter */}
 
         <div className="filter-wrapper">
           <label htmlFor="status-filter">
@@ -324,21 +511,64 @@ function ProductsPage() {
           </select>
         </div>
 
+        {/* Category Filter */}
+
+        <div className="filter-wrapper">
+          <label htmlFor="category-filter">
+            Category
+          </label>
+
+          <select
+            id="category-filter"
+            value={categoryFilter}
+            onChange={(event) =>
+              setCategoryFilter(
+                event.target.value
+              )
+            }
+          >
+            <option value="">
+              All Categories
+            </option>
+
+            {categories.map(
+              (category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
+                  {category.name}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        {/* Total */}
+
         <div className="product-total">
           <span>Total</span>
 
-          <strong>{products.length}</strong>
+          <strong>
+            {products.length}
+          </strong>
         </div>
       </div>
+
+      {/* Product Table */}
 
       <div className="table-card">
         {loading ? (
           <div className="empty-state">
-            <p>Loading products...</p>
+            <p>
+              Loading products...
+            </p>
           </div>
         ) : products.length === 0 ? (
           <div className="empty-state">
-            <h3>No products found</h3>
+            <h3>
+              No products found
+            </h3>
 
             <p>
               Add a product or change your
@@ -353,6 +583,7 @@ function ProductsPage() {
                   <th>Product</th>
                   <th>SKU</th>
                   <th>Barcode</th>
+                  <th>Category</th>
                   <th>Price</th>
                   <th>GST</th>
                   <th>Stock</th>
@@ -363,117 +594,142 @@ function ProductsPage() {
               </thead>
 
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <div className="product-name">
-                        <strong>
-                          {product.name}
-                        </strong>
+                {products.map(
+                  (product) => (
+                    <tr
+                      key={product.id}
+                    >
+                      <td>
+                        <div className="product-name">
+                          <strong>
+                            {product.name}
+                          </strong>
 
-                        <span>
-                          Purchase ₹
-                          {product.purchasePrice.toFixed(
-                            2
-                          )}
-                        </span>
-                      </div>
-                    </td>
+                          <span>
+                            Purchase ₹
+                            {product.purchasePrice.toFixed(
+                              2
+                            )}
+                          </span>
+                        </div>
+                      </td>
 
-                    <td>{product.sku}</td>
+                      <td>
+                        {product.sku}
+                      </td>
 
-                    <td>
-                      {product.barcode || "—"}
-                    </td>
+                      <td>
+                        {product.barcode ||
+                          "—"}
+                      </td>
 
-                    <td>
-                      ₹
-                      {product.sellingPrice.toFixed(
-                        2
-                      )}
-                    </td>
-
-                    <td>
-                      {product.gstRate}%
-                    </td>
-
-                    <td>
-                      <span
-                        className={`stock-badge ${getStockClass(
-                          product
-                        )}`}
-                      >
-                        {product.currentStock}
-                      </span>
-
-                      <small>
-                        Min:{" "}
-                        {product.minimumStock}
-                      </small>
-                    </td>
-
-                    <td>{product.unit}</td>
-
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          product.status ===
-                          "ACTIVE"
-                            ? "status-active"
-                            : "status-inactive"
-                        }`}
-                      >
-                        {product.status}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          onClick={() =>
-                            openEditForm(product)
-                          }
-                        >
-                          Edit
-                        </button>
-
-                        {product.status ===
-                        "ACTIVE" ? (
-                          <button
-                            type="button"
-                            className="danger-button"
-                            onClick={() =>
-                              handleDeactivate(
-                                product
-                              )
-                            }
-                          >
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="activate-button"
-                            onClick={() =>
-                              handleActivate(
-                                product
-                              )
-                            }
-                          >
-                            Activate
-                          </button>
+                      <td>
+                        {getCategoryName(
+                          product.categoryId
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      <td>
+                        ₹
+                        {product.sellingPrice.toFixed(
+                          2
+                        )}
+                      </td>
+
+                      <td>
+                        {product.gstRate}%
+                      </td>
+
+                      <td>
+                        <span
+                          className={`stock-badge ${getStockClass(
+                            product
+                          )}`}
+                        >
+                          {
+                            product.currentStock
+                          }
+                        </span>
+
+                        <small>
+                          Min:{" "}
+                          {
+                            product.minimumStock
+                          }
+                        </small>
+                      </td>
+
+                      <td>
+                        {product.unit}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            product.status ===
+                            "ACTIVE"
+                              ? "status-active"
+                              : "status-inactive"
+                          }`}
+                        >
+                          {
+                            product.status
+                          }
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() =>
+                              openEditForm(
+                                product
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
+
+                          {product.status ===
+                          "ACTIVE" ? (
+                            <button
+                              type="button"
+                              className="danger-button"
+                              onClick={() =>
+                                handleDeactivate(
+                                  product
+                                )
+                              }
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="activate-button"
+                              onClick={() =>
+                                handleActivate(
+                                  product
+                                )
+                              }
+                            >
+                              Activate
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Product Form Modal */}
 
       {showForm && (
         <div className="modal-backdrop">
@@ -484,8 +740,12 @@ function ProductsPage() {
             aria-labelledby="product-form-title"
           >
             <ProductForm
-              product={editingProduct}
-              onSubmit={handleProductSubmit}
+              product={
+                editingProduct
+              }
+              onSubmit={
+                handleProductSubmit
+              }
               onCancel={closeForm}
               isSubmitting={saving}
             />
