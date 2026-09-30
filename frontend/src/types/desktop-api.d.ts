@@ -263,6 +263,49 @@ interface DesktopAPI {
     getSummary: () =>
       Promise<InventorySummaryResponse>;
   };
+
+
+  customers: {
+  getById: (
+    id: string
+  ) => Promise<import("../../../shared/types/customer").Customer | null>;
+
+  getByMobile: (
+    mobile: string
+  ) => Promise<import("../../../shared/types/customer").Customer | null>;
+
+  create: (
+    input: import("../../../shared/types/customer").CustomerInput
+  ) => Promise<import("../../../shared/types/customer").Customer>;
+
+  update: (
+    id: string,
+    input: import("../../../shared/types/customer").CustomerUpdateInput
+  ) => Promise<import("../../../shared/types/customer").Customer>;
+
+  getAll: () => Promise<
+    import("../../../shared/types/customer").Customer[]
+  >;
+
+  search: (
+    searchTerm: string
+  ) => Promise<
+    import("../../../shared/types/customer").Customer[]
+  >;
+
+  getOutstanding: () => Promise<
+    import("../../../shared/types/customer").Customer[]
+  >;
+
+  updateFinancials: (
+    customerId: string,
+    purchaseAmountDelta?: number,
+    outstandingAmountDelta?: number
+  ) => Promise<
+    import("../../../shared/types/customer").Customer
+  >;
+};
+
 }
 
 declare global {

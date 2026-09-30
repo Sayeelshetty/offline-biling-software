@@ -8,6 +8,7 @@ import {
 import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
+import CustomerPage from "./pages/Customers/CustomerPage.tsx";
 
 import "./App.css";
 
@@ -120,34 +121,24 @@ function AppLayout() {
         <main className="page-container">
           <Routes>
             {/* Dashboard */}
-
             <Route
               path="/"
-              element={
-                <DashboardPage />
-              }
+              element={<DashboardPage />}
             />
 
             {/* Products */}
-
             <Route
               path="/products"
-              element={
-                <ProductsPage />
-              }
+              element={<ProductsPage />}
             />
 
             {/* Categories */}
-
             <Route
               path="/categories"
-              element={
-                <CategoriesPage />
-              }
+              element={<CategoriesPage />}
             />
 
             {/* Billing */}
-
             <Route
               path="/billing"
               element={
@@ -162,31 +153,18 @@ function AppLayout() {
             />
 
             {/* Inventory */}
-
             <Route
               path="/inventory"
-              element={
-                <InventoryPage />
-              }
+              element={<InventoryPage />}
             />
 
             {/* Customers */}
-
             <Route
               path="/customers"
-              element={
-                <section className="page">
-                  <h1>Customers</h1>
-
-                  <p>
-                    Customer module coming later.
-                  </p>
-                </section>
-              }
+              element={<CustomerPage />}
             />
 
             {/* Payments */}
-
             <Route
               path="/payments"
               element={
@@ -201,7 +179,6 @@ function AppLayout() {
             />
 
             {/* Invoices */}
-
             <Route
               path="/invoices"
               element={
@@ -216,7 +193,6 @@ function AppLayout() {
             />
 
             {/* Reports */}
-
             <Route
               path="/reports"
               element={

@@ -217,4 +217,61 @@ contextBridge.exposeInMainWorld("desktopAPI", {
         "inventory:get-summary"
       ),
   },
+
+  customers: {
+  getById: (id) =>
+    ipcRenderer.invoke(
+      "customers:get-by-id",
+      id
+    ),
+
+  getByMobile: (mobile) =>
+    ipcRenderer.invoke(
+      "customers:get-by-mobile",
+      mobile
+    ),
+
+  create: (input) =>
+    ipcRenderer.invoke(
+      "customers:create",
+      input
+    ),
+
+  update: (id, input) =>
+    ipcRenderer.invoke(
+      "customers:update",
+      id,
+      input
+    ),
+
+  getAll: () =>
+    ipcRenderer.invoke(
+      "customers:get-all"
+    ),
+
+  search: (searchTerm) =>
+    ipcRenderer.invoke(
+      "customers:search",
+      searchTerm
+    ),
+
+  getOutstanding: () =>
+    ipcRenderer.invoke(
+      "customers:get-outstanding"
+    ),
+
+  updateFinancials: (
+    customerId,
+    purchaseAmountDelta,
+    outstandingAmountDelta
+  ) =>
+    ipcRenderer.invoke(
+      "customers:update-financials",
+      customerId,
+      purchaseAmountDelta,
+      outstandingAmountDelta
+    ),
+},
 });
+
+

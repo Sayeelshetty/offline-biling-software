@@ -8,6 +8,7 @@ const {
 const path = require("path");
 
 const { runMigrations } = require("./database/migrations.cjs");
+const customerRepository = require("./database/repositories/customer.repository.cjs");
 
 const {
   getDatabase,
@@ -1336,6 +1337,63 @@ ipcMain.handle(
           error.message,
       };
     }
+  }
+);
+
+
+
+ipcMain.handle("customers:get-by-id", (_event, id) => {
+  return customerRepository.getCustomerById(id);
+});
+
+ipcMain.handle("customers:get-by-mobile", (_event, mobile) => {
+  return customerRepository.getCustomerByMobile(mobile);
+});
+
+ipcMain.handle("customers:create", (_event, input) => {
+  return customerRepository.createCustomer(input);
+});
+
+ipcMain.handle(
+  "customers:update",
+  (_event, id, input) => {
+    return customerRepository.updateCustomer(
+      id,
+      input
+    );
+  }
+);
+
+ipcMain.handle("customers:get-all", () => {
+  return customerRepository.getAllCustomers();
+});
+
+ipcMain.handle(
+  "customers:search",
+  (_event, searchTerm) => {
+    return customerRepository.searchCustomers(
+      searchTerm
+    );
+  }
+);
+
+ipcMain.handle("customers:get-outstanding", () => {
+  return customerRepository.getOutstandingCustomers();
+});
+
+ipcMain.handle(
+  "customers:update-financials",
+  (
+    _event,
+    customerId,
+    purchaseAmountDelta,
+    outstandingAmountDelta
+  ) => {
+    return customerRepository.updateCustomerFinancials(
+      customerId,
+      purchaseAmountDelta,
+      outstandingAmountDelta
+    );
   }
 );
 
