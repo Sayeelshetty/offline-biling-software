@@ -15,9 +15,13 @@ import ProductForm from "../pages/Products/ProductForm";
 import "../pages/Products/ProductsPage.css";
 
 function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(
+    []
+  );
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(
+    []
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -32,6 +36,8 @@ function ProductsPage() {
   const [saving, setSaving] = useState(false);
 
   const [exporting, setExporting] = useState(false);
+
+  const [importing, setImporting] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -312,6 +318,71 @@ function ProductsPage() {
 
   /*
   |--------------------------------------------------------------------------
+  | Import Products
+  |--------------------------------------------------------------------------
+  */
+
+  async function handleImportProducts() {
+    try {
+      setImporting(true);
+      setError(null);
+      setMessage(null);
+
+      const result =
+        await productService.importProductsCsv();
+
+      if (result.canceled) {
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Validation Errors
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        result.errors &&
+        result.errors.length > 0
+      ) {
+        setError(
+          `Import failed:\n${result.errors.join(
+            "\n"
+          )}`
+        );
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Successful Import
+      |--------------------------------------------------------------------------
+      */
+
+      setMessage(
+        `${result.count ?? 0} product(s) imported successfully.`
+      );
+
+      await loadProducts();
+    } catch (err) {
+      console.error(
+        "Failed to import products:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to import products."
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
   | Deactivate Product
   |--------------------------------------------------------------------------
   */
@@ -464,9 +535,29 @@ function ProductsPage() {
           <button
             type="button"
             className="secondary-button"
-            onClick={handleExportProducts}
+            onClick={
+              handleImportProducts
+            }
+            disabled={
+              importing ||
+              exporting ||
+              loading
+            }
+          >
+            {importing
+              ? "Importing..."
+              : "Import CSV"}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={
+              handleExportProducts
+            }
             disabled={
               exporting ||
+              importing ||
               loading
             }
           >
@@ -479,6 +570,10 @@ function ProductsPage() {
             type="button"
             className="primary-button"
             onClick={openAddForm}
+            disabled={
+              importing ||
+              exporting
+            }
           >
             + Add Product
           </button>
@@ -781,7 +876,9 @@ function ProductsPage() {
           >
             <ProductForm
               product={editingProduct}
-              onSubmit={handleProductSubmit}
+              onSubmit={
+                handleProductSubmit
+              }
               onCancel={closeForm}
               isSubmitting={saving}
             />

@@ -44,6 +44,31 @@ interface ProductExportResponse {
   error?: string;
 }
 
+interface ImportedProductData {
+  name: string;
+  sku: string;
+  barcode: string | null;
+  categoryId: string | null;
+  sellingPrice: number;
+  purchasePrice: number;
+  gstRate: number;
+  currentStock: number;
+  minimumStock: number;
+  unit: string;
+  imagePath: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+interface ProductImportResponse {
+  success: boolean;
+  canceled?: boolean;
+  path?: string;
+  count?: number;
+  products?: ImportedProductData[];
+  errors?: string[];
+  error?: string;
+}
+
 interface CategoryResponse {
   success: boolean;
   category?: Category | null;
@@ -126,6 +151,8 @@ interface DesktopAPI {
       includeInactive?: boolean,
       categoryId?: string | null
     ) => Promise<ProductExportResponse>;
+
+    importCsv: () => Promise<ProductImportResponse>;
   };
 
   // =========================

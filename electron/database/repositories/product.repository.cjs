@@ -53,7 +53,11 @@ function validateDeviceId(deviceId) {
 }
 
 function validateCategoryId(categoryId) {
-  if (categoryId === null || categoryId === undefined || categoryId === "") {
+  if (
+    categoryId === null ||
+    categoryId === undefined ||
+    categoryId === ""
+  ) {
     return;
   }
 
@@ -68,7 +72,9 @@ function validateCategoryId(categoryId) {
     .get(categoryId);
 
   if (!category) {
-    throw new Error("Selected category was not found");
+    throw new Error(
+      "Selected category was not found"
+    );
   }
 }
 
@@ -152,7 +158,9 @@ function createProduct(productData) {
     id,
     name: name.trim(),
     sku: sku.trim(),
-    barcode: barcode ? barcode.trim() : null,
+    barcode: barcode
+      ? barcode.trim()
+      : null,
     categoryId: categoryId || null,
     sellingPrice: Number(sellingPrice),
     purchasePrice: Number(purchasePrice),
@@ -168,6 +176,284 @@ function createProduct(productData) {
   });
 
   return findProductById(id);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Import Products
+|--------------------------------------------------------------------------
+|
+| Imports validated products in one SQLite transaction.
+| If any database insert fails, the complete import
+| is rolled back.
+|
+|--------------------------------------------------------------------------
+*/
+
+function importProducts(
+  products,
+  deviceId = "DEV-LOCAL-001"
+) {
+  const database = getDatabase();
+
+  if (
+    !Array.isArray(products) ||
+    products.length === 0
+  ) {
+    throw new Error(
+      "No products available for import"
+    );
+  }
+
+  validateDeviceId(deviceId);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Check duplicate SKUs and barcodes inside
+  | the import file itself.
+  |--------------------------------------------------------------------------
+  */
+
+  const skuSet = new Set();
+  const barcodeSet = new Set();
+
+  for (const product of products) {
+    const sku = String(
+      product.sku || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    if (!sku) {
+      throw new Error(
+        "Every imported product must have a SKU"
+      );
+    }
+
+    if (skuSet.has(sku)) {
+      throw new Error(
+        `Duplicate SKU in import file: ${product.sku}`
+      );
+    }
+
+    skuSet.add(sku);
+
+    if (product.barcode) {
+      const barcode = String(
+        product.barcode
+      ).trim();
+
+      if (barcodeSet.has(barcode)) {
+        throw new Error(
+          `Duplicate barcode in import file: ${barcode}`
+        );
+      }
+
+      barcodeSet.add(barcode);
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Check database duplicates before starting
+  |--------------------------------------------------------------------------
+  */
+
+  const findSkuStatement = database.prepare(`
+    SELECT id
+    FROM products
+    WHERE LOWER(sku) = LOWER(?)
+    LIMIT 1
+  `);
+
+  const findBarcodeStatement =
+    database.prepare(`
+      SELECT id
+      FROM products
+      WHERE barcode = ?
+      LIMIT 1
+    `);
+
+  const findCategoryStatement =
+    database.prepare(`
+      SELECT id, status
+      FROM categories
+      WHERE id = ?
+      LIMIT 1
+    `);
+
+  for (const product of products) {
+    const sku = String(
+      product.sku || ""
+    ).trim();
+
+    const existingSku =
+      findSkuStatement.get(sku);
+
+    if (existingSku) {
+      throw new Error(
+        `SKU already exists: ${sku}`
+      );
+    }
+
+    if (product.barcode) {
+      const barcode = String(
+        product.barcode
+      ).trim();
+
+      const existingBarcode =
+        findBarcodeStatement.get(
+          barcode
+        );
+
+      if (existingBarcode) {
+        throw new Error(
+          `Barcode already exists: ${barcode}`
+        );
+      }
+    }
+
+    if (product.categoryId) {
+      const category =
+        findCategoryStatement.get(
+          product.categoryId
+        );
+
+      if (!category) {
+        throw new Error(
+          `Category not found: ${product.categoryId}`
+        );
+      }
+
+      if (category.status !== "ACTIVE") {
+        throw new Error(
+          `Category is inactive: ${product.categoryId}`
+        );
+      }
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Prepare Insert
+  |--------------------------------------------------------------------------
+  */
+
+  const insertStatement = database.prepare(`
+    INSERT INTO products (
+      id,
+      server_id,
+      name,
+      sku,
+      barcode,
+      category_id,
+      selling_price,
+      purchase_price,
+      gst_rate,
+      current_stock,
+      minimum_stock,
+      unit,
+      image_path,
+      status,
+      created_at,
+      updated_at,
+      sync_status,
+      device_id
+    )
+    VALUES (
+      @id,
+      NULL,
+      @name,
+      @sku,
+      @barcode,
+      @categoryId,
+      @sellingPrice,
+      @purchasePrice,
+      @gstRate,
+      @currentStock,
+      @minimumStock,
+      @unit,
+      @imagePath,
+      @status,
+      @createdAt,
+      @updatedAt,
+      'PENDING',
+      @deviceId
+    )
+  `);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Transaction
+  |--------------------------------------------------------------------------
+  */
+
+  const transaction = database.transaction(
+    (items) => {
+      const createdProducts = [];
+      const now = new Date().toISOString();
+
+      for (const product of items) {
+        const id = randomUUID();
+
+        insertStatement.run({
+          id,
+          name: String(
+            product.name
+          ).trim(),
+          sku: String(
+            product.sku
+          ).trim(),
+          barcode: product.barcode
+            ? String(
+                product.barcode
+              ).trim()
+            : null,
+          categoryId:
+            product.categoryId ||
+            null,
+          sellingPrice: Number(
+            product.sellingPrice
+          ),
+          purchasePrice: Number(
+            product.purchasePrice
+          ),
+          gstRate: Number(
+            product.gstRate
+          ),
+          currentStock: Number(
+            product.currentStock
+          ),
+          minimumStock: Number(
+            product.minimumStock
+          ),
+          unit:
+            String(
+              product.unit || "PCS"
+            ).trim(),
+          imagePath:
+            product.imagePath || null,
+          status:
+            product.status ===
+            "INACTIVE"
+              ? "INACTIVE"
+              : "ACTIVE",
+          createdAt: now,
+          updatedAt: now,
+          deviceId:
+            deviceId.trim(),
+        });
+
+        createdProducts.push(
+          findProductById(id)
+        );
+      }
+
+      return createdProducts;
+    }
+  );
+
+  return transaction(products);
 }
 
 /*
@@ -312,7 +598,9 @@ function searchProducts(
     WHERE (
       LOWER(name) LIKE LOWER(@search)
       OR LOWER(sku) LIKE LOWER(@search)
-      OR LOWER(COALESCE(barcode, '')) LIKE LOWER(@search)
+      OR LOWER(
+        COALESCE(barcode, '')
+      ) LIKE LOWER(@search)
     )
   `;
 
@@ -349,12 +637,18 @@ function getAllProducts({
   const parameters = {};
 
   if (!includeInactive) {
-    conditions.push(`status = 'ACTIVE'`);
+    conditions.push(
+      `status = 'ACTIVE'`
+    );
   }
 
   if (categoryId) {
-    conditions.push(`category_id = @categoryId`);
-    parameters.categoryId = categoryId;
+    conditions.push(
+      `category_id = @categoryId`
+    );
+
+    parameters.categoryId =
+      categoryId;
   }
 
   let query = `
@@ -382,7 +676,9 @@ function getAllProducts({
 
   if (conditions.length > 0) {
     query += `
-      WHERE ${conditions.join(" AND ")}
+      WHERE ${conditions.join(
+        " AND "
+      )}
     `;
   }
 
@@ -401,26 +697,24 @@ function getAllProducts({
 |--------------------------------------------------------------------------
 | Update Product
 |--------------------------------------------------------------------------
-|
-| Note:
-| current_stock is intentionally NOT updated here.
-| Stock should later be changed through inventory
-| stock movements.
-|
-|--------------------------------------------------------------------------
 */
 
 function updateProduct(id, data) {
   const database = getDatabase();
 
   if (!id) {
-    throw new Error("Product ID is required");
+    throw new Error(
+      "Product ID is required"
+    );
   }
 
-  const existingProduct = findProductById(id);
+  const existingProduct =
+    findProductById(id);
 
   if (!existingProduct) {
-    throw new Error("Product not found");
+    throw new Error(
+      "Product not found"
+    );
   }
 
   const {
@@ -434,14 +728,16 @@ function updateProduct(id, data) {
     minimumStock = 0,
     unit = "PCS",
     imagePath = null,
-    status = existingProduct.status,
+    status =
+      existingProduct.status,
   } = data || {};
 
   validateProductName(name);
   validateSku(sku);
   validateCategoryId(categoryId);
 
-  const now = new Date().toISOString();
+  const now =
+    new Date().toISOString();
 
   const statement = database.prepare(`
     UPDATE products
@@ -466,14 +762,22 @@ function updateProduct(id, data) {
     id,
     name: name.trim(),
     sku: sku.trim(),
-    barcode: barcode ? barcode.trim() : null,
-    categoryId: categoryId || null,
-    sellingPrice: Number(sellingPrice),
-    purchasePrice: Number(purchasePrice),
-    gstRate: Number(gstRate),
-    minimumStock: Number(minimumStock),
+    barcode: barcode
+      ? barcode.trim()
+      : null,
+    categoryId:
+      categoryId || null,
+    sellingPrice:
+      Number(sellingPrice),
+    purchasePrice:
+      Number(purchasePrice),
+    gstRate:
+      Number(gstRate),
+    minimumStock:
+      Number(minimumStock),
     unit: unit.trim(),
-    imagePath: imagePath || null,
+    imagePath:
+      imagePath || null,
     status,
     updatedAt: now,
   });
@@ -491,16 +795,22 @@ function deactivateProduct(id) {
   const database = getDatabase();
 
   if (!id) {
-    throw new Error("Product ID is required");
+    throw new Error(
+      "Product ID is required"
+    );
   }
 
-  const existingProduct = findProductById(id);
+  const existingProduct =
+    findProductById(id);
 
   if (!existingProduct) {
-    throw new Error("Product not found");
+    throw new Error(
+      "Product not found"
+    );
   }
 
-  const now = new Date().toISOString();
+  const now =
+    new Date().toISOString();
 
   database
     .prepare(`
@@ -526,16 +836,22 @@ function activateProduct(id) {
   const database = getDatabase();
 
   if (!id) {
-    throw new Error("Product ID is required");
+    throw new Error(
+      "Product ID is required"
+    );
   }
 
-  const existingProduct = findProductById(id);
+  const existingProduct =
+    findProductById(id);
 
   if (!existingProduct) {
-    throw new Error("Product not found");
+    throw new Error(
+      "Product not found"
+    );
   }
 
-  const now = new Date().toISOString();
+  const now =
+    new Date().toISOString();
 
   database
     .prepare(`
@@ -585,7 +901,9 @@ function getLowStockProducts() {
       WHERE
         status = 'ACTIVE'
         AND current_stock <= minimum_stock
-      ORDER BY current_stock ASC, name COLLATE NOCASE ASC
+      ORDER BY
+        current_stock ASC,
+        name COLLATE NOCASE ASC
     `)
     .all();
 
@@ -594,6 +912,7 @@ function getLowStockProducts() {
 
 module.exports = {
   createProduct,
+  importProducts,
   findProductById,
   findProductBySku,
   findProductByBarcode,

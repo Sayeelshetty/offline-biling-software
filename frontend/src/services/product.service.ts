@@ -208,6 +208,53 @@ export async function exportProductsCsv(
 
 /*
 |--------------------------------------------------------------------------
+| Import Products
+|--------------------------------------------------------------------------
+*/
+
+export interface ImportedProductData {
+  name: string;
+  sku: string;
+  barcode: string | null;
+  categoryId: string | null;
+  sellingPrice: number;
+  purchasePrice: number;
+  gstRate: number;
+  currentStock: number;
+  minimumStock: number;
+  unit: string;
+  imagePath: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface ImportProductsResult {
+  success: boolean;
+  canceled?: boolean;
+  path?: string;
+  count?: number;
+  products?: ImportedProductData[];
+  errors?: string[];
+  error?: string;
+}
+
+export async function importProductsCsv(): Promise<
+  ImportProductsResult
+> {
+  const response =
+    await window.desktopAPI.products.importCsv();
+
+  if (!response.success) {
+    throw new Error(
+      response.error ||
+        "Failed to import products"
+    );
+  }
+
+  return response;
+}
+
+/*
+|--------------------------------------------------------------------------
 | Default Product Service
 |--------------------------------------------------------------------------
 */
@@ -224,6 +271,7 @@ const productService = {
   activateProduct,
   getLowStockProducts,
   exportProductsCsv,
+  importProductsCsv,
 };
 
 export default productService;

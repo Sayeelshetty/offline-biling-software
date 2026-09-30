@@ -98,6 +98,11 @@ contextBridge.exposeInMainWorld("desktopAPI", {
           categoryId,
         }
       ),
+
+    importCsv: () =>
+      ipcRenderer.invoke(
+        "products:import-csv"
+      ),
   },
 
   // =========================

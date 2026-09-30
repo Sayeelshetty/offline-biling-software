@@ -17,6 +17,7 @@ const {
 
 const {
   createProduct,
+  importProducts,
   findProductById,
   findProductBySku,
   findProductByBarcode,
@@ -41,6 +42,7 @@ const {
 
 const {
   writeProductsCsv,
+  readProductsCsv,
 } = require("./utils/csv.cjs");
 
 const isDevelopment = !app.isPackaged;
@@ -95,13 +97,16 @@ function createMainWindow() {
 |--------------------------------------------------------------------------
 */
 
-ipcMain.handle("app:get-info", () => {
-  return {
-    name: "Offline Billing Software",
-    version: app.getVersion(),
-    platform: process.platform,
-  };
-});
+ipcMain.handle(
+  "app:get-info",
+  () => {
+    return {
+      name: "Offline Billing Software",
+      version: app.getVersion(),
+      platform: process.platform,
+    };
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -424,7 +429,8 @@ ipcMain.handle(
           mainWindow,
           {
             title: "Export Products",
-            defaultPath: defaultFileName,
+            defaultPath:
+              defaultFileName,
             filters: [
               {
                 name: "CSV Files",
@@ -480,6 +486,435 @@ ipcMain.handle(
 
 /*
 |--------------------------------------------------------------------------
+| Product CSV Import IPC
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle(
+  "products:import-csv",
+  async () => {
+    try {
+      /*
+      |--------------------------------------------------------------------------
+      | Select CSV
+      |--------------------------------------------------------------------------
+      */
+
+      const result =
+        await dialog.showOpenDialog(
+          mainWindow,
+          {
+            title: "Import Products",
+            properties: [
+              "openFile",
+            ],
+            filters: [
+              {
+                name: "CSV Files",
+                extensions: ["csv"],
+              },
+              {
+                name: "All Files",
+                extensions: ["*"],
+              },
+            ],
+          }
+        );
+
+      if (result.canceled) {
+        return {
+          success: true,
+          canceled: true,
+          count: 0,
+          products: [],
+          errors: [],
+        };
+      }
+
+      if (
+        !result.filePaths ||
+        result.filePaths.length === 0
+      ) {
+        return {
+          success: false,
+          error:
+            "No CSV file selected.",
+        };
+      }
+
+      const filePath =
+        result.filePaths[0];
+
+      /*
+      |--------------------------------------------------------------------------
+      | Read CSV
+      |--------------------------------------------------------------------------
+      */
+
+      const rows =
+        readProductsCsv(filePath);
+
+      if (rows.length === 0) {
+        return {
+          success: false,
+          error:
+            "The selected CSV file contains no product rows.",
+        };
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Validate CSV Rows
+      |--------------------------------------------------------------------------
+      */
+
+      const validProducts = [];
+      const errors = [];
+
+      rows.forEach(
+        (row, index) => {
+          const rowNumber =
+            index + 2;
+
+          const name =
+            row["Product Name"]?.trim();
+
+          const sku =
+            row["SKU"]?.trim();
+
+          const barcode =
+            row["Barcode"]?.trim() ||
+            null;
+
+          const categoryId =
+            row["Category ID"]?.trim() ||
+            null;
+
+          const sellingPrice =
+            Number(
+              row["Selling Price"]
+            );
+
+          const purchasePrice =
+            Number(
+              row["Purchase Price"]
+            );
+
+          const gstRate =
+            Number(
+              row["GST Rate"]
+            );
+
+          const currentStock =
+            Number(
+              row["Current Stock"]
+            );
+
+          const minimumStock =
+            Number(
+              row["Minimum Stock"]
+            );
+
+          const unit =
+            row["Unit"]?.trim() ||
+            "PCS";
+
+          const status =
+            row["Status"]?.trim() ||
+            "ACTIVE";
+
+          /*
+          |--------------------------------------------------------------------------
+          | Required Fields
+          |--------------------------------------------------------------------------
+          */
+
+          if (!name) {
+            errors.push(
+              `Row ${rowNumber}: Product Name is required.`
+            );
+
+            return;
+          }
+
+          if (!sku) {
+            errors.push(
+              `Row ${rowNumber}: SKU is required.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Price Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            Number.isNaN(
+              sellingPrice
+            ) ||
+            sellingPrice < 0
+          ) {
+            errors.push(
+              `Row ${rowNumber}: Selling Price is invalid.`
+            );
+
+            return;
+          }
+
+          if (
+            Number.isNaN(
+              purchasePrice
+            ) ||
+            purchasePrice < 0
+          ) {
+            errors.push(
+              `Row ${rowNumber}: Purchase Price is invalid.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | GST Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            Number.isNaN(
+              gstRate
+            ) ||
+            gstRate < 0 ||
+            gstRate > 100
+          ) {
+            errors.push(
+              `Row ${rowNumber}: GST Rate must be between 0 and 100.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Stock Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            Number.isNaN(
+              currentStock
+            ) ||
+            currentStock < 0
+          ) {
+            errors.push(
+              `Row ${rowNumber}: Current Stock is invalid.`
+            );
+
+            return;
+          }
+
+          if (
+            Number.isNaN(
+              minimumStock
+            ) ||
+            minimumStock < 0
+          ) {
+            errors.push(
+              `Row ${rowNumber}: Minimum Stock is invalid.`
+            );
+
+            return;
+          }
+
+          if (!unit) {
+            errors.push(
+              `Row ${rowNumber}: Unit is required.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Status Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            status !== "ACTIVE" &&
+            status !== "INACTIVE"
+          ) {
+            errors.push(
+              `Row ${rowNumber}: Status must be ACTIVE or INACTIVE.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Category Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (categoryId) {
+            const category =
+              getCategoryById(
+                categoryId
+              );
+
+            if (!category) {
+              errors.push(
+                `Row ${rowNumber}: Category ID "${categoryId}" was not found.`
+              );
+
+              return;
+            }
+
+            if (
+              category.status !==
+              "ACTIVE"
+            ) {
+              errors.push(
+                `Row ${rowNumber}: Selected category is inactive.`
+              );
+
+              return;
+            }
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Duplicate SKU Validation
+          |--------------------------------------------------------------------------
+          */
+
+          const existingSku =
+            findProductBySku(
+              sku
+            );
+
+          if (existingSku) {
+            errors.push(
+              `Row ${rowNumber}: SKU "${sku}" already exists.`
+            );
+
+            return;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Duplicate Barcode Validation
+          |--------------------------------------------------------------------------
+          */
+
+          if (barcode) {
+            const existingBarcode =
+              findProductByBarcode(
+                barcode
+              );
+
+            if (existingBarcode) {
+              errors.push(
+                `Row ${rowNumber}: Barcode "${barcode}" already exists.`
+              );
+
+              return;
+            }
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Valid Product
+          |--------------------------------------------------------------------------
+          */
+
+          validProducts.push({
+            name,
+            sku,
+            barcode,
+            categoryId,
+            sellingPrice,
+            purchasePrice,
+            gstRate,
+            currentStock,
+            minimumStock,
+            unit,
+            imagePath:
+              row["Image Path"]?.trim() ||
+              null,
+            status,
+          });
+        }
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Stop Import When Validation Errors Exist
+      |--------------------------------------------------------------------------
+      |
+      | We do not partially import a CSV.
+      |
+      */
+
+      if (errors.length > 0) {
+        return {
+          success: true,
+          canceled: false,
+          path: filePath,
+          count: 0,
+          products: [],
+          errors,
+        };
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Import Into SQLite
+      |--------------------------------------------------------------------------
+      */
+
+      const createdProducts =
+        importProducts(
+          validProducts,
+          "DEV-LOCAL-001"
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Import Complete
+      |--------------------------------------------------------------------------
+      */
+
+      return {
+        success: true,
+        canceled: false,
+        path: filePath,
+        count:
+          createdProducts.length,
+        products:
+          createdProducts,
+        errors: [],
+      };
+    } catch (error) {
+      console.error(
+        "Import products CSV error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
 | Category IPC
 |--------------------------------------------------------------------------
 */
@@ -491,7 +926,9 @@ ipcMain.handle(
       return {
         success: true,
         category:
-          createCategory(categoryData),
+          createCategory(
+            categoryData
+          ),
       };
     } catch (error) {
       console.error(
@@ -560,7 +997,9 @@ ipcMain.handle(
       return {
         success: true,
         categories:
-          getAllCategories(options),
+          getAllCategories(
+            options
+          ),
       };
     } catch (error) {
       console.error(
@@ -613,7 +1052,9 @@ ipcMain.handle(
       return {
         success: true,
         category:
-          updateCategory(categoryData),
+          updateCategory(
+            categoryData
+          ),
       };
     } catch (error) {
       console.error(
@@ -688,16 +1129,20 @@ app.whenReady().then(() => {
     console.log(
       "================================="
     );
+
     console.log(
       "Offline Billing Software"
     );
+
     console.log(
       "SQLite initialized successfully"
     );
+
     console.log(
       "Database:",
       getDatabasePath()
     );
+
     console.log(
       "================================="
     );
@@ -725,12 +1170,20 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
+app.on(
+  "window-all-closed",
+  () => {
+    if (
+      process.platform !== "darwin"
+    ) {
+      app.quit();
+    }
   }
-});
+);
 
-app.on("before-quit", () => {
-  closeDatabase();
-});
+app.on(
+  "before-quit",
+  () => {
+    closeDatabase();
+  }
+);
