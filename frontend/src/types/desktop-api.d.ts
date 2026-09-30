@@ -10,6 +10,13 @@ import type {
   CategoryUpdateInput,
 } from "../../../shared/types/category";
 
+
+import type {
+  CreateInvoiceInput,
+  CreateInvoiceResult,
+  Invoice,
+} from "../../../shared/types/invoice";
+
 import type {
   StockMovementResult,
   StockOperationInput,
@@ -305,6 +312,30 @@ interface DesktopAPI {
     import("../../../shared/types/customer").Customer
   >;
 };
+
+invoices: {
+  create: (
+    input: CreateInvoiceInput
+  ) => Promise<CreateInvoiceResult>;
+
+  getById: (
+    invoiceId: string
+  ) => Promise<Invoice | null>;
+
+  getByTransactionId: (
+    transactionId: string
+  ) => Promise<Invoice | null>;
+
+  getByNumber: (
+    invoiceNumber: string
+  ) => Promise<Invoice | null>;
+
+  getRecent: (
+    limit?: number
+  ) => Promise<Invoice[]>;
+};
+
+
 
 }
 

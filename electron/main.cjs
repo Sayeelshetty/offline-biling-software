@@ -5,9 +5,16 @@ const {
   dialog,
 } = require("electron");
 
+
+
 const path = require("path");
 
 const { runMigrations } = require("./database/migrations.cjs");
+
+const invoiceRepository = require(
+  "./database/repositories/invoice.repository.cjs"
+);
+
 const customerRepository = require("./database/repositories/customer.repository.cjs");
 
 const {
@@ -1395,6 +1402,42 @@ ipcMain.handle(
       outstandingAmountDelta
     );
   }
+
+);
+
+
+ipcMain.handle(
+  "invoices:create",
+  (_event, input) =>
+    invoiceRepository.createInvoice(input)
+);
+
+ipcMain.handle(
+  "invoices:get-by-id",
+  (_event, invoiceId) =>
+    invoiceRepository.getInvoiceById(invoiceId)
+);
+
+ipcMain.handle(
+  "invoices:get-by-transaction-id",
+  (_event, transactionId) =>
+    invoiceRepository.getInvoiceByTransactionId(
+      transactionId
+    )
+);
+
+ipcMain.handle(
+  "invoices:get-by-number",
+  (_event, invoiceNumber) =>
+    invoiceRepository.getInvoiceByNumber(
+      invoiceNumber
+    )
+);
+
+ipcMain.handle(
+  "invoices:get-recent",
+  (_event, limit) =>
+    invoiceRepository.getRecentInvoices(limit)
 );
 
 /*

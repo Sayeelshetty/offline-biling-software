@@ -9,6 +9,7 @@ import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
 import CustomerPage from "./pages/Customers/CustomerPage.tsx";
+import BillingPage from "./pages/BillingPage";
 
 import "./App.css";
 
@@ -141,15 +142,7 @@ function AppLayout() {
             {/* Billing */}
             <Route
               path="/billing"
-              element={
-                <section className="page">
-                  <h1>Billing</h1>
-
-                  <p>
-                    Billing module coming next.
-                  </p>
-                </section>
-              }
+              element={<BillingPage />}
             />
 
             {/* Inventory */}

@@ -272,6 +272,39 @@ contextBridge.exposeInMainWorld("desktopAPI", {
       outstandingAmountDelta
     ),
 },
+
+invoices: {
+  create: (input) =>
+    ipcRenderer.invoke(
+      "invoices:create",
+      input
+    ),
+
+  getById: (invoiceId) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-id",
+      invoiceId
+    ),
+
+  getByTransactionId: (transactionId) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-transaction-id",
+      transactionId
+    ),
+
+  getByNumber: (invoiceNumber) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-number",
+      invoiceNumber
+    ),
+
+  getRecent: (limit) =>
+    ipcRenderer.invoke(
+      "invoices:get-recent",
+      limit
+    ),
+},
+
 });
 
 
