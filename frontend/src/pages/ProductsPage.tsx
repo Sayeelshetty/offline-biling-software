@@ -4,52 +4,40 @@ import type {
   Product,
   ProductInput,
   ProductUpdateInput,
-} from "../types/product";
+} from "../../shared/types/product";
 
-import type { Category } from "../types/category";
+import type { Category } from "../../shared/types/category";
 
 import productService from "../services/product.service";
-import {
-  getAllCategories,
-} from "../services/category.service";
+import { getAllCategories } from "../services/category.service";
 
 import ProductForm from "../pages/Products/ProductForm";
 import "../pages/Products/ProductsPage.css";
 
 function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(
-    []
-  );
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const [categories, setCategories] = useState<
-    Category[]
-  >([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState<
-      "ACTIVE" | "INACTIVE" | "ALL"
-    >("ACTIVE");
+  const [statusFilter, setStatusFilter] = useState<
+    "ACTIVE" | "INACTIVE" | "ALL"
+  >("ACTIVE");
 
-  const [categoryFilter, setCategoryFilter] =
-    useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const [message, setMessage] =
-    useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [showForm, setShowForm] =
-    useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const [showForm, setShowForm] = useState(false);
 
   const [editingProduct, setEditingProduct] =
     useState<Product | null>(null);
@@ -63,8 +51,7 @@ function ProductsPage() {
   useEffect(() => {
     async function loadCategories() {
       try {
-        const result =
-          await getAllCategories(false);
+        const result = await getAllCategories(false);
 
         setCategories(result);
       } catch (err) {
@@ -132,12 +119,7 @@ function ProductsPage() {
       } else {
         /*
         |--------------------------------------------------------------------------
-        | Load Products
-        |--------------------------------------------------------------------------
-        |
-        | When no search term is entered, we can
-        | pass the category directly to SQLite.
-        |
+        | Load Products With Category Filter
         |--------------------------------------------------------------------------
         */
 
@@ -155,7 +137,9 @@ function ProductsPage() {
       |--------------------------------------------------------------------------
       */
 
-      if (statusFilter === "INACTIVE") {
+      if (
+        statusFilter === "INACTIVE"
+      ) {
         result = result.filter(
           (product) =>
             product.status === "INACTIVE"
@@ -164,13 +148,7 @@ function ProductsPage() {
 
       /*
       |--------------------------------------------------------------------------
-      | Category Filter
-      |--------------------------------------------------------------------------
-      |
-      | Search results are filtered here because
-      | the current search API searches by
-      | name, SKU and barcode.
-      |
+      | Category Filter For Search Results
       |--------------------------------------------------------------------------
       */
 
@@ -204,7 +182,7 @@ function ProductsPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Form Actions
+  | Add / Edit Form
   |--------------------------------------------------------------------------
   */
 
@@ -290,6 +268,50 @@ function ProductsPage() {
 
   /*
   |--------------------------------------------------------------------------
+  | Export Products
+  |--------------------------------------------------------------------------
+  */
+
+  async function handleExportProducts() {
+    try {
+      setExporting(true);
+      setError(null);
+      setMessage(null);
+
+      const includeInactive =
+        statusFilter !== "ACTIVE";
+
+      const result =
+        await productService.exportProductsCsv(
+          includeInactive,
+          categoryFilter || null
+        );
+
+      if (result.canceled) {
+        return;
+      }
+
+      setMessage(
+        `${result.count ?? 0} product(s) exported successfully.`
+      );
+    } catch (err) {
+      console.error(
+        "Failed to export products:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to export products."
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
   | Deactivate Product
   |--------------------------------------------------------------------------
   */
@@ -297,9 +319,10 @@ function ProductsPage() {
   async function handleDeactivate(
     product: Product
   ) {
-    const confirmed = window.confirm(
-      `Deactivate "${product.name}"?`
-    );
+    const confirmed =
+      window.confirm(
+        `Deactivate "${product.name}"?`
+      );
 
     if (!confirmed) {
       return;
@@ -404,10 +427,11 @@ function ProductsPage() {
       return "—";
     }
 
-    const category = categories.find(
-      (item) =>
-        item.id === categoryId
-    );
+    const category =
+      categories.find(
+        (item) =>
+          item.id === categoryId
+      );
 
     return category?.name ?? "—";
   }
@@ -436,13 +460,29 @@ function ProductsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={openAddForm}
-        >
-          + Add Product
-        </button>
+        <div className="products-header-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleExportProducts}
+            disabled={
+              exporting ||
+              loading
+            }
+          >
+            {exporting
+              ? "Exporting..."
+              : "Export CSV"}
+          </button>
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={openAddForm}
+          >
+            + Add Product
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -740,12 +780,8 @@ function ProductsPage() {
             aria-labelledby="product-form-title"
           >
             <ProductForm
-              product={
-                editingProduct
-              }
-              onSubmit={
-                handleProductSubmit
-              }
+              product={editingProduct}
+              onSubmit={handleProductSubmit}
               onCancel={closeForm}
               isSubmitting={saving}
             />

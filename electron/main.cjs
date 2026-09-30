@@ -1,4 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+} = require("electron");
+
 const path = require("path");
 
 const { runMigrations } = require("./database/migrations.cjs");
@@ -33,6 +39,10 @@ const {
   activateCategory,
 } = require("./database/repositories/category.repository.cjs");
 
+const {
+  writeProductsCsv,
+} = require("./utils/csv.cjs");
+
 const isDevelopment = !app.isPackaged;
 
 let mainWindow = null;
@@ -45,7 +55,10 @@ function createMainWindow() {
     minHeight: 700,
 
     webPreferences: {
-      preload: path.join(__dirname, "preload.cjs"),
+      preload: path.join(
+        __dirname,
+        "preload.cjs"
+      ),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -55,10 +68,15 @@ function createMainWindow() {
   });
 
   if (isDevelopment) {
-    mainWindow.loadURL("http://127.0.0.1:5173");
+    mainWindow.loadURL(
+      "http://127.0.0.1:5173"
+    );
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, "../frontend/dist/index.html")
+      path.join(
+        __dirname,
+        "../frontend/dist/index.html"
+      )
     );
   }
 
@@ -91,34 +109,42 @@ ipcMain.handle("app:get-info", () => {
 |--------------------------------------------------------------------------
 */
 
-ipcMain.handle("database:get-status", () => {
-  try {
-    const database = getDatabase();
+ipcMain.handle(
+  "database:get-status",
+  () => {
+    try {
+      const database = getDatabase();
 
-    const tables = database
-      .prepare(`
-        SELECT name
-        FROM sqlite_master
-        WHERE type = 'table'
-        ORDER BY name
-      `)
-      .all();
+      const tables = database
+        .prepare(`
+          SELECT name
+          FROM sqlite_master
+          WHERE type = 'table'
+          ORDER BY name
+        `)
+        .all();
 
-    return {
-      success: true,
-      path: getDatabasePath(),
-      tableCount: tables.length,
-      tables: tables.map((table) => table.name),
-    };
-  } catch (error) {
-    console.error("Database status error:", error);
+      return {
+        success: true,
+        path: getDatabasePath(),
+        tableCount: tables.length,
+        tables: tables.map(
+          (table) => table.name
+        ),
+      };
+    } catch (error) {
+      console.error(
+        "Database status error:",
+        error
+      );
 
-    return {
-      success: false,
-      error: error.message,
-    };
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
-});
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -132,10 +158,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: createProduct(productData),
+        product:
+          createProduct(productData),
       };
     } catch (error) {
-      console.error("Create product error:", error);
+      console.error(
+        "Create product error:",
+        error
+      );
 
       return {
         success: false,
@@ -151,10 +181,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: findProductById(id),
+        product:
+          findProductById(id),
       };
     } catch (error) {
-      console.error("Find product by ID error:", error);
+      console.error(
+        "Find product by ID error:",
+        error
+      );
 
       return {
         success: false,
@@ -170,10 +204,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: findProductBySku(sku),
+        product:
+          findProductBySku(sku),
       };
     } catch (error) {
-      console.error("Find product by SKU error:", error);
+      console.error(
+        "Find product by SKU error:",
+        error
+      );
 
       return {
         success: false,
@@ -189,10 +227,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: findProductByBarcode(barcode),
+        product:
+          findProductByBarcode(barcode),
       };
     } catch (error) {
-      console.error("Find product by barcode error:", error);
+      console.error(
+        "Find product by barcode error:",
+        error
+      );
 
       return {
         success: false,
@@ -204,17 +246,27 @@ ipcMain.handle(
 
 ipcMain.handle(
   "products:search",
-  (_event, { searchTerm = "", includeInactive = false } = {}) => {
+  (
+    _event,
+    {
+      searchTerm = "",
+      includeInactive = false,
+    } = {}
+  ) => {
     try {
       return {
         success: true,
-        products: searchProducts(
-          searchTerm,
-          includeInactive
-        ),
+        products:
+          searchProducts(
+            searchTerm,
+            includeInactive
+          ),
       };
     } catch (error) {
-      console.error("Search products error:", error);
+      console.error(
+        "Search products error:",
+        error
+      );
 
       return {
         success: false,
@@ -230,10 +282,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        products: getAllProducts(options),
+        products:
+          getAllProducts(options),
       };
     } catch (error) {
-      console.error("Get all products error:", error);
+      console.error(
+        "Get all products error:",
+        error
+      );
 
       return {
         success: false,
@@ -249,10 +305,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: updateProduct(id, data),
+        product:
+          updateProduct(id, data),
       };
     } catch (error) {
-      console.error("Update product error:", error);
+      console.error(
+        "Update product error:",
+        error
+      );
 
       return {
         success: false,
@@ -268,10 +328,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: deactivateProduct(id),
+        product:
+          deactivateProduct(id),
       };
     } catch (error) {
-      console.error("Deactivate product error:", error);
+      console.error(
+        "Deactivate product error:",
+        error
+      );
 
       return {
         success: false,
@@ -287,10 +351,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        product: activateProduct(id),
+        product:
+          activateProduct(id),
       };
     } catch (error) {
-      console.error("Activate product error:", error);
+      console.error(
+        "Activate product error:",
+        error
+      );
 
       return {
         success: false,
@@ -306,11 +374,99 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        products: getLowStockProducts(),
+        products:
+          getLowStockProducts(),
       };
     } catch (error) {
       console.error(
         "Get low stock products error:",
+        error
+      );
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Product CSV Export IPC
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle(
+  "products:export-csv",
+  async (
+    _event,
+    {
+      includeInactive = false,
+      categoryId = null,
+    } = {}
+  ) => {
+    try {
+      const products =
+        getAllProducts({
+          includeInactive,
+          categoryId:
+            categoryId || null,
+        });
+
+      const defaultFileName =
+        `products-${new Date()
+          .toISOString()
+          .slice(0, 10)}.csv`;
+
+      const result =
+        await dialog.showSaveDialog(
+          mainWindow,
+          {
+            title: "Export Products",
+            defaultPath: defaultFileName,
+            filters: [
+              {
+                name: "CSV Files",
+                extensions: ["csv"],
+              },
+              {
+                name: "All Files",
+                extensions: ["*"],
+              },
+            ],
+          }
+        );
+
+      if (result.canceled) {
+        return {
+          success: true,
+          canceled: true,
+        };
+      }
+
+      if (!result.filePath) {
+        return {
+          success: false,
+          error:
+            "No export file path selected.",
+        };
+      }
+
+      writeProductsCsv(
+        result.filePath,
+        products
+      );
+
+      return {
+        success: true,
+        canceled: false,
+        path: result.filePath,
+        count: products.length,
+      };
+    } catch (error) {
+      console.error(
+        "Export products CSV error:",
         error
       );
 
@@ -334,10 +490,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: createCategory(categoryData),
+        category:
+          createCategory(categoryData),
       };
     } catch (error) {
-      console.error("Create category error:", error);
+      console.error(
+        "Create category error:",
+        error
+      );
 
       return {
         success: false,
@@ -353,10 +513,14 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: getCategoryById(id),
+        category:
+          getCategoryById(id),
       };
     } catch (error) {
-      console.error("Get category by ID error:", error);
+      console.error(
+        "Get category by ID error:",
+        error
+      );
 
       return {
         success: false,
@@ -372,7 +536,8 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: getCategoryByName(name),
+        category:
+          getCategoryByName(name),
       };
     } catch (error) {
       console.error(
@@ -394,7 +559,8 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        categories: getAllCategories(options),
+        categories:
+          getAllCategories(options),
       };
     } catch (error) {
       console.error(
@@ -412,14 +578,19 @@ ipcMain.handle(
 
 ipcMain.handle(
   "categories:search",
-  (_event, searchText, options = {}) => {
+  (
+    _event,
+    searchText,
+    options = {}
+  ) => {
     try {
       return {
         success: true,
-        categories: searchCategories(
-          searchText,
-          options
-        ),
+        categories:
+          searchCategories(
+            searchText,
+            options
+          ),
       };
     } catch (error) {
       console.error(
@@ -441,7 +612,8 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: updateCategory(categoryData),
+        category:
+          updateCategory(categoryData),
       };
     } catch (error) {
       console.error(
@@ -463,7 +635,8 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: deactivateCategory(id),
+        category:
+          deactivateCategory(id),
       };
     } catch (error) {
       console.error(
@@ -485,7 +658,8 @@ ipcMain.handle(
     try {
       return {
         success: true,
-        category: activateCategory(id),
+        category:
+          activateCategory(id),
       };
     } catch (error) {
       console.error(
@@ -511,23 +685,41 @@ app.whenReady().then(() => {
   try {
     runMigrations();
 
-    console.log("=================================");
-    console.log("Offline Billing Software");
-    console.log("SQLite initialized successfully");
-    console.log("Database:", getDatabasePath());
-    console.log("=================================");
+    console.log(
+      "================================="
+    );
+    console.log(
+      "Offline Billing Software"
+    );
+    console.log(
+      "SQLite initialized successfully"
+    );
+    console.log(
+      "Database:",
+      getDatabasePath()
+    );
+    console.log(
+      "================================="
+    );
 
     createMainWindow();
   } catch (error) {
-    console.error("Application startup failed:");
+    console.error(
+      "Application startup failed:"
+    );
+
     console.error(error);
 
     app.quit();
+
     return;
   }
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (
+      BrowserWindow.getAllWindows()
+        .length === 0
+    ) {
       createMainWindow();
     }
   });

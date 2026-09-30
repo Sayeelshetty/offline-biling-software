@@ -2,7 +2,7 @@ import type {
   Product,
   ProductInput,
   ProductUpdateInput,
-} from "../types/product";
+} from "../../../shared/types/product";
 
 export async function createProduct(
   productData: ProductInput
@@ -54,7 +54,9 @@ export async function getProductByBarcode(
   barcode: string
 ): Promise<Product | null> {
   const response =
-    await window.desktopAPI.products.getByBarcode(barcode);
+    await window.desktopAPI.products.getByBarcode(
+      barcode
+    );
 
   if (!response.success) {
     throw new Error(
@@ -130,7 +132,8 @@ export async function deactivateProduct(
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error || "Failed to deactivate product"
+      response.error ||
+        "Failed to deactivate product"
     );
   }
 
@@ -145,7 +148,8 @@ export async function activateProduct(
 
   if (!response.success || !response.product) {
     throw new Error(
-      response.error || "Failed to activate product"
+      response.error ||
+        "Failed to activate product"
     );
   }
 
@@ -170,18 +174,41 @@ export async function getLowStockProducts(): Promise<
 
 /*
 |--------------------------------------------------------------------------
-| Default Product Service
+| Export Products
 |--------------------------------------------------------------------------
-|
-| Existing ProductsPage code uses a default import.
-| Keep this object so both styles work:
-|
-| import productService from "...";
-|
-| and:
-|
-| import { createProduct } from "...";
-|
+*/
+
+export interface ExportProductsResult {
+  success: boolean;
+  canceled?: boolean;
+  path?: string;
+  count?: number;
+  error?: string;
+}
+
+export async function exportProductsCsv(
+  includeInactive = false,
+  categoryId: string | null = null
+): Promise<ExportProductsResult> {
+  const response =
+    await window.desktopAPI.products.exportCsv(
+      includeInactive,
+      categoryId
+    );
+
+  if (!response.success) {
+    throw new Error(
+      response.error ||
+        "Failed to export products"
+    );
+  }
+
+  return response;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Default Product Service
 |--------------------------------------------------------------------------
 */
 
@@ -196,6 +223,7 @@ const productService = {
   deactivateProduct,
   activateProduct,
   getLowStockProducts,
+  exportProductsCsv,
 };
 
 export default productService;

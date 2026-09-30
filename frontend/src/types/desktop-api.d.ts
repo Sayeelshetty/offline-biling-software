@@ -36,6 +36,14 @@ interface ProductListResponse {
   error?: string;
 }
 
+interface ProductExportResponse {
+  success: boolean;
+  canceled?: boolean;
+  path?: string;
+  count?: number;
+  error?: string;
+}
+
 interface CategoryResponse {
   success: boolean;
   category?: Category | null;
@@ -51,11 +59,6 @@ interface CategoryListResponse {
 interface ProductGetAllOptions {
   includeInactive?: boolean;
   categoryId?: string;
-}
-
-interface ProductSearchOptions {
-  searchTerm?: string;
-  includeInactive?: boolean;
 }
 
 interface CategoryOptions {
@@ -118,6 +121,11 @@ interface DesktopAPI {
     ) => Promise<ProductResponse>;
 
     getLowStock: () => Promise<ProductListResponse>;
+
+    exportCsv: (
+      includeInactive?: boolean,
+      categoryId?: string | null
+    ) => Promise<ProductExportResponse>;
   };
 
   // =========================
