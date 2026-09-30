@@ -15,6 +15,10 @@ const invoiceRepository = require(
   "./database/repositories/invoice.repository.cjs"
 );
 
+const paymentRepository = require(
+  "./database/repositories/payment.repository.cjs"
+);
+
 const customerRepository = require("./database/repositories/customer.repository.cjs");
 
 const {
@@ -1438,6 +1442,42 @@ ipcMain.handle(
   "invoices:get-recent",
   (_event, limit) =>
     invoiceRepository.getRecentInvoices(limit)
+);
+
+ipcMain.handle(
+  "payments:get-by-id",
+  (_event, paymentId) =>
+    paymentRepository.getPaymentById(
+      paymentId
+    )
+);
+
+ipcMain.handle(
+  "payments:get-all",
+  (_event, options) =>
+    paymentRepository.getPayments(
+      options || {}
+    )
+);
+
+ipcMain.handle(
+  "payments:get-outstanding",
+  () =>
+    paymentRepository.getOutstandingPayments()
+);
+
+ipcMain.handle(
+  "payments:get-summary",
+  () =>
+    paymentRepository.getPaymentSummary()
+);
+
+ipcMain.handle(
+  "payments:record",
+  (_event, input) =>
+    paymentRepository.recordPayment(
+      input
+    )
 );
 
 /*

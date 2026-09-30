@@ -5,6 +5,8 @@ import {
   Routes,
 } from "react-router-dom";
 
+import PaymentsPage from "./pages/Payments/PaymentsPage";
+
 import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
@@ -157,19 +159,10 @@ function AppLayout() {
               element={<CustomerPage />}
             />
 
-            {/* Payments */}
-            <Route
-              path="/payments"
-              element={
-                <section className="page">
-                  <h1>Payments</h1>
-
-                  <p>
-                    Payment module coming later.
-                  </p>
-                </section>
-              }
-            />
+           <Route
+  path="/payments"
+  element={<PaymentsPage />}
+/>
 
             {/* Invoices */}
             <Route

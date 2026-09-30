@@ -12,6 +12,15 @@ import type {
 
 
 import type {
+  Payment,
+  PaymentSearchOptions,
+  OutstandingPayment,
+  PaymentSummary,
+  RecordPaymentInput,
+} from "../../../shared/types/payment";
+
+
+import type {
   CreateInvoiceInput,
   CreateInvoiceResult,
   Invoice,
@@ -333,6 +342,39 @@ invoices: {
   getRecent: (
     limit?: number
   ) => Promise<Invoice[]>;
+};
+
+
+payments: {
+  getById: (
+    paymentId: string
+  ) => Promise<Payment | null>;
+
+  getAll: (
+    options?: PaymentSearchOptions
+  ) => Promise<Payment[]>;
+
+  getOutstanding: () =>
+    Promise<OutstandingPayment[]>;
+
+  getSummary: () =>
+    Promise<PaymentSummary>;
+
+  record: (
+    input: RecordPaymentInput
+  ) => Promise<{
+    payment: Payment;
+    invoice: {
+      id: string;
+      invoiceTotal: number;
+      previousPaidAmount: number;
+      paidAmount: number;
+      outstandingAmount: number;
+      paymentStatus:
+        | "PAID"
+        | "PARTIAL";
+    };
+  }>;
 };
 
 

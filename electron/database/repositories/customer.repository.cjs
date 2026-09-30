@@ -19,50 +19,185 @@ function mapCustomerRow(row) {
     mobile: row.mobile,
     email: row.email ?? null,
     address: row.address ?? null,
-    totalPurchases: Number(row.total_purchases ?? 0),
-    outstandingAmount: Number(row.outstanding_amount ?? 0),
+
+    totalPurchases: Number(
+      row.total_purchases ?? 0
+    ),
+
+    outstandingAmount: Number(
+      row.outstanding_amount ?? 0
+    ),
+
     serverId: row.server_id ?? null,
+
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+
     syncStatus: row.sync_status,
     deviceId: row.device_id,
   };
 }
 
 function validateCustomerInput(input) {
-  if (!input || typeof input !== "object") {
-    throw new Error("Customer data is required.");
+  if (
+    !input ||
+    typeof input !== "object"
+  ) {
+    throw new Error(
+      "Customer data is required."
+    );
   }
 
-  const name = String(input.name ?? "").trim();
-  const mobile = String(input.mobile ?? "").trim();
+  const name = String(
+    input.name ?? ""
+  ).trim();
+
+  const mobile = String(
+    input.mobile ?? ""
+  ).trim();
 
   if (!name) {
-    throw new Error("Customer name is required.");
+    throw new Error(
+      "Customer name is required."
+    );
   }
 
   if (!mobile) {
-    throw new Error("Customer mobile number is required.");
+    throw new Error(
+      "Customer mobile number is required."
+    );
   }
 
-  if (!/^[0-9+\-\s()]{7,20}$/.test(mobile)) {
-    throw new Error("Invalid customer mobile number.");
+  if (
+    !/^[0-9+\\-\s()]{7,20}$/.test(
+      mobile
+    )
+  ) {
+    throw new Error(
+      "Invalid customer mobile number."
+    );
   }
 
   return {
     name,
+
     mobile,
+
     email:
       input.email === null ||
       input.email === undefined
         ? null
-        : String(input.email).trim() || null,
+        : String(input.email)
+            .trim() || null,
+
     address:
       input.address === null ||
       input.address === undefined
         ? null
-        : String(input.address).trim() || null,
-    deviceId: String(input.deviceId ?? "").trim(),
+        : String(input.address)
+            .trim() || null,
+
+    deviceId: String(
+      input.deviceId ?? ""
+    ).trim(),
+  };
+}
+
+/*
+ * IMPORTANT:
+ *
+ * Customer financial values are calculated
+ * from invoices + payments.
+ *
+ * This avoids stale values in:
+ *
+ * customers.outstanding_amount
+ * customers.total_purchases
+ */
+function getComputedFinancials(
+  customerId
+) {
+  const row = db
+    .prepare(
+      `
+      WITH invoice_payments AS (
+        SELECT
+          p.invoice_id,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.status != 'CANCELLED'
+                THEN p.amount
+                ELSE 0
+              END
+            ),
+            0
+          ) AS paid_amount
+
+        FROM payments p
+
+        GROUP BY p.invoice_id
+      ),
+
+      customer_invoices AS (
+        SELECT
+          i.id,
+          i.customer_id,
+          i.total,
+          i.payment_method,
+          i.payment_status,
+
+          COALESCE(
+            ip.paid_amount,
+            0
+          ) AS paid_amount
+
+        FROM invoices i
+
+        LEFT JOIN invoice_payments ip
+          ON ip.invoice_id = i.id
+
+        WHERE
+          i.customer_id = ?
+          AND i.payment_status != 'CANCELLED'
+      )
+
+      SELECT
+        COALESCE(
+          SUM(total),
+          0
+        ) AS total_purchases,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN payment_method = 'CREDIT'
+              THEN
+                CASE
+                  WHEN total - paid_amount > 0
+                  THEN total - paid_amount
+                  ELSE 0
+                END
+              ELSE 0
+            END
+          ),
+          0
+        ) AS outstanding_amount
+
+      FROM customer_invoices
+      `
+    )
+    .get(customerId);
+
+  return {
+    totalPurchases: Number(
+      row?.total_purchases ?? 0
+    ),
+
+    outstandingAmount: Number(
+      row?.outstanding_amount ?? 0
+    ),
   };
 }
 
@@ -70,21 +205,104 @@ function getCustomerById(id) {
   const row = db
     .prepare(
       `
+      WITH invoice_payments AS (
+        SELECT
+          p.invoice_id,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.status != 'CANCELLED'
+                THEN p.amount
+                ELSE 0
+              END
+            ),
+            0
+          ) AS paid_amount
+
+        FROM payments p
+
+        GROUP BY p.invoice_id
+      ),
+
+      customer_financials AS (
+        SELECT
+          i.customer_id,
+
+          COALESCE(
+            SUM(i.total),
+            0
+          ) AS total_purchases,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN i.payment_method = 'CREDIT'
+                THEN
+                  CASE
+                    WHEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    ) > 0
+                    THEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    )
+                    ELSE 0
+                  END
+                ELSE 0
+              END
+            ),
+            0
+          ) AS outstanding_amount
+
+        FROM invoices i
+
+        LEFT JOIN invoice_payments ip
+          ON ip.invoice_id = i.id
+
+        WHERE
+          i.payment_status != 'CANCELLED'
+
+        GROUP BY i.customer_id
+      )
+
       SELECT
-        id,
-        name,
-        mobile,
-        email,
-        address,
-        total_purchases,
-        outstanding_amount,
-        server_id,
-        created_at,
-        updated_at,
-        sync_status,
-        device_id
-      FROM customers
-      WHERE id = ?
+        c.id,
+        c.name,
+        c.mobile,
+        c.email,
+        c.address,
+
+        COALESCE(
+          cf.total_purchases,
+          0
+        ) AS total_purchases,
+
+        COALESCE(
+          cf.outstanding_amount,
+          0
+        ) AS outstanding_amount,
+
+        c.server_id,
+        c.created_at,
+        c.updated_at,
+        c.sync_status,
+        c.device_id
+
+      FROM customers c
+
+      LEFT JOIN customer_financials cf
+        ON cf.customer_id = c.id
+
+      WHERE c.id = ?
+
       LIMIT 1
       `
     )
@@ -94,7 +312,9 @@ function getCustomerById(id) {
 }
 
 function getCustomerByMobile(mobile) {
-  const normalizedMobile = String(mobile ?? "").trim();
+  const normalizedMobile = String(
+    mobile ?? ""
+  ).trim();
 
   if (!normalizedMobile) {
     return null;
@@ -103,21 +323,104 @@ function getCustomerByMobile(mobile) {
   const row = db
     .prepare(
       `
+      WITH invoice_payments AS (
+        SELECT
+          p.invoice_id,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.status != 'CANCELLED'
+                THEN p.amount
+                ELSE 0
+              END
+            ),
+            0
+          ) AS paid_amount
+
+        FROM payments p
+
+        GROUP BY p.invoice_id
+      ),
+
+      customer_financials AS (
+        SELECT
+          i.customer_id,
+
+          COALESCE(
+            SUM(i.total),
+            0
+          ) AS total_purchases,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN i.payment_method = 'CREDIT'
+                THEN
+                  CASE
+                    WHEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    ) > 0
+                    THEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    )
+                    ELSE 0
+                  END
+                ELSE 0
+              END
+            ),
+            0
+          ) AS outstanding_amount
+
+        FROM invoices i
+
+        LEFT JOIN invoice_payments ip
+          ON ip.invoice_id = i.id
+
+        WHERE
+          i.payment_status != 'CANCELLED'
+
+        GROUP BY i.customer_id
+      )
+
       SELECT
-        id,
-        name,
-        mobile,
-        email,
-        address,
-        total_purchases,
-        outstanding_amount,
-        server_id,
-        created_at,
-        updated_at,
-        sync_status,
-        device_id
-      FROM customers
-      WHERE mobile = ?
+        c.id,
+        c.name,
+        c.mobile,
+        c.email,
+        c.address,
+
+        COALESCE(
+          cf.total_purchases,
+          0
+        ) AS total_purchases,
+
+        COALESCE(
+          cf.outstanding_amount,
+          0
+        ) AS outstanding_amount,
+
+        c.server_id,
+        c.created_at,
+        c.updated_at,
+        c.sync_status,
+        c.device_id
+
+      FROM customers c
+
+      LEFT JOIN customer_financials cf
+        ON cf.customer_id = c.id
+
+      WHERE c.mobile = ?
+
       LIMIT 1
       `
     )
@@ -127,15 +430,19 @@ function getCustomerByMobile(mobile) {
 }
 
 function createCustomer(input) {
-  const customer = validateCustomerInput(input);
+  const customer =
+    validateCustomerInput(input);
 
   if (!customer.deviceId) {
-    throw new Error("Device ID is required.");
+    throw new Error(
+      "Device ID is required."
+    );
   }
 
-  const existingCustomer = getCustomerByMobile(
-    customer.mobile
-  );
+  const existingCustomer =
+    getCustomerByMobile(
+      customer.mobile
+    );
 
   if (existingCustomer) {
     throw new Error(
@@ -145,8 +452,8 @@ function createCustomer(input) {
 
   const id = createId();
 
-  // The customers table requires both timestamps.
-  const now = new Date().toISOString();
+  const now =
+    new Date().toISOString();
 
   const insert = db.prepare(
     `
@@ -196,20 +503,25 @@ function createCustomer(input) {
 }
 
 function updateCustomer(id, input) {
-  const customer = validateCustomerInput({
-    ...input,
-    deviceId: "LOCAL-UPDATE",
-  });
+  const customer =
+    validateCustomerInput({
+      ...input,
+      deviceId: "LOCAL-UPDATE",
+    });
 
-  const existingCustomer = getCustomerById(id);
+  const existingCustomer =
+    getCustomerById(id);
 
   if (!existingCustomer) {
-    throw new Error("Customer not found.");
+    throw new Error(
+      "Customer not found."
+    );
   }
 
-  const duplicateCustomer = getCustomerByMobile(
-    customer.mobile
-  );
+  const duplicateCustomer =
+    getCustomerByMobile(
+      customer.mobile
+    );
 
   if (
     duplicateCustomer &&
@@ -220,7 +532,8 @@ function updateCustomer(id, input) {
     );
   }
 
-  const updatedAt = new Date().toISOString();
+  const updatedAt =
+    new Date().toISOString();
 
   db.prepare(
     `
@@ -250,21 +563,104 @@ function getAllCustomers() {
   const rows = db
     .prepare(
       `
+      WITH invoice_payments AS (
+        SELECT
+          p.invoice_id,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.status != 'CANCELLED'
+                THEN p.amount
+                ELSE 0
+              END
+            ),
+            0
+          ) AS paid_amount
+
+        FROM payments p
+
+        GROUP BY p.invoice_id
+      ),
+
+      customer_financials AS (
+        SELECT
+          i.customer_id,
+
+          COALESCE(
+            SUM(i.total),
+            0
+          ) AS total_purchases,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN i.payment_method = 'CREDIT'
+                THEN
+                  CASE
+                    WHEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    ) > 0
+                    THEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    )
+                    ELSE 0
+                  END
+                ELSE 0
+              END
+            ),
+            0
+          ) AS outstanding_amount
+
+        FROM invoices i
+
+        LEFT JOIN invoice_payments ip
+          ON ip.invoice_id = i.id
+
+        WHERE
+          i.payment_status != 'CANCELLED'
+
+        GROUP BY i.customer_id
+      )
+
       SELECT
-        id,
-        name,
-        mobile,
-        email,
-        address,
-        total_purchases,
-        outstanding_amount,
-        server_id,
-        created_at,
-        updated_at,
-        sync_status,
-        device_id
-      FROM customers
-      ORDER BY name COLLATE NOCASE ASC
+        c.id,
+        c.name,
+        c.mobile,
+        c.email,
+        c.address,
+
+        COALESCE(
+          cf.total_purchases,
+          0
+        ) AS total_purchases,
+
+        COALESCE(
+          cf.outstanding_amount,
+          0
+        ) AS outstanding_amount,
+
+        c.server_id,
+        c.created_at,
+        c.updated_at,
+        c.sync_status,
+        c.device_id
+
+      FROM customers c
+
+      LEFT JOIN customer_financials cf
+        ON cf.customer_id = c.id
+
+      ORDER BY
+        c.name COLLATE NOCASE ASC
       `
     )
     .all();
@@ -273,7 +669,9 @@ function getAllCustomers() {
 }
 
 function searchCustomers(searchTerm) {
-  const term = String(searchTerm ?? "").trim();
+  const term = String(
+    searchTerm ?? ""
+  ).trim();
 
   if (!term) {
     return getAllCustomers();
@@ -284,113 +682,209 @@ function searchCustomers(searchTerm) {
   const rows = db
     .prepare(
       `
+      WITH invoice_payments AS (
+        SELECT
+          p.invoice_id,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN p.status != 'CANCELLED'
+                THEN p.amount
+                ELSE 0
+              END
+            ),
+            0
+          ) AS paid_amount
+
+        FROM payments p
+
+        GROUP BY p.invoice_id
+      ),
+
+      customer_financials AS (
+        SELECT
+          i.customer_id,
+
+          COALESCE(
+            SUM(i.total),
+            0
+          ) AS total_purchases,
+
+          COALESCE(
+            SUM(
+              CASE
+                WHEN i.payment_method = 'CREDIT'
+                THEN
+                  CASE
+                    WHEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    ) > 0
+                    THEN (
+                      i.total -
+                      COALESCE(
+                        ip.paid_amount,
+                        0
+                      )
+                    )
+                    ELSE 0
+                  END
+                ELSE 0
+              END
+            ),
+            0
+          ) AS outstanding_amount
+
+        FROM invoices i
+
+        LEFT JOIN invoice_payments ip
+          ON ip.invoice_id = i.id
+
+        WHERE
+          i.payment_status != 'CANCELLED'
+
+        GROUP BY i.customer_id
+      )
+
       SELECT
-        id,
-        name,
-        mobile,
-        email,
-        address,
-        total_purchases,
-        outstanding_amount,
-        server_id,
-        created_at,
-        updated_at,
-        sync_status,
-        device_id
-      FROM customers
+        c.id,
+        c.name,
+        c.mobile,
+        c.email,
+        c.address,
+
+        COALESCE(
+          cf.total_purchases,
+          0
+        ) AS total_purchases,
+
+        COALESCE(
+          cf.outstanding_amount,
+          0
+        ) AS outstanding_amount,
+
+        c.server_id,
+        c.created_at,
+        c.updated_at,
+        c.sync_status,
+        c.device_id
+
+      FROM customers c
+
+      LEFT JOIN customer_financials cf
+        ON cf.customer_id = c.id
+
       WHERE
-        name LIKE ? COLLATE NOCASE
-        OR mobile LIKE ?
-        OR email LIKE ? COLLATE NOCASE
-      ORDER BY name COLLATE NOCASE ASC
+        c.name LIKE ? COLLATE NOCASE
+        OR c.mobile LIKE ?
+        OR c.email LIKE ? COLLATE NOCASE
+
+      ORDER BY
+        c.name COLLATE NOCASE ASC
       `
     )
-    .all(pattern, pattern, pattern);
+    .all(
+      pattern,
+      pattern,
+      pattern
+    );
 
   return rows.map(mapCustomerRow);
 }
 
 function getOutstandingCustomers() {
-  const rows = db
-    .prepare(
-      `
-      SELECT
-        id,
-        name,
-        mobile,
-        email,
-        address,
-        total_purchases,
-        outstanding_amount,
-        server_id,
-        created_at,
-        updated_at,
-        sync_status,
-        device_id
-      FROM customers
-      WHERE outstanding_amount > 0
-      ORDER BY outstanding_amount DESC, name COLLATE NOCASE ASC
-      `
-    )
-    .all();
+  const customers =
+    getAllCustomers();
 
-  return rows.map(mapCustomerRow);
+  return customers.filter(
+    (customer) =>
+      customer.outstandingAmount >
+      0.009
+  );
 }
 
+/*
+ * Kept for compatibility with the
+ * existing invoice/payment code.
+ *
+ * Instead of blindly adding deltas to
+ * cached financial values, refresh the
+ * values from actual invoices/payments.
+ */
 function updateCustomerFinancials(
   customerId,
   purchaseAmountDelta = 0,
   outstandingAmountDelta = 0
 ) {
-  const purchaseDelta = Number(purchaseAmountDelta);
+  const purchaseDelta = Number(
+    purchaseAmountDelta
+  );
+
   const outstandingDelta = Number(
     outstandingAmountDelta
   );
 
   if (
-    !Number.isFinite(purchaseDelta) ||
-    !Number.isFinite(outstandingDelta)
+    !Number.isFinite(
+      purchaseDelta
+    ) ||
+    !Number.isFinite(
+      outstandingDelta
+    )
   ) {
     throw new Error(
       "Financial amounts must be valid numbers."
     );
   }
 
-  const customer = getCustomerById(customerId);
+  const customer =
+    db.prepare(
+      `
+      SELECT id
+      FROM customers
+      WHERE id = ?
+      LIMIT 1
+      `
+    ).get(customerId);
 
   if (!customer) {
-    throw new Error("Customer not found.");
-  }
-
-  const nextOutstanding =
-    customer.outstandingAmount + outstandingDelta;
-
-  if (nextOutstanding < 0) {
     throw new Error(
-      "Customer outstanding amount cannot be negative."
+      "Customer not found."
     );
   }
 
-  const updatedAt = new Date().toISOString();
+  const financials =
+    getComputedFinancials(
+      customerId
+    );
+
+  const updatedAt =
+    new Date().toISOString();
 
   db.prepare(
     `
     UPDATE customers
     SET
-      total_purchases = total_purchases + ?,
-      outstanding_amount = outstanding_amount + ?,
+      total_purchases = ?,
+      outstanding_amount = ?,
       updated_at = ?,
       sync_status = 'PENDING'
     WHERE id = ?
     `
   ).run(
-    purchaseDelta,
-    outstandingDelta,
+    financials.totalPurchases,
+    financials.outstandingAmount,
     updatedAt,
     customerId
   );
 
-  return getCustomerById(customerId);
+  return getCustomerById(
+    customerId
+  );
 }
 
 module.exports = {

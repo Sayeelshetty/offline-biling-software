@@ -305,6 +305,36 @@ invoices: {
     ),
 },
 
+payments: {
+  getById: (paymentId) =>
+    ipcRenderer.invoke(
+      "payments:get-by-id",
+      paymentId
+    ),
+
+  getAll: (options) =>
+    ipcRenderer.invoke(
+      "payments:get-all",
+      options
+    ),
+
+  getOutstanding: () =>
+    ipcRenderer.invoke(
+      "payments:get-outstanding"
+    ),
+
+  getSummary: () =>
+    ipcRenderer.invoke(
+      "payments:get-summary"
+    ),
+
+  record: (input) =>
+    ipcRenderer.invoke(
+      "payments:record",
+      input
+    ),
+},
+
 });
 
 
