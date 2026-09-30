@@ -321,7 +321,6 @@ interface DesktopAPI {
     import("../../../shared/types/customer").Customer
   >;
 };
-
 invoices: {
   create: (
     input: CreateInvoiceInput
@@ -342,8 +341,14 @@ invoices: {
   getRecent: (
     limit?: number
   ) => Promise<Invoice[]>;
-};
 
+  downloadPdf: (
+    invoiceNumber: string
+  ) => Promise<{
+    canceled: boolean;
+    filePath: string | null;
+  }>;
+};
 
 payments: {
   getById: (

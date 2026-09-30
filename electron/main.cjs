@@ -5,7 +5,7 @@ const {
   dialog,
 } = require("electron");
 
-
+const fs = require("fs");
 
 const path = require("path");
 
@@ -1478,6 +1478,83 @@ ipcMain.handle(
     paymentRepository.recordPayment(
       input
     )
+);
+
+ipcMain.handle(
+  "invoices:download-pdf",
+  async (event, invoiceNumber) => {
+    const win =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+
+    if (!win) {
+      throw new Error(
+        "Invoice window is not available."
+      );
+    }
+
+    const safeInvoiceNumber =
+      String(
+        invoiceNumber || "invoice"
+      ).replace(
+        /[<>:"/\\|?*]+/g,
+        "_"
+      );
+
+    const result =
+      await dialog.showSaveDialog(
+        win,
+        {
+          title: "Save Invoice as PDF",
+
+          defaultPath:
+            `${safeInvoiceNumber}.pdf`,
+
+          filters: [
+            {
+              name: "PDF Files",
+              extensions: ["pdf"],
+            },
+          ],
+        }
+      );
+
+    if (
+      result.canceled ||
+      !result.filePath
+    ) {
+      return {
+        canceled: true,
+        filePath: null,
+      };
+    }
+
+    const pdfData =
+      await win.webContents.printToPDF({
+        pageSize: "A4",
+        printBackground: true,
+        displayHeaderFooter: false,
+        preferCSSPageSize: true,
+
+        margins: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+        },
+      });
+
+    fs.writeFileSync(
+      result.filePath,
+      pdfData
+    );
+
+    return {
+      canceled: false,
+      filePath: result.filePath,
+    };
+  }
 );
 
 /*

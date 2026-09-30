@@ -12,6 +12,7 @@ import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
 import CustomerPage from "./pages/Customers/CustomerPage.tsx";
 import BillingPage from "./pages/BillingPage";
+import InvoicePage from "./pages/Invoices/InvoicePage";
 
 import "./App.css";
 
@@ -165,18 +166,10 @@ function AppLayout() {
 />
 
             {/* Invoices */}
-            <Route
-              path="/invoices"
-              element={
-                <section className="page">
-                  <h1>Invoices</h1>
-
-                  <p>
-                    Invoice module coming later.
-                  </p>
-                </section>
-              }
-            />
+         <Route
+  path="/invoices"
+  element={<InvoicePage />}
+/>
 
             {/* Reports */}
             <Route
@@ -191,6 +184,8 @@ function AppLayout() {
                 </section>
               }
             />
+
+
           </Routes>
         </main>
       </div>

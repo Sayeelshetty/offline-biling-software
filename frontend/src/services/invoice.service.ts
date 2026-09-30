@@ -2,7 +2,12 @@ import type {
   CreateInvoiceInput,
   CreateInvoiceResult,
   Invoice,
-} from "../types/invoice";
+} from "../../../shared/types/invoice";
+
+export type DownloadPdfResult = {
+  canceled: boolean;
+  filePath: string | null;
+};
 
 type DesktopInvoiceApi = {
   create: (
@@ -24,12 +29,17 @@ type DesktopInvoiceApi = {
   getRecent: (
     limit?: number
   ) => Promise<Invoice[]>;
+
+  downloadPdf: (
+    invoiceNumber: string
+  ) => Promise<DownloadPdfResult>;
 };
 
 function getInvoiceApi(): DesktopInvoiceApi {
-  const api = window.desktopAPI?.invoices as
-    | DesktopInvoiceApi
-    | undefined;
+  const api =
+    window.desktopAPI?.invoices as
+      | DesktopInvoiceApi
+      | undefined;
 
   if (!api) {
     throw new Error(
@@ -74,12 +84,21 @@ async function getRecentInvoices(
   return getInvoiceApi().getRecent(limit);
 }
 
+async function downloadInvoicePdf(
+  invoiceNumber: string
+): Promise<DownloadPdfResult> {
+  return getInvoiceApi().downloadPdf(
+    invoiceNumber
+  );
+}
+
 const invoiceService = {
   createInvoice,
   getInvoiceById,
   getInvoiceByTransactionId,
   getInvoiceByNumber,
   getRecentInvoices,
+  downloadInvoicePdf,
 };
 
 export default invoiceService;

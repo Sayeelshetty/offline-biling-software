@@ -303,6 +303,12 @@ invoices: {
       "invoices:get-recent",
       limit
     ),
+
+  downloadPdf: (invoiceNumber) =>
+    ipcRenderer.invoke(
+      "invoices:download-pdf",
+      invoiceNumber
+    ),
 },
 
 payments: {
@@ -334,6 +340,12 @@ payments: {
       input
     ),
 },
+
+downloadPdf: (invoiceNumber) =>
+  ipcRenderer.invoke(
+    "invoices:download-pdf",
+    invoiceNumber
+  ),
 
 });
 
