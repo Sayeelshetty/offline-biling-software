@@ -12,7 +12,9 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   database: {
     getStatus: () =>
-      ipcRenderer.invoke("database:get-status"),
+      ipcRenderer.invoke(
+        "database:get-status"
+      ),
   },
 
   // =========================
@@ -159,6 +161,60 @@ contextBridge.exposeInMainWorld("desktopAPI", {
       ipcRenderer.invoke(
         "categories:activate",
         id
+      ),
+  },
+
+  // =========================
+  // Inventory
+  // =========================
+  inventory: {
+    stockIn: (inventoryData) =>
+      ipcRenderer.invoke(
+        "inventory:stock-in",
+        inventoryData
+      ),
+
+    stockOut: (inventoryData) =>
+      ipcRenderer.invoke(
+        "inventory:stock-out",
+        inventoryData
+      ),
+
+    adjust: (inventoryData) =>
+      ipcRenderer.invoke(
+        "inventory:adjust",
+        inventoryData
+      ),
+
+    getCurrentStock: (productId) =>
+      ipcRenderer.invoke(
+        "inventory:get-current-stock",
+        productId
+      ),
+
+    getMovements: (
+      productId,
+      limit = 100
+    ) =>
+      ipcRenderer.invoke(
+        "inventory:get-movements",
+        {
+          productId,
+          limit,
+        }
+      ),
+
+    getAllMovements: (
+      limit = 200
+    ) =>
+      ipcRenderer.invoke(
+        "inventory:get-all-movements",
+        limit
+      ),
+
+    getSummary: () =>
+      ipcRenderer.invoke(
+        "inventory:get-summary"
       ),
   },
 });

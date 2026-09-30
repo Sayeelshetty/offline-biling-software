@@ -2,7 +2,7 @@ import type {
   Product,
   ProductInput,
   ProductUpdateInput,
-} from "../../../shared/types/product";
+} from "../types/product";
 
 export async function createProduct(
   productData: ProductInput

@@ -41,6 +41,16 @@ const {
 } = require("./database/repositories/category.repository.cjs");
 
 const {
+  stockIn,
+  stockOut,
+  adjustStock,
+  getCurrentStock,
+  getStockMovements,
+  getAllStockMovements,
+  getStockSummary,
+} = require("./database/repositories/inventory.repository.cjs");
+
+const {
   writeProductsCsv,
   readProductsCsv,
 } = require("./utils/csv.cjs");
@@ -82,9 +92,12 @@ function createMainWindow() {
     );
   }
 
-  mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
-  });
+  mainWindow.once(
+    "ready-to-show",
+    () => {
+      mainWindow.show();
+    }
+  );
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -118,24 +131,30 @@ ipcMain.handle(
   "database:get-status",
   () => {
     try {
-      const database = getDatabase();
+      const database =
+        getDatabase();
 
-      const tables = database
-        .prepare(`
-          SELECT name
-          FROM sqlite_master
-          WHERE type = 'table'
-          ORDER BY name
-        `)
-        .all();
+      const tables =
+        database
+          .prepare(`
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+            ORDER BY name
+          `)
+          .all();
 
       return {
         success: true,
-        path: getDatabasePath(),
-        tableCount: tables.length,
-        tables: tables.map(
-          (table) => table.name
-        ),
+        path:
+          getDatabasePath(),
+        tableCount:
+          tables.length,
+        tables:
+          tables.map(
+            (table) =>
+              table.name
+          ),
       };
     } catch (error) {
       console.error(
@@ -145,7 +164,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -164,7 +184,9 @@ ipcMain.handle(
       return {
         success: true,
         product:
-          createProduct(productData),
+          createProduct(
+            productData
+          ),
       };
     } catch (error) {
       console.error(
@@ -174,7 +196,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -197,7 +220,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -220,7 +244,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -233,7 +258,9 @@ ipcMain.handle(
       return {
         success: true,
         product:
-          findProductByBarcode(barcode),
+          findProductByBarcode(
+            barcode
+          ),
       };
     } catch (error) {
       console.error(
@@ -243,7 +270,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -275,7 +303,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -283,12 +312,17 @@ ipcMain.handle(
 
 ipcMain.handle(
   "products:get-all",
-  (_event, options = {}) => {
+  (
+    _event,
+    options = {}
+  ) => {
     try {
       return {
         success: true,
         products:
-          getAllProducts(options),
+          getAllProducts(
+            options
+          ),
       };
     } catch (error) {
       console.error(
@@ -298,7 +332,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -306,12 +341,18 @@ ipcMain.handle(
 
 ipcMain.handle(
   "products:update",
-  (_event, { id, data }) => {
+  (
+    _event,
+    { id, data }
+  ) => {
     try {
       return {
         success: true,
         product:
-          updateProduct(id, data),
+          updateProduct(
+            id,
+            data
+          ),
       };
     } catch (error) {
       console.error(
@@ -321,7 +362,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -334,7 +376,9 @@ ipcMain.handle(
       return {
         success: true,
         product:
-          deactivateProduct(id),
+          deactivateProduct(
+            id
+          ),
       };
     } catch (error) {
       console.error(
@@ -344,7 +388,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -357,7 +402,9 @@ ipcMain.handle(
       return {
         success: true,
         product:
-          activateProduct(id),
+          activateProduct(
+            id
+          ),
       };
     } catch (error) {
       console.error(
@@ -367,7 +414,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -390,7 +438,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -428,30 +477,43 @@ ipcMain.handle(
         await dialog.showSaveDialog(
           mainWindow,
           {
-            title: "Export Products",
+            title:
+              "Export Products",
+
             defaultPath:
               defaultFileName,
+
             filters: [
               {
-                name: "CSV Files",
-                extensions: ["csv"],
+                name:
+                  "CSV Files",
+                extensions: [
+                  "csv",
+                ],
               },
               {
-                name: "All Files",
-                extensions: ["*"],
+                name:
+                  "All Files",
+                extensions: [
+                  "*",
+                ],
               },
             ],
           }
         );
 
-      if (result.canceled) {
+      if (
+        result.canceled
+      ) {
         return {
           success: true,
           canceled: true,
         };
       }
 
-      if (!result.filePath) {
+      if (
+        !result.filePath
+      ) {
         return {
           success: false,
           error:
@@ -467,8 +529,10 @@ ipcMain.handle(
       return {
         success: true,
         canceled: false,
-        path: result.filePath,
-        count: products.length,
+        path:
+          result.filePath,
+        count:
+          products.length,
       };
     } catch (error) {
       console.error(
@@ -478,7 +542,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -494,34 +559,39 @@ ipcMain.handle(
   "products:import-csv",
   async () => {
     try {
-      /*
-      |--------------------------------------------------------------------------
-      | Select CSV
-      |--------------------------------------------------------------------------
-      */
-
       const result =
         await dialog.showOpenDialog(
           mainWindow,
           {
-            title: "Import Products",
+            title:
+              "Import Products",
+
             properties: [
               "openFile",
             ],
+
             filters: [
               {
-                name: "CSV Files",
-                extensions: ["csv"],
+                name:
+                  "CSV Files",
+                extensions: [
+                  "csv",
+                ],
               },
               {
-                name: "All Files",
-                extensions: ["*"],
+                name:
+                  "All Files",
+                extensions: [
+                  "*",
+                ],
               },
             ],
           }
         );
 
-      if (result.canceled) {
+      if (
+        result.canceled
+      ) {
         return {
           success: true,
           canceled: true,
@@ -545,28 +615,20 @@ ipcMain.handle(
       const filePath =
         result.filePaths[0];
 
-      /*
-      |--------------------------------------------------------------------------
-      | Read CSV
-      |--------------------------------------------------------------------------
-      */
-
       const rows =
-        readProductsCsv(filePath);
+        readProductsCsv(
+          filePath
+        );
 
-      if (rows.length === 0) {
+      if (
+        rows.length === 0
+      ) {
         return {
           success: false,
           error:
             "The selected CSV file contains no product rows.",
         };
       }
-
-      /*
-      |--------------------------------------------------------------------------
-      | Validate CSV Rows
-      |--------------------------------------------------------------------------
-      */
 
       const validProducts = [];
       const errors = [];
@@ -577,42 +639,56 @@ ipcMain.handle(
             index + 2;
 
           const name =
-            row["Product Name"]?.trim();
+            row[
+              "Product Name"
+            ]?.trim();
 
           const sku =
             row["SKU"]?.trim();
 
           const barcode =
-            row["Barcode"]?.trim() ||
-            null;
+            row[
+              "Barcode"
+            ]?.trim() || null;
 
           const categoryId =
-            row["Category ID"]?.trim() ||
-            null;
+            row[
+              "Category ID"
+            ]?.trim() || null;
 
           const sellingPrice =
             Number(
-              row["Selling Price"]
+              row[
+                "Selling Price"
+              ]
             );
 
           const purchasePrice =
             Number(
-              row["Purchase Price"]
+              row[
+                "Purchase Price"
+              ]
             );
 
           const gstRate =
             Number(
-              row["GST Rate"]
+              row[
+                "GST Rate"
+              ]
             );
 
           const currentStock =
             Number(
-              row["Current Stock"]
+              row[
+                "Current Stock"
+              ]
             );
 
           const minimumStock =
             Number(
-              row["Minimum Stock"]
+              row[
+                "Minimum Stock"
+              ]
             );
 
           const unit =
@@ -622,12 +698,6 @@ ipcMain.handle(
           const status =
             row["Status"]?.trim() ||
             "ACTIVE";
-
-          /*
-          |--------------------------------------------------------------------------
-          | Required Fields
-          |--------------------------------------------------------------------------
-          */
 
           if (!name) {
             errors.push(
@@ -644,12 +714,6 @@ ipcMain.handle(
 
             return;
           }
-
-          /*
-          |--------------------------------------------------------------------------
-          | Price Validation
-          |--------------------------------------------------------------------------
-          */
 
           if (
             Number.isNaN(
@@ -677,12 +741,6 @@ ipcMain.handle(
             return;
           }
 
-          /*
-          |--------------------------------------------------------------------------
-          | GST Validation
-          |--------------------------------------------------------------------------
-          */
-
           if (
             Number.isNaN(
               gstRate
@@ -696,12 +754,6 @@ ipcMain.handle(
 
             return;
           }
-
-          /*
-          |--------------------------------------------------------------------------
-          | Stock Validation
-          |--------------------------------------------------------------------------
-          */
 
           if (
             Number.isNaN(
@@ -737,12 +789,6 @@ ipcMain.handle(
             return;
           }
 
-          /*
-          |--------------------------------------------------------------------------
-          | Status Validation
-          |--------------------------------------------------------------------------
-          */
-
           if (
             status !== "ACTIVE" &&
             status !== "INACTIVE"
@@ -753,12 +799,6 @@ ipcMain.handle(
 
             return;
           }
-
-          /*
-          |--------------------------------------------------------------------------
-          | Category Validation
-          |--------------------------------------------------------------------------
-          */
 
           if (categoryId) {
             const category =
@@ -786,18 +826,14 @@ ipcMain.handle(
             }
           }
 
-          /*
-          |--------------------------------------------------------------------------
-          | Duplicate SKU Validation
-          |--------------------------------------------------------------------------
-          */
-
           const existingSku =
             findProductBySku(
               sku
             );
 
-          if (existingSku) {
+          if (
+            existingSku
+          ) {
             errors.push(
               `Row ${rowNumber}: SKU "${sku}" already exists.`
             );
@@ -805,19 +841,15 @@ ipcMain.handle(
             return;
           }
 
-          /*
-          |--------------------------------------------------------------------------
-          | Duplicate Barcode Validation
-          |--------------------------------------------------------------------------
-          */
-
           if (barcode) {
             const existingBarcode =
               findProductByBarcode(
                 barcode
               );
 
-            if (existingBarcode) {
+            if (
+              existingBarcode
+            ) {
               errors.push(
                 `Row ${rowNumber}: Barcode "${barcode}" already exists.`
               );
@@ -825,12 +857,6 @@ ipcMain.handle(
               return;
             }
           }
-
-          /*
-          |--------------------------------------------------------------------------
-          | Valid Product
-          |--------------------------------------------------------------------------
-          */
 
           validProducts.push({
             name,
@@ -844,23 +870,18 @@ ipcMain.handle(
             minimumStock,
             unit,
             imagePath:
-              row["Image Path"]?.trim() ||
+              row[
+                "Image Path"
+              ]?.trim() ||
               null,
             status,
           });
         }
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Stop Import When Validation Errors Exist
-      |--------------------------------------------------------------------------
-      |
-      | We do not partially import a CSV.
-      |
-      */
-
-      if (errors.length > 0) {
+      if (
+        errors.length > 0
+      ) {
         return {
           success: true,
           canceled: false,
@@ -871,23 +892,11 @@ ipcMain.handle(
         };
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Import Into SQLite
-      |--------------------------------------------------------------------------
-      */
-
       const createdProducts =
         importProducts(
           validProducts,
           "DEV-LOCAL-001"
         );
-
-      /*
-      |--------------------------------------------------------------------------
-      | Import Complete
-      |--------------------------------------------------------------------------
-      */
 
       return {
         success: true,
@@ -907,7 +916,204 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Inventory IPC
+|--------------------------------------------------------------------------
+*/
+
+ipcMain.handle(
+  "inventory:stock-in",
+  (_event, inventoryData) => {
+    try {
+      return {
+        success: true,
+        result:
+          stockIn(
+            inventoryData
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Stock in error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:stock-out",
+  (_event, inventoryData) => {
+    try {
+      return {
+        success: true,
+        result:
+          stockOut(
+            inventoryData
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Stock out error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:adjust",
+  (_event, inventoryData) => {
+    try {
+      return {
+        success: true,
+        result:
+          adjustStock(
+            inventoryData
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Stock adjustment error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:get-current-stock",
+  (_event, productId) => {
+    try {
+      return {
+        success: true,
+        result:
+          getCurrentStock(
+            productId
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Get current stock error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:get-movements",
+  (
+    _event,
+    {
+      productId,
+      limit = 100,
+    } = {}
+  ) => {
+    try {
+      return {
+        success: true,
+        movements:
+          getStockMovements(
+            productId,
+            limit
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Get product stock movements error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:get-all-movements",
+  (
+    _event,
+    limit = 200
+  ) => {
+    try {
+      return {
+        success: true,
+        movements:
+          getAllStockMovements(
+            limit
+          ),
+      };
+    } catch (error) {
+      console.error(
+        "Get all stock movements error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "inventory:get-summary",
+  () => {
+    try {
+      return {
+        success: true,
+        products:
+          getStockSummary(),
+      };
+    } catch (error) {
+      console.error(
+        "Get stock summary error:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message,
       };
     }
   }
@@ -938,7 +1144,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -961,7 +1168,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -974,7 +1182,9 @@ ipcMain.handle(
       return {
         success: true,
         category:
-          getCategoryByName(name),
+          getCategoryByName(
+            name
+          ),
       };
     } catch (error) {
       console.error(
@@ -984,7 +1194,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -992,7 +1203,10 @@ ipcMain.handle(
 
 ipcMain.handle(
   "categories:get-all",
-  (_event, options = {}) => {
+  (
+    _event,
+    options = {}
+  ) => {
     try {
       return {
         success: true,
@@ -1009,7 +1223,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -1039,7 +1254,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -1064,7 +1280,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -1077,7 +1294,9 @@ ipcMain.handle(
       return {
         success: true,
         category:
-          deactivateCategory(id),
+          deactivateCategory(
+            id
+          ),
       };
     } catch (error) {
       console.error(
@@ -1087,7 +1306,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -1100,7 +1320,9 @@ ipcMain.handle(
       return {
         success: true,
         category:
-          activateCategory(id),
+          activateCategory(
+            id
+          ),
       };
     } catch (error) {
       console.error(
@@ -1110,7 +1332,8 @@ ipcMain.handle(
 
       return {
         success: false,
-        error: error.message,
+        error:
+          error.message,
       };
     }
   }
@@ -1160,21 +1383,26 @@ app.whenReady().then(() => {
     return;
   }
 
-  app.on("activate", () => {
-    if (
-      BrowserWindow.getAllWindows()
-        .length === 0
-    ) {
-      createMainWindow();
+  app.on(
+    "activate",
+    () => {
+      if (
+        BrowserWindow
+          .getAllWindows()
+          .length === 0
+      ) {
+        createMainWindow();
+      }
     }
-  });
+  );
 });
 
 app.on(
   "window-all-closed",
   () => {
     if (
-      process.platform !== "darwin"
+      process.platform !==
+      "darwin"
     ) {
       app.quit();
     }

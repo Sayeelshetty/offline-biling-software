@@ -7,6 +7,7 @@ import {
 
 import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
+import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
 
 import "./App.css";
 
@@ -16,7 +17,9 @@ function DashboardPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">DASHBOARD</p>
+
           <h1>Dashboard</h1>
+
           <p className="page-description">
             Overview of your billing and business activity.
           </p>
@@ -62,7 +65,9 @@ function AppLayout() {
         </div>
 
         <nav className="navigation">
-          <Link to="/">Dashboard</Link>
+          <Link to="/">
+            Dashboard
+          </Link>
 
           <Link to="/products">
             Products
@@ -101,7 +106,9 @@ function AppLayout() {
       <div className="main-area">
         <header className="topbar">
           <div>
-            <strong>Offline Billing Software</strong>
+            <strong>
+              Offline Billing Software
+            </strong>
           </div>
 
           <div className="connection-status">
@@ -113,29 +120,40 @@ function AppLayout() {
         <main className="page-container">
           <Routes>
             {/* Dashboard */}
+
             <Route
               path="/"
-              element={<DashboardPage />}
+              element={
+                <DashboardPage />
+              }
             />
 
             {/* Products */}
+
             <Route
               path="/products"
-              element={<ProductsPage />}
+              element={
+                <ProductsPage />
+              }
             />
 
             {/* Categories */}
+
             <Route
               path="/categories"
-              element={<CategoriesPage />}
+              element={
+                <CategoriesPage />
+              }
             />
 
             {/* Billing */}
+
             <Route
               path="/billing"
               element={
                 <section className="page">
                   <h1>Billing</h1>
+
                   <p>
                     Billing module coming next.
                   </p>
@@ -144,24 +162,22 @@ function AppLayout() {
             />
 
             {/* Inventory */}
+
             <Route
               path="/inventory"
               element={
-                <section className="page">
-                  <h1>Inventory</h1>
-                  <p>
-                    Inventory module coming later.
-                  </p>
-                </section>
+                <InventoryPage />
               }
             />
 
             {/* Customers */}
+
             <Route
               path="/customers"
               element={
                 <section className="page">
                   <h1>Customers</h1>
+
                   <p>
                     Customer module coming later.
                   </p>
@@ -170,11 +186,13 @@ function AppLayout() {
             />
 
             {/* Payments */}
+
             <Route
               path="/payments"
               element={
                 <section className="page">
                   <h1>Payments</h1>
+
                   <p>
                     Payment module coming later.
                   </p>
@@ -183,11 +201,13 @@ function AppLayout() {
             />
 
             {/* Invoices */}
+
             <Route
               path="/invoices"
               element={
                 <section className="page">
                   <h1>Invoices</h1>
+
                   <p>
                     Invoice module coming later.
                   </p>
@@ -196,11 +216,13 @@ function AppLayout() {
             />
 
             {/* Reports */}
+
             <Route
               path="/reports"
               element={
                 <section className="page">
                   <h1>Reports</h1>
+
                   <p>
                     Reports module coming later.
                   </p>

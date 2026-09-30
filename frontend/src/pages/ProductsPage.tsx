@@ -4,9 +4,9 @@ import type {
   Product,
   ProductInput,
   ProductUpdateInput,
-} from "../../shared/types/product";
+} from "../types/product";
 
-import type { Category } from "../../shared/types/category";
+import type { Category } from "../types/category";
 
 import productService from "../services/product.service";
 import { getAllCategories } from "../services/category.service";

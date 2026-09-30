@@ -10,6 +10,15 @@ import type {
   CategoryUpdateInput,
 } from "../../../shared/types/category";
 
+import type {
+  StockMovementResult,
+  StockOperationInput,
+  StockAdjustmentInput,
+  CurrentStock,
+  StockMovement,
+  StockSummary,
+} from "../../../shared/types/inventory";
+
 interface AppInfo {
   name: string;
   version: string;
@@ -81,6 +90,30 @@ interface CategoryListResponse {
   error?: string;
 }
 
+interface InventoryMovementResponse {
+  success: boolean;
+  result?: StockMovementResult;
+  error?: string;
+}
+
+interface InventoryCurrentStockResponse {
+  success: boolean;
+  result?: CurrentStock;
+  error?: string;
+}
+
+interface InventoryMovementsResponse {
+  success: boolean;
+  movements?: StockMovement[];
+  error?: string;
+}
+
+interface InventorySummaryResponse {
+  success: boolean;
+  products?: StockSummary[];
+  error?: string;
+}
+
 interface ProductGetAllOptions {
   includeInactive?: boolean;
   categoryId?: string;
@@ -94,11 +127,13 @@ interface DesktopAPI {
   // =========================
   // Application
   // =========================
+
   getAppInfo: () => Promise<AppInfo>;
 
   // =========================
   // Database
   // =========================
+
   database: {
     getStatus: () => Promise<DatabaseStatus>;
   };
@@ -106,6 +141,7 @@ interface DesktopAPI {
   // =========================
   // Products
   // =========================
+
   products: {
     create: (
       productData: ProductInput
@@ -158,6 +194,7 @@ interface DesktopAPI {
   // =========================
   // Categories
   // =========================
+
   categories: {
     create: (
       categoryData: CategoryInput
@@ -191,6 +228,40 @@ interface DesktopAPI {
     activate: (
       id: string
     ) => Promise<CategoryResponse>;
+  };
+
+  // =========================
+  // Inventory
+  // =========================
+
+  inventory: {
+    stockIn: (
+      inventoryData: StockOperationInput
+    ) => Promise<InventoryMovementResponse>;
+
+    stockOut: (
+      inventoryData: StockOperationInput
+    ) => Promise<InventoryMovementResponse>;
+
+    adjust: (
+      inventoryData: StockAdjustmentInput
+    ) => Promise<InventoryMovementResponse>;
+
+    getCurrentStock: (
+      productId: string
+    ) => Promise<InventoryCurrentStockResponse>;
+
+    getMovements: (
+      productId: string,
+      limit?: number
+    ) => Promise<InventoryMovementsResponse>;
+
+    getAllMovements: (
+      limit?: number
+    ) => Promise<InventoryMovementsResponse>;
+
+    getSummary: () =>
+      Promise<InventorySummaryResponse>;
   };
 }
 
