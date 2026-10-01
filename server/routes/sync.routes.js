@@ -1,7 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
 
-const { query } = require("../db/database");
+const { query, pool } = require("../db/database");
 
 const router = express.Router();
 
@@ -22,6 +22,114 @@ const ALLOWED_OPERATIONS = [
 
 function generateServerId() {
   return crypto.randomUUID();
+}
+
+/**
+ * Extract transactionId from a sync payload.
+ *
+ * Invoice:
+ * payload.invoice.transactionId
+ *
+ * Payment / stock movement:
+ * payload.transactionId
+ */
+function getTransactionId(payload) {
+  if (
+    payload &&
+    typeof payload.transactionId === "string" &&
+    payload.transactionId.trim()
+  ) {
+    return payload.transactionId.trim();
+  }
+
+  if (
+    payload &&
+    payload.invoice &&
+    typeof payload.invoice.transactionId === "string" &&
+    payload.invoice.transactionId.trim()
+  ) {
+    return payload.invoice.transactionId.trim();
+  }
+
+  return null;
+}
+
+/**
+ * Find an existing sync record.
+ *
+ * Duplicate protection:
+ * 1. Same queueId
+ * 2. Same transactionId for the same entity type + operation
+ *
+ * The transactionId comparison is done in JavaScript after reading
+ * the JSON payload from PostgreSQL. This avoids relying on a particular
+ * PostgreSQL JSON/JSONB expression and matches the actual payload shape
+ * used by this project.
+ */
+async function findExistingSyncRecord(client, {
+  queueId,
+  entityType,
+  operation,
+  transactionId,
+}) {
+  // First: exact queue item retry
+  const queueResult = await client.query(
+    `
+    SELECT server_id, payload
+    FROM sync_records
+    WHERE queue_id = $1
+    LIMIT 1
+    `,
+    [queueId]
+  );
+
+  if (queueResult.rows.length > 0) {
+    return queueResult.rows[0];
+  }
+
+  // No transaction ID means queueId is the only deduplication key.
+  if (!transactionId) {
+    return null;
+  }
+
+  // Find previous records for the same entity type + operation.
+  const transactionResult = await client.query(
+    `
+    SELECT server_id, payload
+    FROM sync_records
+    WHERE entity_type = $1
+      AND operation = $2
+    ORDER BY created_at DESC
+    `,
+    [entityType, operation]
+  );
+
+  for (const row of transactionResult.rows) {
+    let storedPayload = row.payload;
+
+    try {
+      if (typeof storedPayload === "string") {
+        storedPayload = JSON.parse(storedPayload);
+      }
+    } catch (error) {
+      console.warn(
+        "Unable to parse stored sync payload:",
+        error.message
+      );
+      continue;
+    }
+
+    const storedTransactionId = getTransactionId(storedPayload);
+
+    if (
+      storedTransactionId &&
+      storedTransactionId === transactionId
+    ) {
+      return row;
+    }
+  }
+
+  return null;
 }
 
 router.get("/health", async (_req, res) => {
@@ -52,7 +160,7 @@ router.post("/push", async (req, res) => {
     });
   }
 
-  const client = await require("../db/database").pool.connect();
+  const client = await pool.connect();
 
   const results = [];
   let synced = 0;
@@ -141,7 +249,11 @@ router.post("/push", async (req, res) => {
         continue;
       }
 
-      if (typeof payload !== "object" || payload === null) {
+      if (
+        typeof payload !== "object" ||
+        payload === null ||
+        Array.isArray(payload)
+      ) {
         results.push({
           queueId,
           entityType,
@@ -155,18 +267,37 @@ router.post("/push", async (req, res) => {
         continue;
       }
 
-      const existing = await client.query(
-        `
-        SELECT server_id
-        FROM sync_records
-        WHERE queue_id = $1
-        LIMIT 1
-        `,
-        [queueId]
-      );
+      const transactionId = getTransactionId(payload);
 
-      if (existing.rows.length > 0) {
-        const serverId = existing.rows[0].server_id;
+      /*
+       * Lock the logical transaction so concurrent requests with the
+       * same transactionId cannot both insert a new record.
+       *
+       * queueId is also included so different business transactions
+       * do not share the same advisory lock.
+       */
+      if (transactionId) {
+        await client.query(
+          `
+          SELECT pg_advisory_xact_lock(
+            hashtextextended($1, 0)
+          )
+          `,
+          [
+            `${entityType}:${operation}:${transactionId}`,
+          ]
+        );
+      }
+
+      const existing = await findExistingSyncRecord(client, {
+        queueId,
+        entityType,
+        operation,
+        transactionId,
+      });
+
+      if (existing) {
+        const serverId = existing.server_id;
 
         results.push({
           queueId,
