@@ -347,6 +347,82 @@ downloadPdf: (invoiceNumber) =>
     invoiceNumber
   ),
 
+  sync: {
+  getPending: (limit) =>
+    ipcRenderer.invoke(
+      "sync:get-pending",
+      limit
+    ),
+
+  getFailed: (limit) =>
+    ipcRenderer.invoke(
+      "sync:get-failed",
+      limit
+    ),
+
+  getAll: (limit) =>
+    ipcRenderer.invoke(
+      "sync:get-all",
+      limit
+    ),
+
+  getById: (queueId) =>
+    ipcRenderer.invoke(
+      "sync:get-by-id",
+      queueId
+    ),
+
+  getByEntity: (
+    entityType,
+    entityId
+  ) =>
+    ipcRenderer.invoke(
+      "sync:get-by-entity",
+      entityType,
+      entityId
+    ),
+
+  getSummary: () =>
+    ipcRenderer.invoke(
+      "sync:get-summary"
+    ),
+
+  markSynced: (
+    queueId,
+    serverId
+  ) =>
+    ipcRenderer.invoke(
+      "sync:mark-synced",
+      queueId,
+      serverId
+    ),
+
+  markFailed: (
+    queueId,
+    errorMessage
+  ) =>
+    ipcRenderer.invoke(
+      "sync:mark-failed",
+      queueId,
+      errorMessage
+    ),
+
+  retry: (queueId) =>
+    ipcRenderer.invoke(
+      "sync:retry",
+      queueId
+    ),
+
+  retryAll: (limit) =>
+    ipcRenderer.invoke(
+      "sync:retry-all",
+      limit
+    ),
+},
+
 });
+
+
+
 
 

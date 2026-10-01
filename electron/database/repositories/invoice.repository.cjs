@@ -31,8 +31,56 @@ function getNow() {
   return new Date().toISOString();
 }
 
+function enqueueSyncRecord(
+  entityType,
+  entityId,
+  operation,
+  payload,
+  deviceId
+) {
+  const now = getNow();
+
+  db.prepare(`
+    INSERT INTO sync_queue (
+      id,
+      entity_type,
+      entity_id,
+      operation,
+      payload,
+      status,
+      device_id,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      'PENDING',
+      ?,
+      ?,
+      ?
+    )
+  `).run(
+    createId(),
+    entityType,
+    entityId,
+    operation,
+    JSON.stringify(payload),
+    deviceId,
+    now,
+    now
+  );
+}
+
 function roundMoney(value) {
-  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  return (
+    Math.round(
+      (Number(value) + Number.EPSILON) * 100
+    ) / 100
+  );
 }
 
 function mapInvoiceItemRow(row) {
@@ -89,10 +137,14 @@ function validateCreateInvoiceInput(input) {
     !Array.isArray(input.items) ||
     input.items.length === 0
   ) {
-    throw new Error("At least one product is required.");
+    throw new Error(
+      "At least one product is required."
+    );
   }
 
-  const deviceId = String(input.deviceId ?? "").trim();
+  const deviceId = String(
+    input.deviceId ?? ""
+  ).trim();
 
   if (!deviceId) {
     throw new Error("Device ID is required.");
@@ -103,7 +155,9 @@ function validateCreateInvoiceInput(input) {
   ).toUpperCase();
 
   if (!PAYMENT_METHODS.has(paymentMethod)) {
-    throw new Error("Invalid payment method.");
+    throw new Error(
+      "Invalid payment method."
+    );
   }
 
   const paymentStatus = String(
@@ -111,16 +165,22 @@ function validateCreateInvoiceInput(input) {
   ).toUpperCase();
 
   if (!PAYMENT_STATUSES.has(paymentStatus)) {
-    throw new Error("Invalid payment status.");
+    throw new Error(
+      "Invalid payment status."
+    );
   }
 
-  const invoiceDiscount = Number(input.discount ?? 0);
+  const invoiceDiscount = Number(
+    input.discount ?? 0
+  );
 
   if (
     !Number.isFinite(invoiceDiscount) ||
     invoiceDiscount < 0
   ) {
-    throw new Error("Invalid invoice discount.");
+    throw new Error(
+      "Invalid invoice discount."
+    );
   }
 
   const paymentAmount = Number(
@@ -131,7 +191,9 @@ function validateCreateInvoiceInput(input) {
     !Number.isFinite(paymentAmount) ||
     paymentAmount < 0
   ) {
-    throw new Error("Invalid payment amount.");
+    throw new Error(
+      "Invalid payment amount."
+    );
   }
 
   const customerId =
@@ -148,94 +210,124 @@ function validateCreateInvoiceInput(input) {
       ? null
       : String(input.dueDate).trim();
 
-  const items = input.items.map((item, index) => {
-    if (!item || typeof item !== "object") {
-      throw new Error(
-        `Invalid invoice item at position ${index + 1}.`
+  const items = input.items.map(
+    (item, index) => {
+      if (
+        !item ||
+        typeof item !== "object"
+      ) {
+        throw new Error(
+          `Invalid invoice item at position ${
+            index + 1
+          }.`
+        );
+      }
+
+      const productId = String(
+        item.productId ?? ""
+      ).trim();
+
+      const productName = String(
+        item.productName ?? ""
+      ).trim();
+
+      const quantity = Number(
+        item.quantity
       );
-    }
 
-    const productId = String(
-      item.productId ?? ""
-    ).trim();
+      const rate = Number(item.rate);
 
-    const productName = String(
-      item.productName ?? ""
-    ).trim();
-
-    const quantity = Number(item.quantity);
-    const rate = Number(item.rate);
-    const gstRate = Number(item.gstRate ?? 0);
-    const discount = Number(item.discount ?? 0);
-
-    if (!productId) {
-      throw new Error(
-        `Product is missing at item ${index + 1}.`
+      const gstRate = Number(
+        item.gstRate ?? 0
       );
-    }
 
-    if (!productName) {
-      throw new Error(
-        `Product name is missing at item ${index + 1}.`
+      const discount = Number(
+        item.discount ?? 0
       );
-    }
 
-    if (
-      !Number.isFinite(quantity) ||
-      quantity <= 0
-    ) {
-      throw new Error(
-        `Quantity must be greater than 0 at item ${index + 1}.`
+      if (!productId) {
+        throw new Error(
+          `Product is missing at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      if (!productName) {
+        throw new Error(
+          `Product name is missing at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      if (
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+      ) {
+        throw new Error(
+          `Quantity must be greater than 0 at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      if (
+        !Number.isFinite(rate) ||
+        rate < 0
+      ) {
+        throw new Error(
+          `Invalid rate at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      if (
+        !Number.isFinite(gstRate) ||
+        gstRate < 0 ||
+        gstRate > 100
+      ) {
+        throw new Error(
+          `Invalid GST rate at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      if (
+        !Number.isFinite(discount) ||
+        discount < 0
+      ) {
+        throw new Error(
+          `Invalid item discount at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      const grossAmount = roundMoney(
+        quantity * rate
       );
+
+      if (discount > grossAmount) {
+        throw new Error(
+          `Item discount cannot exceed item amount at item ${
+            index + 1
+          }.`
+        );
+      }
+
+      return {
+        productId,
+        productName,
+        quantity,
+        rate,
+        gstRate,
+        discount,
+      };
     }
-
-    if (
-      !Number.isFinite(rate) ||
-      rate < 0
-    ) {
-      throw new Error(
-        `Invalid rate at item ${index + 1}.`
-      );
-    }
-
-    if (
-      !Number.isFinite(gstRate) ||
-      gstRate < 0 ||
-      gstRate > 100
-    ) {
-      throw new Error(
-        `Invalid GST rate at item ${index + 1}.`
-      );
-    }
-
-    if (
-      !Number.isFinite(discount) ||
-      discount < 0
-    ) {
-      throw new Error(
-        `Invalid item discount at item ${index + 1}.`
-      );
-    }
-
-    const grossAmount = roundMoney(
-      quantity * rate
-    );
-
-    if (discount > grossAmount) {
-      throw new Error(
-        `Item discount cannot exceed item amount at item ${index + 1}.`
-      );
-    }
-
-    return {
-      productId,
-      productName,
-      quantity,
-      rate,
-      gstRate,
-      discount,
-    };
-  });
+  );
 
   return {
     customerId,
@@ -249,67 +341,87 @@ function validateCreateInvoiceInput(input) {
   };
 }
 
-function calculateInvoiceSummary(items, invoiceDiscount) {
+function calculateInvoiceSummary(
+  items,
+  invoiceDiscount
+) {
   const subtotal = roundMoney(
     items.reduce(
       (sum, item) =>
-        sum + item.quantity * item.rate,
+        sum +
+        item.quantity * item.rate,
       0
     )
   );
 
   const itemDiscount = roundMoney(
     items.reduce(
-      (sum, item) => sum + item.discount,
+      (sum, item) =>
+        sum + item.discount,
       0
     )
   );
 
-  if (invoiceDiscount + itemDiscount > subtotal) {
+  if (
+    invoiceDiscount + itemDiscount >
+    subtotal
+  ) {
     throw new Error(
       "Total discount cannot exceed subtotal."
     );
   }
 
   const taxableAmount = roundMoney(
-    subtotal - itemDiscount - invoiceDiscount
+    subtotal -
+      itemDiscount -
+      invoiceDiscount
   );
 
   const tax = roundMoney(
-    items.reduce((sum, item) => {
-      const lineGross = roundMoney(
-        item.quantity * item.rate
-      );
-
-      const lineNetBeforeInvoiceDiscount =
-        roundMoney(lineGross - item.discount);
-
-      if (lineGross <= 0) {
-        return sum;
-      }
-
-      const lineShare =
-        lineNetBeforeInvoiceDiscount / subtotal;
-
-      const allocatedInvoiceDiscount =
-        roundMoney(
-          invoiceDiscount * lineShare
+    items.reduce(
+      (sum, item) => {
+        const lineGross = roundMoney(
+          item.quantity * item.rate
         );
 
-      const taxableLine = Math.max(
-        0,
-        roundMoney(
-          lineNetBeforeInvoiceDiscount -
-            allocatedInvoiceDiscount
-        )
-      );
+        const lineNetBeforeInvoiceDiscount =
+          roundMoney(
+            lineGross -
+              item.discount
+          );
 
-      const lineTax = roundMoney(
-        taxableLine * (item.gstRate / 100)
-      );
+        if (lineGross <= 0) {
+          return sum;
+        }
 
-      return sum + lineTax;
-    }, 0)
+        const lineShare =
+          lineNetBeforeInvoiceDiscount /
+          subtotal;
+
+        const allocatedInvoiceDiscount =
+          roundMoney(
+            invoiceDiscount *
+              lineShare
+          );
+
+        const taxableLine =
+          Math.max(
+            0,
+            roundMoney(
+              lineNetBeforeInvoiceDiscount -
+                allocatedInvoiceDiscount
+            )
+          );
+
+        const lineTax = roundMoney(
+          taxableLine *
+            (item.gstRate / 100)
+        );
+
+        return sum + lineTax;
+      },
+      0
+    )
   );
 
   const total = roundMoney(
@@ -319,51 +431,58 @@ function calculateInvoiceSummary(items, invoiceDiscount) {
   return {
     subtotal,
     discount: roundMoney(
-      itemDiscount + invoiceDiscount
+      itemDiscount +
+        invoiceDiscount
     ),
     tax,
     total,
   };
 }
 
-function getNextInvoiceNumber(transaction) {
-  const prefix = `INV-${new Date()
-    .toISOString()
-    .slice(0, 10)
-    .replace(/-/g, "")}-`;
+function getNextInvoiceNumber(
+  transaction
+) {
+  const prefix =
+    `INV-${new Date()
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, "")}-`;
 
   const row = transaction
-    .prepare(
-      `
+    .prepare(`
       SELECT invoice_number
       FROM invoices
       WHERE invoice_number LIKE ?
       ORDER BY invoice_number DESC
       LIMIT 1
-      `
-    )
+    `)
     .get(`${prefix}%`);
 
   let nextNumber = 1;
 
   if (row?.invoice_number) {
-    const lastPart = row.invoice_number
-      .slice(prefix.length);
+    const lastPart =
+      row.invoice_number.slice(
+        prefix.length
+      );
 
-    const parsed = Number(lastPart);
+    const parsed = Number(
+      lastPart
+    );
 
     if (Number.isInteger(parsed)) {
       nextNumber = parsed + 1;
     }
   }
 
-  return `${prefix}${String(nextNumber).padStart(4, "0")}`;
+  return `${prefix}${String(
+    nextNumber
+  ).padStart(4, "0")}`;
 }
 
 function getInvoiceById(invoiceId) {
   const invoiceRow = db
-    .prepare(
-      `
+    .prepare(`
       SELECT
         id,
         server_id,
@@ -383,8 +502,7 @@ function getInvoiceById(invoiceId) {
       FROM invoices
       WHERE id = ?
       LIMIT 1
-      `
-    )
+    `)
     .get(invoiceId);
 
   if (!invoiceRow) {
@@ -392,8 +510,7 @@ function getInvoiceById(invoiceId) {
   }
 
   const itemRows = db
-    .prepare(
-      `
+    .prepare(`
       SELECT
         id,
         invoice_id,
@@ -408,26 +525,27 @@ function getInvoiceById(invoiceId) {
       FROM invoice_items
       WHERE invoice_id = ?
       ORDER BY rowid ASC
-      `
-    )
+    `)
     .all(invoiceId);
 
   return mapInvoiceRow(
     invoiceRow,
-    itemRows.map(mapInvoiceItemRow)
+    itemRows.map(
+      mapInvoiceItemRow
+    )
   );
 }
 
-function getInvoiceByTransactionId(transactionId) {
+function getInvoiceByTransactionId(
+  transactionId
+) {
   const row = db
-    .prepare(
-      `
+    .prepare(`
       SELECT id
       FROM invoices
       WHERE transaction_id = ?
       LIMIT 1
-      `
-    )
+    `)
     .get(transactionId);
 
   if (!row) {
@@ -437,16 +555,16 @@ function getInvoiceByTransactionId(transactionId) {
   return getInvoiceById(row.id);
 }
 
-function getInvoiceByNumber(invoiceNumber) {
+function getInvoiceByNumber(
+  invoiceNumber
+) {
   const row = db
-    .prepare(
-      `
+    .prepare(`
       SELECT id
       FROM invoices
       WHERE invoice_number = ?
       LIMIT 1
-      `
-    )
+    `)
     .get(invoiceNumber);
 
   if (!row) {
@@ -456,15 +574,19 @@ function getInvoiceByNumber(invoiceNumber) {
   return getInvoiceById(row.id);
 }
 
-function getRecentInvoices(limit = 50) {
+function getRecentInvoices(
+  limit = 50
+) {
   const safeLimit = Math.min(
-    Math.max(Number(limit) || 50, 1),
+    Math.max(
+      Number(limit) || 50,
+      1
+    ),
     500
   );
 
   const rows = db
-    .prepare(
-      `
+    .prepare(`
       SELECT
         id,
         server_id,
@@ -484,12 +606,10 @@ function getRecentInvoices(limit = 50) {
       FROM invoices
       ORDER BY created_at DESC
       LIMIT ?
-      `
-    )
+    `)
     .all(safeLimit);
 
-  const itemQuery = db.prepare(
-    `
+  const itemQuery = db.prepare(`
     SELECT
       id,
       invoice_id,
@@ -504,51 +624,38 @@ function getRecentInvoices(limit = 50) {
     FROM invoice_items
     WHERE invoice_id = ?
     ORDER BY rowid ASC
-    `
-  );
+  `);
 
   return rows.map((row) => {
     const items = itemQuery
       .all(row.id)
       .map(mapInvoiceItemRow);
 
-    return mapInvoiceRow(row, items);
+    return mapInvoiceRow(
+      row,
+      items
+    );
   });
 }
 
 function createInvoice(input) {
-  const data = validateCreateInvoiceInput(input);
+  const data =
+    validateCreateInvoiceInput(
+      input
+    );
 
-  /*
-   * We deliberately keep the full billing transaction
-   * inside one SQLite transaction:
-   *
-   * invoice
-   * invoice items
-   * payment
-   * stock movements
-   * stock update
-   * customer financials
-   *
-   * This prevents partial bills from being saved.
-   */
-  const createInvoiceTransaction = db.transaction(
-    () => {
+  const createInvoiceTransaction =
+    db.transaction(() => {
       const now = getNow();
 
-      /*
-       * Validate customer before writing anything.
-       */
       if (data.customerId) {
         const customer = db
-          .prepare(
-            `
+          .prepare(`
             SELECT id
             FROM customers
             WHERE id = ?
             LIMIT 1
-            `
-          )
+          `)
           .get(data.customerId);
 
         if (!customer) {
@@ -558,47 +665,44 @@ function createInvoice(input) {
         }
       }
 
-      /*
-       * Merge duplicate product lines so that
-       * stock validation works against the total
-       * requested quantity for that product.
-       */
-      const requestedQuantities = new Map();
+      const requestedQuantities =
+        new Map();
 
       for (const item of data.items) {
         const current =
-          requestedQuantities.get(item.productId) || 0;
+          requestedQuantities.get(
+            item.productId
+          ) || 0;
 
         requestedQuantities.set(
           item.productId,
-          current + item.quantity
+          current +
+            item.quantity
         );
       }
 
-      /*
-       * Validate all products and stock.
-       */
-      const productQuery = db.prepare(
-        `
-        SELECT
-          id,
-          name,
-          selling_price,
-          gst_rate,
-          current_stock,
-          status
-        FROM products
-        WHERE id = ?
-        LIMIT 1
-        `
-      );
+      const productQuery =
+        db.prepare(`
+          SELECT
+            id,
+            name,
+            selling_price,
+            gst_rate,
+            current_stock,
+            status
+          FROM products
+          WHERE id = ?
+          LIMIT 1
+        `);
 
       for (const [
         productId,
         requiredQuantity,
       ] of requestedQuantities.entries()) {
         const product =
-          productQuery.get(productId);
+          productQuery.get(
+            productId
+          );
 
         if (!product) {
           throw new Error(
@@ -606,17 +710,24 @@ function createInvoice(input) {
           );
         }
 
-        if (product.status !== "ACTIVE") {
+        if (
+          product.status !==
+          "ACTIVE"
+        ) {
           throw new Error(
             `Product "${product.name}" is inactive.`
           );
         }
 
-        const currentStock = Number(
-          product.current_stock
-        );
+        const currentStock =
+          Number(
+            product.current_stock
+          );
 
-        if (currentStock < requiredQuantity) {
+        if (
+          currentStock <
+          requiredQuantity
+        ) {
           throw new Error(
             `Insufficient stock for "${product.name}". Available: ${currentStock}, requested: ${requiredQuantity}.`
           );
@@ -629,11 +740,9 @@ function createInvoice(input) {
           data.discount
         );
 
-      /*
-       * Payment validation.
-       */
       if (
-        data.paymentMethod === "CREDIT" &&
+        data.paymentMethod ===
+          "CREDIT" &&
         !data.customerId
       ) {
         throw new Error(
@@ -642,8 +751,10 @@ function createInvoice(input) {
       }
 
       if (
-        data.paymentStatus === "PAID" &&
-        data.paymentAmount < summary.total
+        data.paymentStatus ===
+          "PAID" &&
+        data.paymentAmount <
+          summary.total
       ) {
         throw new Error(
           "Payment amount cannot be less than the invoice total for a PAID invoice."
@@ -651,9 +762,14 @@ function createInvoice(input) {
       }
 
       if (
-        data.paymentStatus === "PARTIAL" &&
-        (data.paymentAmount <= 0 ||
-          data.paymentAmount >= summary.total)
+        data.paymentStatus ===
+          "PARTIAL" &&
+        (
+          data.paymentAmount <=
+            0 ||
+          data.paymentAmount >=
+            summary.total
+        )
       ) {
         throw new Error(
           "Partial payment must be greater than 0 and less than the invoice total."
@@ -661,7 +777,8 @@ function createInvoice(input) {
       }
 
       if (
-        data.paymentStatus === "PENDING" &&
+        data.paymentStatus ===
+          "PENDING" &&
         data.paymentAmount > 0
       ) {
         throw new Error(
@@ -670,72 +787,77 @@ function createInvoice(input) {
       }
 
       if (
-        data.paymentMethod === "CREDIT" &&
-        data.paymentStatus === "PAID" &&
+        data.paymentMethod ===
+          "CREDIT" &&
+        data.paymentStatus ===
+          "PAID" &&
         data.dueDate
       ) {
-        /*
-         * Allowed, but the due date is simply stored.
-         * Credit accounting is driven by payment status
-         * and outstanding calculation below.
-         */
+        // Allowed. Due date is stored.
+        // Credit accounting is driven by
+        // payment status and payment amount.
       }
 
       if (
-        data.paymentMethod !== "CREDIT" &&
-        data.paymentStatus === "PENDING" &&
-        data.paymentAmount === 0
+        data.paymentMethod !==
+          "CREDIT" &&
+        data.paymentStatus ===
+          "PENDING" &&
+        data.paymentAmount ===
+          0
       ) {
-        /*
-         * Supported because the schema permits PENDING.
-         * No additional restriction is needed.
-         */
+        // Supported because the schema
+        // permits PENDING.
       }
 
-      const invoiceId = createId();
+      const invoiceId =
+        createId();
+
       const invoiceTransactionId =
         createTransactionId();
-      const invoiceNumber =
-        getNextInvoiceNumber(db);
 
-      const insertInvoice = db.prepare(
-        `
-        INSERT INTO invoices (
-          id,
-          server_id,
-          transaction_id,
-          invoice_number,
-          customer_id,
-          subtotal,
-          discount,
-          tax,
-          total,
-          payment_method,
-          payment_status,
-          created_at,
-          updated_at,
-          sync_status,
-          device_id
-        )
-        VALUES (
-          ?,
-          NULL,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          'PENDING',
-          ?
-        )
-        `
-      );
+      const invoiceNumber =
+        getNextInvoiceNumber(
+          db
+        );
+
+      const insertInvoice =
+        db.prepare(`
+          INSERT INTO invoices (
+            id,
+            server_id,
+            transaction_id,
+            invoice_number,
+            customer_id,
+            subtotal,
+            discount,
+            tax,
+            total,
+            payment_method,
+            payment_status,
+            created_at,
+            updated_at,
+            sync_status,
+            device_id
+          )
+          VALUES (
+            ?,
+            NULL,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            'PENDING',
+            ?
+          )
+        `);
 
       insertInvoice.run(
         invoiceId,
@@ -753,46 +875,46 @@ function createInvoice(input) {
         data.deviceId
       );
 
-      /*
-       * Insert invoice lines.
-       */
-      const insertItem = db.prepare(
-        `
-        INSERT INTO invoice_items (
-          id,
-          invoice_id,
-          product_id,
-          product_name,
-          quantity,
-          rate,
-          gst_rate,
-          discount,
-          amount,
-          created_at
-        )
-        VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?
-        )
-        `
-      );
+      const insertItem =
+        db.prepare(`
+          INSERT INTO invoice_items (
+            id,
+            invoice_id,
+            product_id,
+            product_name,
+            quantity,
+            rate,
+            gst_rate,
+            discount,
+            amount,
+            created_at
+          )
+          VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+          )
+        `);
 
       for (const item of data.items) {
-        const grossAmount = roundMoney(
-          item.quantity * item.rate
-        );
+        const grossAmount =
+          roundMoney(
+            item.quantity *
+              item.rate
+          );
 
-        const amount = roundMoney(
-          grossAmount - item.discount
-        );
+        const amount =
+          roundMoney(
+            grossAmount -
+              item.discount
+          );
 
         insertItem.run(
           createId(),
@@ -808,55 +930,50 @@ function createInvoice(input) {
         );
       }
 
-      /*
-       * Create stock-out records and immediately
-       * decrease product stock.
-       */
-      const insertStockMovement = db.prepare(
-        `
-        INSERT INTO stock_movements (
-          id,
-          server_id,
-          transaction_id,
-          product_id,
-          type,
-          quantity,
-          reference_type,
-          reference_id,
-          created_at,
-          updated_at,
-          sync_status,
-          device_id
-        )
-        VALUES (
-          ?,
-          NULL,
-          ?,
-          ?,
-          'STOCK_OUT',
-          ?,
-          'INVOICE',
-          ?,
-          ?,
-          ?,
-          'PENDING',
-          ?
-        )
-        `
-      );
+      const insertStockMovement =
+        db.prepare(`
+          INSERT INTO stock_movements (
+            id,
+            server_id,
+            transaction_id,
+            product_id,
+            type,
+            quantity,
+            reference_type,
+            reference_id,
+            created_at,
+            updated_at,
+            sync_status,
+            device_id
+          )
+          VALUES (
+            ?,
+            NULL,
+            ?,
+            ?,
+            'STOCK_OUT',
+            ?,
+            'INVOICE',
+            ?,
+            ?,
+            ?,
+            'PENDING',
+            ?
+          )
+        `);
 
-      const updateProductStock = db.prepare(
-        `
-        UPDATE products
-        SET
-          current_stock = current_stock - ?,
-          updated_at = ?,
-          sync_status = 'PENDING'
-        WHERE
-          id = ?
-          AND current_stock >= ?
-        `
-      );
+      const updateProductStock =
+        db.prepare(`
+          UPDATE products
+          SET
+            current_stock =
+              current_stock - ?,
+            updated_at = ?,
+            sync_status = 'PENDING'
+          WHERE
+            id = ?
+            AND current_stock >= ?
+        `);
 
       for (const [
         productId,
@@ -873,14 +990,20 @@ function createInvoice(input) {
             quantity
           );
 
-        if (stockUpdateResult.changes !== 1) {
+        if (
+          stockUpdateResult.changes !==
+          1
+        ) {
           throw new Error(
             "Stock changed while creating the bill. Please try again."
           );
         }
 
+        const stockMovementId =
+          createId();
+
         insertStockMovement.run(
-          createId(),
+          stockMovementId,
           stockTransactionId,
           productId,
           quantity,
@@ -889,52 +1012,164 @@ function createInvoice(input) {
           now,
           data.deviceId
         );
+
+        enqueueSyncRecord(
+          "STOCK_MOVEMENT",
+          stockMovementId,
+          "CREATE",
+          {
+            id: stockMovementId,
+            transactionId:
+              stockTransactionId,
+            productId,
+            type: "STOCK_OUT",
+            quantity,
+            referenceType: "INVOICE",
+            referenceId:
+              invoiceId,
+            createdAt: now,
+            updatedAt: now,
+            deviceId:
+              data.deviceId,
+          },
+          data.deviceId
+        );
+
+        const updatedProduct =
+          db
+            .prepare(`
+              SELECT
+                id,
+                server_id,
+                name,
+                sku,
+                barcode,
+                category_id,
+                selling_price,
+                purchase_price,
+                gst_rate,
+                current_stock,
+                minimum_stock,
+                unit,
+                image_path,
+                status,
+                created_at,
+                updated_at,
+                sync_status,
+                device_id
+              FROM products
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .get(productId);
+
+        if (!updatedProduct) {
+          throw new Error(
+            "Product could not be loaded after stock update."
+          );
+        }
+
+        enqueueSyncRecord(
+          "PRODUCT",
+          productId,
+          "UPDATE",
+          {
+            id: updatedProduct.id,
+            serverId:
+              updatedProduct.server_id ??
+              null,
+            name:
+              updatedProduct.name,
+            sku:
+              updatedProduct.sku,
+            barcode:
+              updatedProduct.barcode ??
+              null,
+            categoryId:
+              updatedProduct.category_id ??
+              null,
+            sellingPrice:
+              Number(
+                updatedProduct.selling_price
+              ),
+            purchasePrice:
+              Number(
+                updatedProduct.purchase_price
+              ),
+            gstRate:
+              Number(
+                updatedProduct.gst_rate
+              ),
+            currentStock:
+              Number(
+                updatedProduct.current_stock
+              ),
+            minimumStock:
+              Number(
+                updatedProduct.minimum_stock
+              ),
+            unit:
+              updatedProduct.unit,
+            imagePath:
+              updatedProduct.image_path ??
+              null,
+            status:
+              updatedProduct.status,
+            createdAt:
+              updatedProduct.created_at,
+            updatedAt:
+              updatedProduct.updated_at,
+            syncStatus:
+              updatedProduct.sync_status,
+            deviceId:
+              updatedProduct.device_id,
+          },
+          data.deviceId
+        );
       }
 
-      /*
-       * Create the payment record.
-       */
-      const paymentId = createId();
+      const paymentId =
+        createId();
+
       const paymentTransactionId =
         `${invoiceTransactionId}:PAYMENT`;
 
       const paymentStatus =
         data.paymentStatus;
 
-      const insertPayment = db.prepare(
-        `
-        INSERT INTO payments (
-          id,
-          server_id,
-          transaction_id,
-          invoice_id,
-          customer_id,
-          amount,
-          method,
-          due_date,
-          status,
-          created_at,
-          updated_at,
-          sync_status,
-          device_id
-        )
-        VALUES (
-          ?,
-          NULL,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          'PENDING',
-          ?
-        )
-        `
-      );
+      const insertPayment =
+        db.prepare(`
+          INSERT INTO payments (
+            id,
+            server_id,
+            transaction_id,
+            invoice_id,
+            customer_id,
+            amount,
+            method,
+            due_date,
+            status,
+            created_at,
+            updated_at,
+            sync_status,
+            device_id
+          )
+          VALUES (
+            ?,
+            NULL,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            'PENDING',
+            ?
+          )
+        `);
 
       insertPayment.run(
         paymentId,
@@ -950,33 +1185,25 @@ function createInvoice(input) {
         data.deviceId
       );
 
-      /*
-       * Update customer financial totals.
-       *
-       * total_purchases always increases by invoice total.
-       *
-       * Outstanding is:
-       * invoice total - amount already paid.
-       */
       if (data.customerId) {
         const outstandingDelta =
           roundMoney(
-            summary.total - data.paymentAmount
+            summary.total -
+              data.paymentAmount
           );
 
-        const updateCustomer = db.prepare(
-          `
-          UPDATE customers
-          SET
-            total_purchases =
-              total_purchases + ?,
-            outstanding_amount =
-              outstanding_amount + ?,
-            updated_at = ?,
-            sync_status = 'PENDING'
-          WHERE id = ?
-          `
-        );
+        const updateCustomer =
+          db.prepare(`
+            UPDATE customers
+            SET
+              total_purchases =
+                total_purchases + ?,
+              outstanding_amount =
+                outstanding_amount + ?,
+              updated_at = ?,
+              sync_status = 'PENDING'
+            WHERE id = ?
+          `);
 
         updateCustomer.run(
           summary.total,
@@ -984,32 +1211,159 @@ function createInvoice(input) {
           now,
           data.customerId
         );
+
+        const updatedCustomer =
+          db
+            .prepare(`
+              SELECT
+                id,
+                server_id,
+                name,
+                mobile,
+                email,
+                address,
+                total_purchases,
+                outstanding_amount,
+                created_at,
+                updated_at,
+                sync_status,
+                device_id
+              FROM customers
+              WHERE id = ?
+              LIMIT 1
+            `)
+            .get(data.customerId);
+
+        if (!updatedCustomer) {
+          throw new Error(
+            "Customer could not be loaded after financial update."
+          );
+        }
+
+        enqueueSyncRecord(
+          "CUSTOMER",
+          data.customerId,
+          "UPDATE",
+          {
+            id:
+              updatedCustomer.id,
+            serverId:
+              updatedCustomer.server_id ??
+              null,
+            name:
+              updatedCustomer.name,
+            mobile:
+              updatedCustomer.mobile,
+            email:
+              updatedCustomer.email ??
+              null,
+            address:
+              updatedCustomer.address ??
+              null,
+            totalPurchases:
+              Number(
+                updatedCustomer.total_purchases
+              ),
+            outstandingAmount:
+              Number(
+                updatedCustomer.outstanding_amount
+              ),
+            createdAt:
+              updatedCustomer.created_at,
+            updatedAt:
+              updatedCustomer.updated_at,
+            syncStatus:
+              updatedCustomer.sync_status,
+            deviceId:
+              updatedCustomer.device_id,
+          },
+          data.deviceId
+        );
       }
 
-      const invoice = getInvoiceById(
-        invoiceId
+      const invoice =
+        getInvoiceById(
+          invoiceId
+        );
+
+      if (!invoice) {
+        throw new Error(
+          "Invoice could not be loaded after creation."
+        );
+      }
+
+      enqueueSyncRecord(
+        "INVOICE",
+        invoiceId,
+        "CREATE",
+        {
+          invoice,
+        },
+        data.deviceId
+      );
+
+      enqueueSyncRecord(
+        "PAYMENT",
+        paymentId,
+        "CREATE",
+        {
+          paymentId,
+          transactionId:
+            paymentTransactionId,
+          invoiceId,
+          customerId:
+            data.customerId,
+          amount:
+            data.paymentAmount,
+          method:
+            data.paymentMethod,
+          dueDate:
+            data.dueDate,
+          status:
+            paymentStatus,
+          deviceId:
+            data.deviceId,
+        },
+        data.deviceId
       );
 
       return {
         invoice,
+
         payment: {
           id: paymentId,
+
           transactionId:
             paymentTransactionId,
+
           invoiceId,
-          customerId: data.customerId,
-          amount: data.paymentAmount,
-          method: data.paymentMethod,
-          dueDate: data.dueDate,
-          status: paymentStatus,
+
+          customerId:
+            data.customerId,
+
+          amount:
+            data.paymentAmount,
+
+          method:
+            data.paymentMethod,
+
+          dueDate:
+            data.dueDate,
+
+          status:
+            paymentStatus,
+
           createdAt: now,
+
           updatedAt: now,
+
           syncStatus: "PENDING",
-          deviceId: data.deviceId,
+
+          deviceId:
+            data.deviceId,
         },
       };
-    }
-  );
+    });
 
   return createInvoiceTransaction();
 }

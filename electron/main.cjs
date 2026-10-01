@@ -21,6 +21,10 @@ const paymentRepository = require(
 
 const customerRepository = require("./database/repositories/customer.repository.cjs");
 
+const syncRepository = require(
+  "./database/repositories/sync.repository.cjs"
+);
+
 const {
   getDatabase,
   getDatabasePath,
@@ -1479,7 +1483,6 @@ ipcMain.handle(
       input
     )
 );
-
 ipcMain.handle(
   "invoices:download-pdf",
   async (event, invoiceNumber) => {
@@ -1555,6 +1558,95 @@ ipcMain.handle(
       filePath: result.filePath,
     };
   }
+);
+
+// --------------------------------------------------------------------------
+// Sync IPC
+// --------------------------------------------------------------------------
+
+ipcMain.handle(
+  "sync:get-pending",
+  (_event, limit) =>
+    syncRepository.getPendingSyncItems(limit)
+);
+
+ipcMain.handle(
+  "sync:get-failed",
+  (_event, limit) =>
+    syncRepository.getFailedSyncItems(limit)
+);
+
+ipcMain.handle(
+  "sync:get-all",
+  (_event, limit) =>
+    syncRepository.getAllSyncItems(limit)
+);
+
+ipcMain.handle(
+  "sync:get-by-id",
+  (_event, queueId) =>
+    syncRepository.getSyncItemById(queueId)
+);
+
+ipcMain.handle(
+  "sync:get-by-entity",
+  (
+    _event,
+    entityType,
+    entityId
+  ) =>
+    syncRepository.getSyncItemsByEntity(
+      entityType,
+      entityId
+    )
+);
+
+ipcMain.handle(
+  "sync:get-summary",
+  () =>
+    syncRepository.getSyncSummary()
+);
+
+ipcMain.handle(
+  "sync:mark-synced",
+  (
+    _event,
+    queueId,
+    serverId
+  ) =>
+    syncRepository.markSyncItemSynced(
+      queueId,
+      serverId ?? null
+    )
+);
+
+ipcMain.handle(
+  "sync:mark-failed",
+  (
+    _event,
+    queueId,
+    errorMessage
+  ) =>
+    syncRepository.markSyncItemFailed(
+      queueId,
+      errorMessage
+    )
+);
+
+ipcMain.handle(
+  "sync:retry",
+  (_event, queueId) =>
+    syncRepository.retrySyncItem(
+      queueId
+    )
+);
+
+ipcMain.handle(
+  "sync:retry-all",
+  (_event, limit) =>
+    syncRepository.retryAllFailed(
+      limit
+    )
 );
 
 /*

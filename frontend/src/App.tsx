@@ -1,18 +1,30 @@
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   BrowserRouter,
   Link,
   Route,
   Routes,
 } from "react-router-dom";
 
-import PaymentsPage from "./pages/Payments/PaymentsPage";
-
 import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
 import CustomerPage from "./pages/Customers/CustomerPage.tsx";
 import BillingPage from "./pages/BillingPage";
+import PaymentsPage from "./pages/Payments/PaymentsPage";
 import InvoicePage from "./pages/Invoices/InvoicePage";
+
+import connectionService from "./services/connection.service";
+import syncEngineService from "./services/sync-engine.service";
+
+import type {
+  SyncConnectionStatus,
+  SyncEngineStatus,
+} from "../../shared/types/sync";
 
 import "./App.css";
 
@@ -21,7 +33,9 @@ function DashboardPage() {
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">DASHBOARD</p>
+          <p className="eyebrow">
+            DASHBOARD
+          </p>
 
           <h1>Dashboard</h1>
 
@@ -57,15 +71,94 @@ function DashboardPage() {
 }
 
 function AppLayout() {
+  const [
+    connectionStatus,
+    setConnectionStatus,
+  ] = useState<SyncConnectionStatus>(
+    () =>
+      connectionService.getConnectionStatus()
+  );
+
+  const [
+    syncStatus,
+    setSyncStatus,
+  ] = useState<SyncEngineStatus>(
+    () => syncEngineService.getStatus()
+  );
+
+  useEffect(() => {
+    const unsubscribeConnection =
+      connectionService.subscribeToConnectionChanges(
+        (status) => {
+          setConnectionStatus(status);
+        }
+      );
+
+    return unsubscribeConnection;
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const unsubscribeSync =
+      syncEngineService.subscribe(
+        (status) => {
+          if (mounted) {
+            setSyncStatus(status);
+          }
+        }
+      );
+
+    syncEngineService
+      .initialize()
+      .catch((error) => {
+        console.error(
+          "Failed to initialize sync engine:",
+          error
+        );
+      });
+
+    return () => {
+      mounted = false;
+      unsubscribeSync();
+    };
+  }, []);
+
+  const isOnline =
+    connectionStatus === "ONLINE";
+
+  function getSyncLabel() {
+    if (syncStatus.syncing) {
+      return "Syncing...";
+    }
+
+    if (syncStatus.pending > 0) {
+      return `${syncStatus.pending} pending`;
+    }
+
+    if (syncStatus.failed > 0) {
+      return `${syncStatus.failed} failed`;
+    }
+
+    return "All synced";
+  }
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-icon">OB</div>
+          <div className="brand-icon">
+            OB
+          </div>
 
           <div>
-            <strong>Offline Billing</strong>
-            <span>POS System</span>
+            <strong>
+              Offline Billing
+            </strong>
+
+            <span>
+              POS System
+            </span>
           </div>
         </div>
 
@@ -116,62 +209,79 @@ function AppLayout() {
             </strong>
           </div>
 
-          <div className="connection-status">
-            <span className="status-dot" />
-            Offline Ready
+          <div className="topbar-status-group">
+            <div
+              className={`connection-status ${
+                isOnline
+                  ? "connection-online"
+                  : "connection-offline"
+              }`}
+            >
+              <span className="status-dot" />
+
+              {isOnline
+                ? "Online"
+                : "Offline"}
+            </div>
+
+            <div
+              className={`sync-status ${
+                syncStatus.syncing
+                  ? "sync-status-syncing"
+                  : syncStatus.pending > 0
+                  ? "sync-status-pending"
+                  : syncStatus.failed > 0
+                  ? "sync-status-failed"
+                  : "sync-status-success"
+              }`}
+            >
+              {getSyncLabel()}
+            </div>
           </div>
         </header>
 
         <main className="page-container">
           <Routes>
-            {/* Dashboard */}
             <Route
               path="/"
               element={<DashboardPage />}
             />
 
-            {/* Products */}
             <Route
               path="/products"
               element={<ProductsPage />}
             />
 
-            {/* Categories */}
             <Route
               path="/categories"
               element={<CategoriesPage />}
             />
 
-            {/* Billing */}
             <Route
               path="/billing"
               element={<BillingPage />}
             />
 
-            {/* Inventory */}
             <Route
               path="/inventory"
               element={<InventoryPage />}
             />
 
-            {/* Customers */}
             <Route
               path="/customers"
               element={<CustomerPage />}
             />
 
-           <Route
-  path="/payments"
-  element={<PaymentsPage />}
-/>
+            <Route
+              path="/payments"
+              element={<PaymentsPage />}
+            />
 
-            {/* Invoices */}
-         <Route
-  path="/invoices"
-  element={<InvoicePage />}
-/>
+            <Route
+              path="/invoices"
+              element={<InvoicePage />}
+            />
 
-            {/* Reports */}
             <Route
               path="/reports"
               element={
@@ -184,8 +294,6 @@ function AppLayout() {
                 </section>
               }
             />
-
-
           </Routes>
         </main>
       </div>

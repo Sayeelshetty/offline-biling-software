@@ -35,6 +35,13 @@ import type {
   StockSummary,
 } from "../../../shared/types/inventory";
 
+
+import type {
+  SyncEntityType,
+  SyncQueueItem,
+  SyncSummary,
+} from "../../../shared/types/sync";
+
 interface AppInfo {
   name: string;
   version: string;
@@ -382,7 +389,49 @@ payments: {
   }>;
 };
 
+sync: {
+  getPending: (
+    limit?: number
+  ) => Promise<SyncQueueItem[]>;
 
+  getFailed: (
+    limit?: number
+  ) => Promise<SyncQueueItem[]>;
+
+  getAll: (
+    limit?: number
+  ) => Promise<SyncQueueItem[]>;
+
+  getById: (
+    queueId: string
+  ) => Promise<SyncQueueItem | null>;
+
+  getByEntity: (
+    entityType: SyncEntityType,
+    entityId: string
+  ) => Promise<SyncQueueItem[]>;
+
+  getSummary: () =>
+    Promise<SyncSummary>;
+
+  markSynced: (
+    queueId: string,
+    serverId?: string | null
+  ) => Promise<SyncQueueItem | null>;
+
+  markFailed: (
+    queueId: string,
+    errorMessage: string
+  ) => Promise<SyncQueueItem | null>;
+
+  retry: (
+    queueId: string
+  ) => Promise<SyncQueueItem | null>;
+
+  retryAll: (
+    limit?: number
+  ) => Promise<number>;
+};
 
 }
 
