@@ -192,6 +192,11 @@ const [
   setDefaultGstRate,
 ] = useState(5);
 
+const [
+  discountEnabled,
+  setDiscountEnabled,
+] = useState(true);
+
   const [
     error,
     setError,
@@ -331,6 +336,10 @@ const [
       setDefaultGstRate(
         settings.billing.defaultGstRate
       );
+
+      setDiscountEnabled(
+  settings.billing.discountEnabled
+);
     } catch (error) {
       console.error(
         "Failed to load billing settings:",
@@ -388,6 +397,30 @@ const [
     };
   }, [searchTerm]);
 
+
+
+  useEffect(() => {
+  // product search logic...
+}, [searchTerm]);
+
+useEffect(() => {
+  if (discountEnabled) {
+    return;
+  }
+
+  setInvoiceDiscount("0");
+
+  setCart((current) =>
+    current.map((line) => ({
+      ...line,
+      discount: 0,
+    }))
+  );
+}, [discountEnabled]);
+
+
+
+
   async function loadCustomers() {
     try {
       setLoadingCustomers(true);
@@ -402,6 +435,8 @@ const [
           "Customer API is not available."
         );
       }
+
+      
 
       let result: Customer[] = [];
 
@@ -956,9 +991,10 @@ const [
                                 )
                               )
                             }
-                            disabled={
-                              generatingBill
-                            }
+                             disabled={
+    generatingBill ||
+    !discountEnabled
+  }
                           />
                         </td>
 
@@ -1047,8 +1083,9 @@ const [
               className="clear-bill-button"
               onClick={clearBill}
               disabled={
-                cart.length === 0 ||
-                generatingBill
+                 generatingBill ||
+  cart.length === 0 ||
+  !discountEnabled
               }
             >
               Clear Bill
@@ -1093,22 +1130,23 @@ const [
                 Bill Discount
               </label>
 
-              <input
-                id="invoice-discount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={invoiceDiscount}
-                onChange={(event) =>
-                  setInvoiceDiscount(
-                    event.target.value
-                  )
-                }
-                disabled={
-                  generatingBill ||
-                  cart.length === 0
-                }
-              />
+   <input
+  id="invoice-discount"
+  type="number"
+  min="0"
+  step="0.01"
+  value={invoiceDiscount}
+  onChange={(event) => {
+    setInvoiceDiscount(
+      event.target.value
+    );
+  }}
+  disabled={
+    generatingBill ||
+    cart.length === 0 ||
+    !discountEnabled
+  }
+/>
             </div>
 
             <div>

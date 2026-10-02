@@ -475,62 +475,34 @@ function getNextInvoiceNumber(
   const numberPrefix =
     `${prefix}-`;
 
-  const rows = transaction
-    .prepare(`
-      SELECT invoice_number
+  const findExistingInvoice =
+    transaction.prepare(`
+      SELECT 1
       FROM invoices
-      WHERE invoice_number LIKE ?
-    `)
-    .all(`${numberPrefix}%`);
+      WHERE invoice_number = ?
+      LIMIT 1
+    `);
 
   let nextNumber =
     startingNumber;
 
-  for (const row of rows) {
-    const invoiceNumber =
-      String(
-        row?.invoice_number ?? ""
-      );
+  while (true) {
+    const candidate =
+      `${numberPrefix}${String(
+        nextNumber
+      ).padStart(4, "0")}`;
 
-    if (
-      !invoiceNumber.startsWith(
-        numberPrefix
-      )
-    ) {
-      continue;
+    const existing =
+      findExistingInvoice.get(candidate);
+
+    if (!existing) {
+      return candidate;
     }
 
-    const numericPart =
-      invoiceNumber.slice(
-        numberPrefix.length
-      );
-
-    if (
-      !/^\\d+$/.test(
-        numericPart
-      )
-    ) {
-      continue;
-    }
-
-    const parsedNumber =
-      Number(numericPart);
-
-    if (
-      Number.isInteger(
-        parsedNumber
-      ) &&
-      parsedNumber >= nextNumber
-    ) {
-      nextNumber =
-        parsedNumber + 1;
-    }
+    nextNumber += 1;
   }
-
-  return `${numberPrefix}${String(
-    nextNumber
-  ).padStart(4, "0")}`;
 }
+
 
 function getInvoiceById(invoiceId) {
   const invoiceRow = db
