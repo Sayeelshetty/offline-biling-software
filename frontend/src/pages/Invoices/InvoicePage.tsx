@@ -7,6 +7,10 @@ import { useNavigate } from "react-router-dom";
 
 import invoiceService from "../../services/invoice.service";
 
+import {
+  getSettings,
+} from "../../services/settings.service";
+
 import type {
   Invoice,
   InvoiceItem,
@@ -25,11 +29,14 @@ function formatDate(dateString: string) {
     return dateString;
   }
 
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
 }
 
 function formatDateTime(dateString: string) {
@@ -39,13 +46,16 @@ function formatDateTime(dateString: string) {
     return dateString;
   }
 
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date.toLocaleString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 }
 
 function getPaymentStatusClass(
@@ -105,14 +115,29 @@ function InvoicePage() {
   const [loading, setLoading] =
     useState(true);
 
-  const [pdfLoading, setPdfLoading] =
-    useState(false);
-
   const [error, setError] =
     useState<string | null>(null);
 
-  const [message, setMessage] =
-    useState<string | null>(null);
+  const [businessName, setBusinessName] =
+    useState("Offline Billing");
+
+  async function loadBusinessSettings() {
+    try {
+      const settings = await getSettings();
+
+      setBusinessName(
+        settings.business.businessName?.trim() ||
+          "Offline Billing"
+      );
+    } catch (err) {
+      console.error(
+        "Failed to load business settings:",
+        err
+      );
+
+      setBusinessName("Offline Billing");
+    }
+  }
 
   async function loadInvoices() {
     try {
@@ -158,12 +183,12 @@ function InvoicePage() {
 
   useEffect(() => {
     loadInvoices();
+    loadBusinessSettings();
   }, []);
 
   function openInvoice(invoice: Invoice) {
     setSelectedInvoice(invoice);
     setError(null);
-    setMessage(null);
   }
 
   function handlePrint() {
@@ -172,46 +197,6 @@ function InvoicePage() {
     }
 
     window.print();
-  }
-
-  async function handleDownloadPdf() {
-    if (!selectedInvoice) {
-      return;
-    }
-
-    try {
-      setPdfLoading(true);
-      setError(null);
-      setMessage(null);
-
-      const result =
-        await invoiceService.downloadInvoicePdf(
-          selectedInvoice.invoiceNumber
-        );
-
-      if (result.canceled) {
-        return;
-      }
-
-      setMessage(
-        result.filePath
-          ? `Invoice PDF saved successfully: ${result.filePath}`
-          : "Invoice PDF saved successfully."
-      );
-    } catch (err) {
-      console.error(
-        "Failed to download invoice PDF:",
-        err
-      );
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to download invoice PDF."
-      );
-    } finally {
-      setPdfLoading(false);
-    }
   }
 
   function handleNewBill() {
@@ -226,7 +211,9 @@ function InvoicePage() {
             INVOICES
           </p>
 
-          <h1>Invoice / Receipt</h1>
+          <h1>
+            Invoice / Receipt
+          </h1>
 
           <p className="page-description">
             View generated bills and print customer
@@ -239,7 +226,7 @@ function InvoicePage() {
             type="button"
             className="secondary-button"
             onClick={loadInvoices}
-            disabled={loading || pdfLoading}
+            disabled={loading}
           >
             {loading
               ? "Refreshing..."
@@ -255,12 +242,6 @@ function InvoicePage() {
           </button>
         </div>
       </div>
-
-      {message && (
-        <div className="invoice-message invoice-success">
-          {message}
-        </div>
-      )}
 
       {error && (
         <div className="invoice-message invoice-error">
@@ -391,22 +372,17 @@ function InvoicePage() {
                     type="button"
                     className="secondary-button"
                     onClick={handlePrint}
-                    disabled={pdfLoading}
                   >
                     Print
                   </button>
 
                   <button
                     type="button"
-                    className="secondary-button"
-                    onClick={
-                      handleDownloadPdf
-                    }
-                    disabled={pdfLoading}
+                    className="secondary-button invoice-disabled-action"
+                    disabled
+                    title="PDF export will be connected in the next step."
                   >
-                    {pdfLoading
-                      ? "Generating PDF..."
-                      : "Download PDF"}
+                    Download PDF
                   </button>
 
                   <button
@@ -422,7 +398,6 @@ function InvoicePage() {
                     type="button"
                     className="primary-button"
                     onClick={handleNewBill}
-                    disabled={pdfLoading}
                   >
                     New Bill
                   </button>
@@ -433,7 +408,7 @@ function InvoicePage() {
                 <div className="invoice-paper-header">
                   <div>
                     <p className="invoice-business-name">
-                      Offline Billing
+                      {businessName}
                     </p>
 
                     <p className="invoice-business-subtitle">
@@ -447,9 +422,7 @@ function InvoicePage() {
                     </h3>
 
                     <span>
-                      {
-                        selectedInvoice.invoiceNumber
-                      }
+                      {selectedInvoice.invoiceNumber}
                     </span>
                   </div>
                 </div>

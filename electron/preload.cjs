@@ -536,4 +536,36 @@ contextBridge.exposeInMainWorld("desktopAPI", {
         limit
       ),
   },
+
+// =========================
+// Settings
+// =========================
+
+// =========================
+// Settings
+// =========================
+
+settings: {
+  get: () =>
+    ipcRenderer.invoke("settings:get"),
+
+  update: (settings) =>
+    ipcRenderer.invoke(
+      "settings:update",
+      settings
+    ),
+
+  reset: () =>
+    ipcRenderer.invoke("settings:reset"),
+
+  selectLogo: () =>
+    ipcRenderer.invoke(
+      "settings:select-logo"
+    ),
+
+  getLogoData: () =>
+    ipcRenderer.invoke(
+      "settings:get-logo-data"
+    ),
+},
 });

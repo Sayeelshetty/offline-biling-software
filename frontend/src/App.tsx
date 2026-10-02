@@ -18,9 +18,15 @@ import BillingPage from "./pages/BillingPage";
 import PaymentsPage from "./pages/Payments/PaymentsPage";
 import InvoicePage from "./pages/Invoices/InvoicePage";
 import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 import connectionService from "./services/connection.service";
 import syncEngineService from "./services/sync-engine.service";
+
+import {
+  getSettings,
+  getLogoData,
+} from "./services/settings.service";
 
 import type {
   SyncConnectionStatus,
@@ -84,8 +90,19 @@ function AppLayout() {
     syncStatus,
     setSyncStatus,
   ] = useState<SyncEngineStatus>(
-    () => syncEngineService.getStatus()
+    () =>
+      syncEngineService.getStatus()
   );
+
+  const [
+    businessName,
+    setBusinessName,
+  ] = useState("Offline Billing");
+
+  const [
+    businessLogo,
+    setBusinessLogo,
+  ] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribeConnection =
@@ -125,6 +142,46 @@ function AppLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadBusinessBranding() {
+      try {
+        const [
+          settings,
+          logoData,
+        ] = await Promise.all([
+          getSettings(),
+          getLogoData(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        setBusinessName(
+          settings.business.businessName?.trim() ||
+            "Offline Billing"
+        );
+
+        setBusinessLogo(
+          logoData
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load business branding:",
+          error
+        );
+      }
+    }
+
+    loadBusinessBranding();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const isOnline =
     connectionStatus === "ONLINE";
 
@@ -148,13 +205,35 @@ function AppLayout() {
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-icon">
-            OB
+          <div
+            className="brand-icon"
+            style={{
+              overflow: "hidden",
+              padding: businessLogo
+                ? "3px"
+                : undefined,
+            }}
+          >
+            {businessLogo ? (
+              <img
+                src={businessLogo}
+                alt={`${businessName} logo`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  borderRadius: "inherit",
+                  display: "block",
+                }}
+              />
+            ) : (
+              "OB"
+            )}
           </div>
 
           <div>
             <strong>
-              Offline Billing
+              {businessName}
             </strong>
 
             <span>
@@ -199,6 +278,10 @@ function AppLayout() {
           <Link to="/reports">
             Reports
           </Link>
+
+          <Link to="/settings">
+            Settings
+          </Link>
         </nav>
       </aside>
 
@@ -206,7 +289,7 @@ function AppLayout() {
         <header className="topbar">
           <div>
             <strong>
-              Offline Billing Software
+              {businessName}
             </strong>
           </div>
 
@@ -282,12 +365,16 @@ function AppLayout() {
               path="/invoices"
               element={<InvoicePage />}
             />
-          
-          <Route
-  path="/reports"
-  element={<ReportsPage />}
-/>
-            
+
+            <Route
+              path="/reports"
+              element={<ReportsPage />}
+            />
+
+            <Route
+              path="/settings"
+              element={<SettingsPage />}
+            />
           </Routes>
         </main>
       </div>

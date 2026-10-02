@@ -25,6 +25,10 @@ const syncRepository = require(
   "./database/repositories/sync.repository.cjs"
 );
 
+const settingsRepository = require(
+  "./database/repositories/settings.repository.cjs"
+);
+
 const reportRepository = require(
   "./database/repositories/report.repository.cjs"
 );
@@ -1495,6 +1499,9 @@ ipcMain.handle(
         event.sender
       );
 
+
+
+
     if (!win) {
       throw new Error(
         "Invoice window is not available."
@@ -1653,6 +1660,34 @@ ipcMain.handle(
     )
 );
 
+
+// --------------------------------------------------------------------------
+// Settings IPC
+// --------------------------------------------------------------------------
+
+ipcMain.handle(
+  "settings:get",
+  () => {
+    return settingsRepository.getSettings();
+  }
+);
+
+ipcMain.handle(
+  "settings:update",
+  (_event, settings) => {
+    return settingsRepository.updateSettings(
+      settings
+    );
+  }
+);
+
+ipcMain.handle(
+  "settings:reset",
+  () => {
+    return settingsRepository.resetSettings();
+  }
+);
+
 // --------------------------------------------------------------------------
 // Reports IPC
 // --------------------------------------------------------------------------
@@ -1733,6 +1768,117 @@ ipcMain.handle(
   "reports:get-customer-outstanding-summary",
   () =>
     reportRepository.getCustomerOutstandingSummary()
+);
+
+// --------------------------------------------------------------------------
+// Settings Logo Picker
+// --------------------------------------------------------------------------
+
+ipcMain.handle(
+  "settings:select-logo",
+  async (event) => {
+    const win =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+
+    const result =
+      await dialog.showOpenDialog(
+        win,
+        {
+          title: "Select Business Logo",
+
+          properties: [
+            "openFile",
+          ],
+
+          filters: [
+            {
+              name: "Image Files",
+              extensions: [
+                "png",
+                "jpg",
+                "jpeg",
+                "webp",
+              ],
+            },
+          ],
+        }
+      );
+
+    if (
+      result.canceled ||
+      result.filePaths.length === 0
+    ) {
+      return {
+        canceled: true,
+        filePath: null,
+      };
+    }
+
+    return {
+      canceled: false,
+      filePath: result.filePaths[0],
+    };
+  }
+);
+
+// --------------------------------------------------------------------------
+// Settings Logo Data
+// --------------------------------------------------------------------------
+
+ipcMain.handle(
+  "settings:get-logo-data",
+  async () => {
+    const settings =
+      settingsRepository.getSettings();
+
+    const logoPath =
+      settings?.business?.logoPath;
+
+    if (!logoPath) {
+      return null;
+    }
+
+    try {
+      if (!fs.existsSync(logoPath)) {
+        return null;
+      }
+
+      const extension =
+        path
+          .extname(logoPath)
+          .toLowerCase();
+
+      const mimeTypes = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+      };
+
+      const mimeType =
+        mimeTypes[extension];
+
+      if (!mimeType) {
+        return null;
+      }
+
+      const imageBuffer =
+        fs.readFileSync(logoPath);
+
+      return `data:${mimeType};base64,${imageBuffer.toString(
+        "base64"
+      )}`;
+    } catch (error) {
+      console.error(
+        "Failed to load business logo:",
+        error
+      );
+
+      return null;
+    }
+  }
 );
 
 /*

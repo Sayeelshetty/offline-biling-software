@@ -59,6 +59,12 @@ import type {
   SalesReportOptions,
 } from "../../../shared/types/report";
 
+import type {
+  SettingsData,
+  BackupResponse,
+  RestoreResponse,
+} from "../../../shared/types/settings";
+
 interface AppInfo {
   name: string;
   version: string;
@@ -538,6 +544,26 @@ interface DesktopAPI {
       limit?: number
     ) => Promise<number>;
   };
+
+  // =========================
+  // Settings
+  // =========================
+
+ settings: {
+  get: () => Promise<SettingsData>;
+  update: (settings: SettingsData) => Promise<SettingsData>;
+  reset: () => Promise<SettingsData>;
+
+  selectLogo: () => Promise<{
+    canceled: boolean;
+    filePath: string | null;
+  }>;
+
+  getLogoData: () => Promise<string | null>;
+
+  backup?: () => Promise<BackupResponse>;
+  restore?: () => Promise<RestoreResponse>;
+};
 }
 
 declare global {
