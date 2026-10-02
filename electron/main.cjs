@@ -25,6 +25,10 @@ const syncRepository = require(
   "./database/repositories/sync.repository.cjs"
 );
 
+const reportRepository = require(
+  "./database/repositories/report.repository.cjs"
+);
+
 const {
   getDatabase,
   getDatabasePath,
@@ -1647,6 +1651,88 @@ ipcMain.handle(
     syncRepository.retryAllFailed(
       limit
     )
+);
+
+// --------------------------------------------------------------------------
+// Reports IPC
+// --------------------------------------------------------------------------
+
+ipcMain.handle(
+  "reports:get-sales-summary",
+  (_event, options = {}) =>
+    reportRepository.getSalesSummary(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-daily-sales",
+  (_event, options = {}) =>
+    reportRepository.getDailySales(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-weekly-sales",
+  (_event, options = {}) =>
+    reportRepository.getWeeklySales(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-monthly-sales",
+  (_event, options = {}) =>
+    reportRepository.getMonthlySales(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-product-wise-sales",
+  (_event, options = {}) =>
+    reportRepository.getProductWiseSales(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-payment-method-sales",
+  (_event, options = {}) =>
+    reportRepository.getPaymentMethodWiseSales(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-current-stock",
+  (_event, options = {}) =>
+    reportRepository.getCurrentStockReport(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-low-stock",
+  () =>
+    reportRepository.getLowStockProducts()
+);
+
+ipcMain.handle(
+  "reports:get-stock-movements",
+  (_event, options = {}) =>
+    reportRepository.getStockMovementReport(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-inventory-summary",
+  () =>
+    reportRepository.getInventorySummary()
+);
+
+ipcMain.handle(
+  "reports:get-customer-purchases",
+  (_event, options = {}) =>
+    reportRepository.getCustomerPurchasesReport(options || {})
+);
+
+ipcMain.handle(
+  "reports:get-outstanding-payments",
+  () =>
+    reportRepository.getOutstandingPaymentsReport()
+);
+
+ipcMain.handle(
+  "reports:get-customer-outstanding-summary",
+  () =>
+    reportRepository.getCustomerOutstandingSummary()
 );
 
 /*

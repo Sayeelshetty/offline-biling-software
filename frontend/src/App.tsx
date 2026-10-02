@@ -17,6 +17,7 @@ import CustomerPage from "./pages/Customers/CustomerPage.tsx";
 import BillingPage from "./pages/BillingPage";
 import PaymentsPage from "./pages/Payments/PaymentsPage";
 import InvoicePage from "./pages/Invoices/InvoicePage";
+import ReportsPage from "./pages/ReportsPage";
 
 import connectionService from "./services/connection.service";
 import syncEngineService from "./services/sync-engine.service";
@@ -281,19 +282,12 @@ function AppLayout() {
               path="/invoices"
               element={<InvoicePage />}
             />
-
-            <Route
-              path="/reports"
-              element={
-                <section className="page">
-                  <h1>Reports</h1>
-
-                  <p>
-                    Reports module coming later.
-                  </p>
-                </section>
-              }
-            />
+          
+          <Route
+  path="/reports"
+  element={<ReportsPage />}
+/>
+            
           </Routes>
         </main>
       </div>

@@ -1,15 +1,20 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const {
+  contextBridge,
+  ipcRenderer,
+} = require("electron");
 
 contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   // Application
   // =========================
+
   getAppInfo: () =>
     ipcRenderer.invoke("app:get-info"),
 
   // =========================
   // Database
   // =========================
+
   database: {
     getStatus: () =>
       ipcRenderer.invoke(
@@ -20,6 +25,7 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   // Products
   // =========================
+
   products: {
     create: (productData) =>
       ipcRenderer.invoke(
@@ -110,6 +116,7 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   // Categories
   // =========================
+
   categories: {
     create: (categoryData) =>
       ipcRenderer.invoke(
@@ -167,6 +174,7 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   // Inventory
   // =========================
+
   inventory: {
     stockIn: (inventoryData) =>
       ipcRenderer.invoke(
@@ -218,211 +226,314 @@ contextBridge.exposeInMainWorld("desktopAPI", {
       ),
   },
 
+  // =========================
+  // Customers
+  // =========================
+
   customers: {
-  getById: (id) =>
-    ipcRenderer.invoke(
-      "customers:get-by-id",
-      id
-    ),
+    getById: (id) =>
+      ipcRenderer.invoke(
+        "customers:get-by-id",
+        id
+      ),
 
-  getByMobile: (mobile) =>
-    ipcRenderer.invoke(
-      "customers:get-by-mobile",
-      mobile
-    ),
+    getByMobile: (mobile) =>
+      ipcRenderer.invoke(
+        "customers:get-by-mobile",
+        mobile
+      ),
 
-  create: (input) =>
-    ipcRenderer.invoke(
-      "customers:create",
-      input
-    ),
+    create: (input) =>
+      ipcRenderer.invoke(
+        "customers:create",
+        input
+      ),
 
-  update: (id, input) =>
-    ipcRenderer.invoke(
-      "customers:update",
-      id,
-      input
-    ),
+    update: (id, input) =>
+      ipcRenderer.invoke(
+        "customers:update",
+        id,
+        input
+      ),
 
-  getAll: () =>
-    ipcRenderer.invoke(
-      "customers:get-all"
-    ),
+    getAll: () =>
+      ipcRenderer.invoke(
+        "customers:get-all"
+      ),
 
-  search: (searchTerm) =>
-    ipcRenderer.invoke(
-      "customers:search",
-      searchTerm
-    ),
+    search: (searchTerm) =>
+      ipcRenderer.invoke(
+        "customers:search",
+        searchTerm
+      ),
 
-  getOutstanding: () =>
-    ipcRenderer.invoke(
-      "customers:get-outstanding"
-    ),
+    getOutstanding: () =>
+      ipcRenderer.invoke(
+        "customers:get-outstanding"
+      ),
 
-  updateFinancials: (
-    customerId,
-    purchaseAmountDelta,
-    outstandingAmountDelta
-  ) =>
-    ipcRenderer.invoke(
-      "customers:update-financials",
+    updateFinancials: (
       customerId,
       purchaseAmountDelta,
       outstandingAmountDelta
-    ),
-},
+    ) =>
+      ipcRenderer.invoke(
+        "customers:update-financials",
+        customerId,
+        purchaseAmountDelta,
+        outstandingAmountDelta
+      ),
+  },
 
-invoices: {
-  create: (input) =>
-    ipcRenderer.invoke(
-      "invoices:create",
-      input
-    ),
+  // =========================
+  // Invoices
+  // =========================
 
-  getById: (invoiceId) =>
-    ipcRenderer.invoke(
-      "invoices:get-by-id",
-      invoiceId
-    ),
+  invoices: {
+    create: (input) =>
+      ipcRenderer.invoke(
+        "invoices:create",
+        input
+      ),
 
-  getByTransactionId: (transactionId) =>
-    ipcRenderer.invoke(
-      "invoices:get-by-transaction-id",
+    getById: (invoiceId) =>
+      ipcRenderer.invoke(
+        "invoices:get-by-id",
+        invoiceId
+      ),
+
+    getByTransactionId: (
       transactionId
-    ),
+    ) =>
+      ipcRenderer.invoke(
+        "invoices:get-by-transaction-id",
+        transactionId
+      ),
 
-  getByNumber: (invoiceNumber) =>
-    ipcRenderer.invoke(
-      "invoices:get-by-number",
-      invoiceNumber
-    ),
+    getByNumber: (invoiceNumber) =>
+      ipcRenderer.invoke(
+        "invoices:get-by-number",
+        invoiceNumber
+      ),
 
-  getRecent: (limit) =>
-    ipcRenderer.invoke(
-      "invoices:get-recent",
-      limit
-    ),
+    getRecent: (limit) =>
+      ipcRenderer.invoke(
+        "invoices:get-recent",
+        limit
+      ),
 
+    downloadPdf: (invoiceNumber) =>
+      ipcRenderer.invoke(
+        "invoices:download-pdf",
+        invoiceNumber
+      ),
+  },
+
+  // =========================
+  // Payments
+  // =========================
+
+  payments: {
+    getById: (paymentId) =>
+      ipcRenderer.invoke(
+        "payments:get-by-id",
+        paymentId
+      ),
+
+    getAll: (options) =>
+      ipcRenderer.invoke(
+        "payments:get-all",
+        options
+      ),
+
+    getOutstanding: () =>
+      ipcRenderer.invoke(
+        "payments:get-outstanding"
+      ),
+
+    getSummary: () =>
+      ipcRenderer.invoke(
+        "payments:get-summary"
+      ),
+
+    record: (input) =>
+      ipcRenderer.invoke(
+        "payments:record",
+        input
+      ),
+  },
+
+  // Existing root-level PDF helper
   downloadPdf: (invoiceNumber) =>
     ipcRenderer.invoke(
       "invoices:download-pdf",
       invoiceNumber
     ),
-},
 
-payments: {
-  getById: (paymentId) =>
-    ipcRenderer.invoke(
-      "payments:get-by-id",
-      paymentId
-    ),
+  // =========================
+  // Reports
+  // =========================
 
-  getAll: (options) =>
-    ipcRenderer.invoke(
-      "payments:get-all",
-      options
-    ),
+  reports: {
+    getSalesSummary: (options = {}) =>
+      ipcRenderer.invoke(
+        "reports:get-sales-summary",
+        options
+      ),
 
-  getOutstanding: () =>
-    ipcRenderer.invoke(
-      "payments:get-outstanding"
-    ),
+    getDailySales: (options = {}) =>
+      ipcRenderer.invoke(
+        "reports:get-daily-sales",
+        options
+      ),
 
-  getSummary: () =>
-    ipcRenderer.invoke(
-      "payments:get-summary"
-    ),
+    getWeeklySales: (options = {}) =>
+      ipcRenderer.invoke(
+        "reports:get-weekly-sales",
+        options
+      ),
 
-  record: (input) =>
-    ipcRenderer.invoke(
-      "payments:record",
-      input
-    ),
-},
+    getMonthlySales: (options = {}) =>
+      ipcRenderer.invoke(
+        "reports:get-monthly-sales",
+        options
+      ),
 
-downloadPdf: (invoiceNumber) =>
-  ipcRenderer.invoke(
-    "invoices:download-pdf",
-    invoiceNumber
-  ),
+    getProductWiseSales: (
+      options = {}
+    ) =>
+      ipcRenderer.invoke(
+        "reports:get-product-wise-sales",
+        options
+      ),
+
+    getPaymentMethodSales: (
+      options = {}
+    ) =>
+      ipcRenderer.invoke(
+        "reports:get-payment-method-sales",
+        options
+      ),
+
+    getCurrentStock: (
+      options = {}
+    ) =>
+      ipcRenderer.invoke(
+        "reports:get-current-stock",
+        options
+      ),
+
+    getLowStock: () =>
+      ipcRenderer.invoke(
+        "reports:get-low-stock"
+      ),
+
+    getStockMovements: (
+      options = {}
+    ) =>
+      ipcRenderer.invoke(
+        "reports:get-stock-movements",
+        options
+      ),
+
+    getInventorySummary: () =>
+      ipcRenderer.invoke(
+        "reports:get-inventory-summary"
+      ),
+
+    getCustomerPurchases: (
+      options = {}
+    ) =>
+      ipcRenderer.invoke(
+        "reports:get-customer-purchases",
+        options
+      ),
+
+    getOutstandingPayments: () =>
+      ipcRenderer.invoke(
+        "reports:get-outstanding-payments"
+      ),
+
+    getCustomerOutstandingSummary: () =>
+      ipcRenderer.invoke(
+        "reports:get-customer-outstanding-summary"
+      ),
+  },
+
+  // =========================
+  // Sync
+  // =========================
 
   sync: {
-  getPending: (limit) =>
-    ipcRenderer.invoke(
-      "sync:get-pending",
-      limit
-    ),
+    getPending: (limit) =>
+      ipcRenderer.invoke(
+        "sync:get-pending",
+        limit
+      ),
 
-  getFailed: (limit) =>
-    ipcRenderer.invoke(
-      "sync:get-failed",
-      limit
-    ),
+    getFailed: (limit) =>
+      ipcRenderer.invoke(
+        "sync:get-failed",
+        limit
+      ),
 
-  getAll: (limit) =>
-    ipcRenderer.invoke(
-      "sync:get-all",
-      limit
-    ),
+    getAll: (limit) =>
+      ipcRenderer.invoke(
+        "sync:get-all",
+        limit
+      ),
 
-  getById: (queueId) =>
-    ipcRenderer.invoke(
-      "sync:get-by-id",
-      queueId
-    ),
+    getById: (queueId) =>
+      ipcRenderer.invoke(
+        "sync:get-by-id",
+        queueId
+      ),
 
-  getByEntity: (
-    entityType,
-    entityId
-  ) =>
-    ipcRenderer.invoke(
-      "sync:get-by-entity",
+    getByEntity: (
       entityType,
       entityId
-    ),
+    ) =>
+      ipcRenderer.invoke(
+        "sync:get-by-entity",
+        entityType,
+        entityId
+      ),
 
-  getSummary: () =>
-    ipcRenderer.invoke(
-      "sync:get-summary"
-    ),
+    getSummary: () =>
+      ipcRenderer.invoke(
+        "sync:get-summary"
+      ),
 
-  markSynced: (
-    queueId,
-    serverId
-  ) =>
-    ipcRenderer.invoke(
-      "sync:mark-synced",
+    markSynced: (
       queueId,
       serverId
-    ),
+    ) =>
+      ipcRenderer.invoke(
+        "sync:mark-synced",
+        queueId,
+        serverId
+      ),
 
-  markFailed: (
-    queueId,
-    errorMessage
-  ) =>
-    ipcRenderer.invoke(
-      "sync:mark-failed",
+    markFailed: (
       queueId,
       errorMessage
-    ),
+    ) =>
+      ipcRenderer.invoke(
+        "sync:mark-failed",
+        queueId,
+        errorMessage
+      ),
 
-  retry: (queueId) =>
-    ipcRenderer.invoke(
-      "sync:retry",
-      queueId
-    ),
+    retry: (queueId) =>
+      ipcRenderer.invoke(
+        "sync:retry",
+        queueId
+      ),
 
-  retryAll: (limit) =>
-    ipcRenderer.invoke(
-      "sync:retry-all",
-      limit
-    ),
-},
-
+    retryAll: (limit) =>
+      ipcRenderer.invoke(
+        "sync:retry-all",
+        limit
+      ),
+  },
 });
-
-
-
-
-

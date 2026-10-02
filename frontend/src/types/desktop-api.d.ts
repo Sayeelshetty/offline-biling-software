@@ -10,7 +10,6 @@ import type {
   CategoryUpdateInput,
 } from "../../../shared/types/category";
 
-
 import type {
   Payment,
   PaymentSearchOptions,
@@ -18,7 +17,6 @@ import type {
   PaymentSummary,
   RecordPaymentInput,
 } from "../../../shared/types/payment";
-
 
 import type {
   CreateInvoiceInput,
@@ -35,12 +33,31 @@ import type {
   StockSummary,
 } from "../../../shared/types/inventory";
 
-
 import type {
   SyncEntityType,
   SyncQueueItem,
   SyncSummary,
 } from "../../../shared/types/sync";
+
+import type {
+  ReportDateRange,
+  SalesSummary,
+  DailySalesReport,
+  WeeklySalesReport,
+  MonthlySalesReport,
+  ProductWiseSalesReport,
+  PaymentMethodSalesReport,
+  CurrentStockReport,
+  LowStockProductReport,
+  StockMovementReport,
+  InventorySummary,
+  CustomerPurchasesReport,
+  OutstandingPaymentReport,
+  CustomerOutstandingSummary,
+  CurrentStockReportOptions,
+  StockMovementReportOptions,
+  SalesReportOptions,
+} from "../../../shared/types/report";
 
 interface AppInfo {
   name: string;
@@ -204,14 +221,16 @@ interface DesktopAPI {
       id: string
     ) => Promise<ProductResponse>;
 
-    getLowStock: () => Promise<ProductListResponse>;
+    getLowStock: () =>
+      Promise<ProductListResponse>;
 
     exportCsv: (
       includeInactive?: boolean,
       categoryId?: string | null
     ) => Promise<ProductExportResponse>;
 
-    importCsv: () => Promise<ProductImportResponse>;
+    importCsv: () =>
+      Promise<ProductImportResponse>;
   };
 
   // =========================
@@ -287,67 +306,129 @@ interface DesktopAPI {
       Promise<InventorySummaryResponse>;
   };
 
+  // =========================
+  // Customers
+  // =========================
 
   customers: {
-  getById: (
-    id: string
-  ) => Promise<import("../../../shared/types/customer").Customer | null>;
+    getById: (
+      id: string
+    ) => Promise<
+      import("../../../shared/types/customer").Customer | null
+    >;
 
-  getByMobile: (
-    mobile: string
-  ) => Promise<import("../../../shared/types/customer").Customer | null>;
+    getByMobile: (
+      mobile: string
+    ) => Promise<
+      import("../../../shared/types/customer").Customer | null
+    >;
 
-  create: (
-    input: import("../../../shared/types/customer").CustomerInput
-  ) => Promise<import("../../../shared/types/customer").Customer>;
+    create: (
+      input: import("../../../shared/types/customer").CustomerInput
+    ) => Promise<
+      import("../../../shared/types/customer").Customer
+    >;
 
-  update: (
-    id: string,
-    input: import("../../../shared/types/customer").CustomerUpdateInput
-  ) => Promise<import("../../../shared/types/customer").Customer>;
+    update: (
+      id: string,
+      input: import("../../../shared/types/customer").CustomerUpdateInput
+    ) => Promise<
+      import("../../../shared/types/customer").Customer
+    >;
 
-  getAll: () => Promise<
-    import("../../../shared/types/customer").Customer[]
-  >;
+    getAll: () => Promise<
+      import("../../../shared/types/customer").Customer[]
+    >;
 
-  search: (
-    searchTerm: string
-  ) => Promise<
-    import("../../../shared/types/customer").Customer[]
-  >;
+    search: (
+      searchTerm: string
+    ) => Promise<
+      import("../../../shared/types/customer").Customer[]
+    >;
 
-  getOutstanding: () => Promise<
-    import("../../../shared/types/customer").Customer[]
-  >;
+    getOutstanding: () => Promise<
+      import("../../../shared/types/customer").Customer[]
+    >;
 
-  updateFinancials: (
-    customerId: string,
-    purchaseAmountDelta?: number,
-    outstandingAmountDelta?: number
-  ) => Promise<
-    import("../../../shared/types/customer").Customer
-  >;
-};
-invoices: {
-  create: (
-    input: CreateInvoiceInput
-  ) => Promise<CreateInvoiceResult>;
+    updateFinancials: (
+      customerId: string,
+      purchaseAmountDelta?: number,
+      outstandingAmountDelta?: number
+    ) => Promise<
+      import("../../../shared/types/customer").Customer
+    >;
+  };
 
-  getById: (
-    invoiceId: string
-  ) => Promise<Invoice | null>;
+  // =========================
+  // Invoices
+  // =========================
 
-  getByTransactionId: (
-    transactionId: string
-  ) => Promise<Invoice | null>;
+  invoices: {
+    create: (
+      input: CreateInvoiceInput
+    ) => Promise<CreateInvoiceResult>;
 
-  getByNumber: (
-    invoiceNumber: string
-  ) => Promise<Invoice | null>;
+    getById: (
+      invoiceId: string
+    ) => Promise<Invoice | null>;
 
-  getRecent: (
-    limit?: number
-  ) => Promise<Invoice[]>;
+    getByTransactionId: (
+      transactionId: string
+    ) => Promise<Invoice | null>;
+
+    getByNumber: (
+      invoiceNumber: string
+    ) => Promise<Invoice | null>;
+
+    getRecent: (
+      limit?: number
+    ) => Promise<Invoice[]>;
+
+    downloadPdf: (
+      invoiceNumber: string
+    ) => Promise<{
+      canceled: boolean;
+      filePath: string | null;
+    }>;
+  };
+
+  // =========================
+  // Payments
+  // =========================
+
+  payments: {
+    getById: (
+      paymentId: string
+    ) => Promise<Payment | null>;
+
+    getAll: (
+      options?: PaymentSearchOptions
+    ) => Promise<Payment[]>;
+
+    getOutstanding: () =>
+      Promise<OutstandingPayment[]>;
+
+    getSummary: () =>
+      Promise<PaymentSummary>;
+
+    record: (
+      input: RecordPaymentInput
+    ) => Promise<{
+      payment: Payment;
+      invoice: {
+        id: string;
+        invoiceTotal: number;
+        previousPaidAmount: number;
+        paidAmount: number;
+        outstandingAmount: number;
+        paymentStatus: "PAID" | "PARTIAL";
+      };
+    }>;
+  };
+
+  // =========================
+  // PDF helper
+  // =========================
 
   downloadPdf: (
     invoiceNumber: string
@@ -355,84 +436,108 @@ invoices: {
     canceled: boolean;
     filePath: string | null;
   }>;
-};
 
-payments: {
-  getById: (
-    paymentId: string
-  ) => Promise<Payment | null>;
+  // =========================
+  // Reports
+  // =========================
 
-  getAll: (
-    options?: PaymentSearchOptions
-  ) => Promise<Payment[]>;
+  reports: {
+    getSalesSummary: (
+      options?: ReportDateRange
+    ) => Promise<SalesSummary>;
 
-  getOutstanding: () =>
-    Promise<OutstandingPayment[]>;
+    getDailySales: (
+      options?: SalesReportOptions
+    ) => Promise<DailySalesReport[]>;
 
-  getSummary: () =>
-    Promise<PaymentSummary>;
+    getWeeklySales: (
+      options?: SalesReportOptions
+    ) => Promise<WeeklySalesReport[]>;
 
-  record: (
-    input: RecordPaymentInput
-  ) => Promise<{
-    payment: Payment;
-    invoice: {
-      id: string;
-      invoiceTotal: number;
-      previousPaidAmount: number;
-      paidAmount: number;
-      outstandingAmount: number;
-      paymentStatus:
-        | "PAID"
-        | "PARTIAL";
-    };
-  }>;
-};
+    getMonthlySales: (
+      options?: SalesReportOptions
+    ) => Promise<MonthlySalesReport[]>;
 
-sync: {
-  getPending: (
-    limit?: number
-  ) => Promise<SyncQueueItem[]>;
+    getProductWiseSales: (
+      options?: SalesReportOptions
+    ) => Promise<ProductWiseSalesReport[]>;
 
-  getFailed: (
-    limit?: number
-  ) => Promise<SyncQueueItem[]>;
+    getPaymentMethodSales: (
+      options?: SalesReportOptions
+    ) => Promise<PaymentMethodSalesReport[]>;
 
-  getAll: (
-    limit?: number
-  ) => Promise<SyncQueueItem[]>;
+    getCurrentStock: (
+      options?: CurrentStockReportOptions
+    ) => Promise<CurrentStockReport[]>;
 
-  getById: (
-    queueId: string
-  ) => Promise<SyncQueueItem | null>;
+    getLowStock: () =>
+      Promise<LowStockProductReport[]>;
 
-  getByEntity: (
-    entityType: SyncEntityType,
-    entityId: string
-  ) => Promise<SyncQueueItem[]>;
+    getStockMovements: (
+      options?: StockMovementReportOptions
+    ) => Promise<StockMovementReport[]>;
 
-  getSummary: () =>
-    Promise<SyncSummary>;
+    getInventorySummary: () =>
+      Promise<InventorySummary>;
 
-  markSynced: (
-    queueId: string,
-    serverId?: string | null
-  ) => Promise<SyncQueueItem | null>;
+    getCustomerPurchases: (
+      options?: SalesReportOptions
+    ) => Promise<CustomerPurchasesReport[]>;
 
-  markFailed: (
-    queueId: string,
-    errorMessage: string
-  ) => Promise<SyncQueueItem | null>;
+    getOutstandingPayments: () =>
+      Promise<OutstandingPaymentReport[]>;
 
-  retry: (
-    queueId: string
-  ) => Promise<SyncQueueItem | null>;
+    getCustomerOutstandingSummary: () =>
+      Promise<CustomerOutstandingSummary[]>;
+  };
 
-  retryAll: (
-    limit?: number
-  ) => Promise<number>;
-};
+  // =========================
+  // Sync
+  // =========================
 
+  sync: {
+    getPending: (
+      limit?: number
+    ) => Promise<SyncQueueItem[]>;
+
+    getFailed: (
+      limit?: number
+    ) => Promise<SyncQueueItem[]>;
+
+    getAll: (
+      limit?: number
+    ) => Promise<SyncQueueItem[]>;
+
+    getById: (
+      queueId: string
+    ) => Promise<SyncQueueItem | null>;
+
+    getByEntity: (
+      entityType: SyncEntityType,
+      entityId: string
+    ) => Promise<SyncQueueItem[]>;
+
+    getSummary: () =>
+      Promise<SyncSummary>;
+
+    markSynced: (
+      queueId: string,
+      serverId?: string | null
+    ) => Promise<SyncQueueItem | null>;
+
+    markFailed: (
+      queueId: string,
+      errorMessage: string
+    ) => Promise<SyncQueueItem | null>;
+
+    retry: (
+      queueId: string
+    ) => Promise<SyncQueueItem | null>;
+
+    retryAll: (
+      limit?: number
+    ) => Promise<number>;
+  };
 }
 
 declare global {
