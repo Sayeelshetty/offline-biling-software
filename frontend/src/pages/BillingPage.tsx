@@ -9,6 +9,10 @@ import productService, {
   type Product,
 } from "../services/product.service";
 
+import {
+  getSettings,
+} from "../services/settings.service";
+
 import invoiceService from "../services/invoice.service";
 
 import type {
@@ -81,14 +85,46 @@ function calculateLineAmount(
   );
 }
 
-function calculateLineTax(
-  line: BillingLine
+function getEffectiveGstRate(
+  _line: BillingLine,
+  taxEnabled: boolean,
+  defaultGstRate: number
 ): number {
-  const taxableAmount = calculateLineAmount(line);
+  if (!taxEnabled) {
+    return 0;
+  }
+
+  const configuredGstRate =
+    Number(defaultGstRate);
+
+  if (
+    Number.isFinite(configuredGstRate) &&
+    configuredGstRate >= 0
+  ) {
+    return configuredGstRate;
+  }
+
+  return 0;
+}
+
+function calculateLineTax(
+  line: BillingLine,
+  taxEnabled: boolean,
+  defaultGstRate: number
+): number {
+  const taxableAmount =
+    calculateLineAmount(line);
+
+  const gstRate =
+    getEffectiveGstRate(
+      line,
+      taxEnabled,
+      defaultGstRate
+    );
 
   return (
     taxableAmount *
-    (line.product.gstRate / 100)
+    (gstRate / 100)
   );
 }
 
@@ -145,6 +181,16 @@ function BillingPage() {
     generatingBill,
     setGeneratingBill,
   ] = useState(false);
+
+  const [
+  taxEnabled,
+  setTaxEnabled,
+] = useState(true);
+
+const [
+  defaultGstRate,
+  setDefaultGstRate,
+] = useState(5);
 
   const [
     error,
@@ -220,9 +266,15 @@ function BillingPage() {
         lineAmount - allocatedDiscount
       );
 
-      tax +=
-        taxableLineAmount *
-        (line.product.gstRate / 100);
+     tax +=
+  taxableLineAmount *
+  (
+    getEffectiveGstRate(
+      line,
+      taxEnabled,
+      defaultGstRate
+    ) / 100
+  );
 
       remainingDiscount -= allocatedDiscount;
     }
@@ -251,7 +303,12 @@ function BillingPage() {
       tax: roundMoney(tax),
       total: roundMoney(total),
     };
-  }, [cart, invoiceDiscount]);
+ }, [
+  cart,
+  invoiceDiscount,
+  taxEnabled,
+  defaultGstRate,
+]);
 
   useEffect(() => {
     searchInputRef.current?.focus();
@@ -260,6 +317,30 @@ function BillingPage() {
   useEffect(() => {
     loadCustomers();
   }, []);
+
+  useEffect(() => {
+  async function loadBillingSettings() {
+    try {
+      const settings =
+        await getSettings();
+
+      setTaxEnabled(
+        settings.billing.taxEnabled
+      );
+
+      setDefaultGstRate(
+        settings.billing.defaultGstRate
+      );
+    } catch (error) {
+      console.error(
+        "Failed to load billing settings:",
+        error
+      );
+    }
+  }
+
+  loadBillingSettings();
+}, []);
 
   useEffect(() => {
     const trimmed = searchTerm.trim();
@@ -528,7 +609,12 @@ function BillingPage() {
             productName: line.product.name,
             quantity: line.quantity,
             rate: line.product.sellingPrice,
-            gstRate: line.product.gstRate,
+            gstRate:
+  getEffectiveGstRate(
+    line,
+    taxEnabled,
+    defaultGstRate
+  ),
             discount: line.discount,
           })),
 
@@ -877,11 +963,12 @@ function BillingPage() {
                         </td>
 
                         <td>
-                          {
-                            line.product
-                              .gstRate
-                          }
-                          %
+                         {getEffectiveGstRate(
+  line,
+  taxEnabled,
+  defaultGstRate
+)}
+%
                         </td>
 
                         <td>
