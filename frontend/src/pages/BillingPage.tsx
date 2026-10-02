@@ -197,6 +197,19 @@ const [
   setDiscountEnabled,
 ] = useState(true);
 
+
+
+const [
+  paymentMethods,
+  setPaymentMethods,
+] = useState<PaymentMethod[]>([
+  "CASH",
+  "UPI",
+  "CARD",
+  "CREDIT",
+  "OTHER",
+]);
+
   const [
     error,
     setError,
@@ -340,6 +353,10 @@ const [
       setDiscountEnabled(
   settings.billing.discountEnabled
 );
+
+setPaymentMethods(
+  settings.billing.paymentMethods
+);
     } catch (error) {
       console.error(
         "Failed to load billing settings:",
@@ -350,6 +367,27 @@ const [
 
   loadBillingSettings();
 }, []);
+
+
+useEffect(() => {
+  if (paymentMethods.length === 0) {
+    setPaymentMethod("CASH");
+    return;
+  }
+
+  if (!paymentMethods.includes(paymentMethod)) {
+    const nextMethod = paymentMethods[0];
+
+    setPaymentMethod(nextMethod);
+
+    if (nextMethod !== "CREDIT") {
+      setDueDate("");
+    }
+  }
+}, [
+  paymentMethods,
+  paymentMethod,
+]);
 
   useEffect(() => {
     const trimmed = searchTerm.trim();
@@ -1174,43 +1212,72 @@ useEffect(() => {
               Payment Method
             </label>
 
-            <div className="payment-methods">
-              {(
-                [
-                  "CASH",
-                  "UPI",
-                  "CARD",
-                  "CREDIT",
-                  "OTHER",
-                ] as PaymentMethod[]
-              ).map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  className={
-                    paymentMethod === method
-                      ? "payment-method active"
-                      : "payment-method"
-                  }
-                  onClick={() =>
-                    setPaymentMethod(
-                      method
-                    )
-                  }
-                  disabled={generatingBill}
-                >
-                  {method === "CASH"
-                    ? "Cash"
-                    : method === "UPI"
-                    ? "UPI"
-                    : method === "CARD"
-                    ? "Card"
-                    : method === "CREDIT"
-                    ? "Credit"
-                    : "Other"}
-                </button>
-              ))}
-            </div>
+           <div className="payment-section">
+  <label>
+    Payment Method
+  </label>
+
+  <div className="payment-methods">
+    {paymentMethods.length === 0 ? (
+      <p>
+        No payment methods are enabled.
+      </p>
+    ) : (
+      paymentMethods.map((method) => (
+        <button
+          key={method}
+          type="button"
+          className={
+            paymentMethod === method
+              ? "payment-method active"
+              : "payment-method"
+          }
+          onClick={() => {
+            setPaymentMethod(method);
+          }}
+          disabled={generatingBill}
+        >
+          {method === "CASH"
+            ? "Cash"
+            : method === "UPI"
+            ? "UPI"
+            : method === "CARD"
+            ? "Card"
+            : method === "CREDIT"
+            ? "Credit"
+            : "Other"}
+        </button>
+      ))
+    )}
+  </div>
+
+  {paymentMethod === "CREDIT" && (
+    <div className="credit-section">
+      <div className="credit-note">
+        Credit payment requires a
+        customer and due date.
+      </div>
+
+      <div className="credit-field">
+        <label htmlFor="credit-due-date">
+          Due Date
+        </label>
+
+        <input
+          id="credit-due-date"
+          type="date"
+          value={dueDate}
+          onChange={(event) => {
+            setDueDate(
+              event.target.value
+            );
+          }}
+          disabled={generatingBill}
+        />
+      </div>
+    </div>
+  )}
+</div>
           </div>
 
           {paymentMethod ===
