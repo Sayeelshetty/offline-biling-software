@@ -1,6 +1,10 @@
 const crypto = require("crypto");
 
-const { getDatabase } = require("../connection.cjs");
+const { getDatabase } =
+  require("../connection.cjs");
+
+const settingsRepository =
+  require("./settings.repository.cjs");
 
 const db = getDatabase();
 
@@ -442,40 +446,88 @@ function calculateInvoiceSummary(
 function getNextInvoiceNumber(
   transaction
 ) {
-  const prefix =
-    `INV-${new Date()
-      .toISOString()
-      .slice(0, 10)
-      .replace(/-/g, "")}-`;
+  const settings =
+    settingsRepository.getSettings();
 
-  const row = transaction
+  const configuredPrefix =
+    String(
+      settings?.invoice?.invoicePrefix ??
+        "INV"
+    ).trim();
+
+  const configuredStartingNumber =
+    Number(
+      settings?.invoice?.startingNumber ??
+        1
+    );
+
+  const prefix =
+    configuredPrefix || "INV";
+
+  const startingNumber =
+    Number.isInteger(
+      configuredStartingNumber
+    ) &&
+    configuredStartingNumber > 0
+      ? configuredStartingNumber
+      : 1;
+
+  const numberPrefix =
+    `${prefix}-`;
+
+  const rows = transaction
     .prepare(`
       SELECT invoice_number
       FROM invoices
       WHERE invoice_number LIKE ?
-      ORDER BY invoice_number DESC
-      LIMIT 1
     `)
-    .get(`${prefix}%`);
+    .all(`${numberPrefix}%`);
 
-  let nextNumber = 1;
+  let nextNumber =
+    startingNumber;
 
-  if (row?.invoice_number) {
-    const lastPart =
-      row.invoice_number.slice(
-        prefix.length
+  for (const row of rows) {
+    const invoiceNumber =
+      String(
+        row?.invoice_number ?? ""
       );
 
-    const parsed = Number(
-      lastPart
-    );
+    if (
+      !invoiceNumber.startsWith(
+        numberPrefix
+      )
+    ) {
+      continue;
+    }
 
-    if (Number.isInteger(parsed)) {
-      nextNumber = parsed + 1;
+    const numericPart =
+      invoiceNumber.slice(
+        numberPrefix.length
+      );
+
+    if (
+      !/^\\d+$/.test(
+        numericPart
+      )
+    ) {
+      continue;
+    }
+
+    const parsedNumber =
+      Number(numericPart);
+
+    if (
+      Number.isInteger(
+        parsedNumber
+      ) &&
+      parsedNumber >= nextNumber
+    ) {
+      nextNumber =
+        parsedNumber + 1;
     }
   }
 
-  return `${prefix}${String(
+  return `${numberPrefix}${String(
     nextNumber
   ).padStart(4, "0")}`;
 }
