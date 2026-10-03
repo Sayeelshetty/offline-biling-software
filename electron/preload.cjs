@@ -590,4 +590,8 @@ settings: {
     "settings:restore"
   ),
 },
+auth: {
+  login: (input) =>
+    ipcRenderer.invoke("auth:login", input),
+},
 });

@@ -5,6 +5,11 @@ import type {
 } from "../../../shared/types/product";
 
 import type {
+  LoginInput,
+  LoginResponse,
+} from "../../../shared/auth";
+
+import type {
   Category,
   CategoryInput,
   CategoryUpdateInput,
@@ -363,6 +368,13 @@ interface DesktopAPI {
     ) => Promise<
       import("../../../shared/types/customer").Customer
     >;
+
+    auth: {
+  login: (
+    input: LoginInput
+  ) => Promise<LoginResponse>;
+};
+
   };
 
   // =========================

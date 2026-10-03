@@ -1213,8 +1213,7 @@ async function handleRestore() {
       records.
     </span>
   </button>
-
- <button
+<button
   type="button"
   className="settings-data-action"
   onClick={handleExportProducts}

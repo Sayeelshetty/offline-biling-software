@@ -6,6 +6,12 @@ const {
   shell,
 } = require("electron");
 
+
+const userRepository =
+  require(
+    "./database/repositories/user.repository.cjs"
+  );
+
 const fs = require("fs");
 const path = require("path");
 
@@ -2355,6 +2361,65 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle("auth:login", (_event, input) => {
+  try {
+    const email =
+      typeof input?.email === "string"
+        ? input.email.trim()
+        : "";
+
+    const password =
+      typeof input?.password === "string"
+        ? input.password
+        : "";
+
+    if (!email || !password) {
+      return {
+        success: false,
+        error: "Email and password are required.",
+      };
+    }
+
+    const user =
+      userRepository.authenticateUser(
+        email,
+        password
+      );
+
+    if (!user) {
+      return {
+        success: false,
+        error: "Invalid email or password.",
+      };
+    }
+
+    return {
+      success: true,
+      user,
+    };
+  } catch (error) {
+    console.error(
+      "auth:login failed:",
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Login failed.",
+    };
+  }
+});
+
+ipcMain.handle("auth:get-current-user", () => {
+  return {
+    success: false,
+    user: undefined,
+  };
+});
+
 /*
 |--------------------------------------------------------------------------
 | Application Lifecycle
@@ -2364,6 +2429,7 @@ ipcMain.handle(
 app.whenReady().then(() => {
   try {
     runMigrations();
+    userRepository.initializeDefaultAdmin();
 
     console.log(
       "================================="

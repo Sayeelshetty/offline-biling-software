@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
   BrowserRouter,
@@ -10,6 +7,9 @@ import {
   Routes,
 } from "react-router-dom";
 
+import type { AuthenticatedUser } from "../../shared/auth";
+
+import LoginPage from "./pages/LoginPage.tsx";
 import ProductsPage from "./pages/ProductsPage.tsx";
 import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
 import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
@@ -35,14 +35,75 @@ import type {
 
 import "./App.css";
 
+const AUTH_SESSION_KEY = "offline-billing-auth-user";
+
+function loadStoredUser(): AuthenticatedUser | null {
+  try {
+    const storedUser = localStorage.getItem(
+      AUTH_SESSION_KEY
+    );
+
+    if (!storedUser) {
+      return null;
+    }
+
+    const parsedUser: unknown = JSON.parse(storedUser);
+
+    if (
+      !parsedUser ||
+      typeof parsedUser !== "object"
+    ) {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+      return null;
+    }
+
+    const user = parsedUser as Record<string, unknown>;
+
+    if (
+      typeof user.id !== "string" ||
+      typeof user.name !== "string" ||
+      !["ADMIN", "CASHIER", "MANAGER"].includes(
+        String(user.role)
+      )
+    ) {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+      return null;
+    }
+
+    return {
+      id: user.id,
+      serverId:
+        typeof user.serverId === "string"
+          ? user.serverId
+          : null,
+      businessId:
+        typeof user.businessId === "string"
+          ? user.businessId
+          : null,
+      name: user.name,
+      email:
+        typeof user.email === "string"
+          ? user.email
+          : null,
+      role: user.role as AuthenticatedUser["role"],
+    };
+  } catch (error) {
+    console.error(
+      "Failed to load stored authentication:",
+      error
+    );
+
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    return null;
+  }
+}
+
 function DashboardPage() {
   return (
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">
-            DASHBOARD
-          </p>
+          <p className="eyebrow">DASHBOARD</p>
 
           <h1>Dashboard</h1>
 
@@ -77,21 +138,27 @@ function DashboardPage() {
   );
 }
 
-function AppLayout() {
+type AppLayoutProps = {
+  user: AuthenticatedUser;
+  onLogout: () => void;
+};
+
+function AppLayout({
+  user,
+  onLogout,
+}: AppLayoutProps) {
   const [
     connectionStatus,
     setConnectionStatus,
   ] = useState<SyncConnectionStatus>(
-    () =>
-      connectionService.getConnectionStatus()
+    () => connectionService.getConnectionStatus()
   );
 
   const [
     syncStatus,
     setSyncStatus,
   ] = useState<SyncEngineStatus>(
-    () =>
-      syncEngineService.getStatus()
+    () => syncEngineService.getStatus()
   );
 
   const [
@@ -119,22 +186,18 @@ function AppLayout() {
     let mounted = true;
 
     const unsubscribeSync =
-      syncEngineService.subscribe(
-        (status) => {
-          if (mounted) {
-            setSyncStatus(status);
-          }
+      syncEngineService.subscribe((status) => {
+        if (mounted) {
+          setSyncStatus(status);
         }
-      );
-
-    syncEngineService
-      .initialize()
-      .catch((error) => {
-        console.error(
-          "Failed to initialize sync engine:",
-          error
-        );
       });
+
+    syncEngineService.initialize().catch((error) => {
+      console.error(
+        "Failed to initialize sync engine:",
+        error
+      );
+    });
 
     return () => {
       mounted = false;
@@ -147,13 +210,11 @@ function AppLayout() {
 
     async function loadBusinessBranding() {
       try {
-        const [
-          settings,
-          logoData,
-        ] = await Promise.all([
-          getSettings(),
-          getLogoData(),
-        ]);
+        const [settings, logoData] =
+          await Promise.all([
+            getSettings(),
+            getLogoData(),
+          ]);
 
         if (!mounted) {
           return;
@@ -164,9 +225,7 @@ function AppLayout() {
             "Offline Billing"
         );
 
-        setBusinessLogo(
-          logoData
-        );
+        setBusinessLogo(logoData);
       } catch (error) {
         console.error(
           "Failed to load business branding:",
@@ -232,65 +291,97 @@ function AppLayout() {
           </div>
 
           <div>
-            <strong>
-              {businessName}
-            </strong>
+            <strong>{businessName}</strong>
 
-            <span>
-              POS System
-            </span>
+            <span>POS System</span>
           </div>
         </div>
 
         <nav className="navigation">
-          <Link to="/">
-            Dashboard
-          </Link>
-
-          <Link to="/products">
-            Products
-          </Link>
-
-          <Link to="/categories">
-            Categories
-          </Link>
-
-          <Link to="/billing">
-            Billing
-          </Link>
-
-          <Link to="/inventory">
-            Inventory
-          </Link>
-
-          <Link to="/customers">
-            Customers
-          </Link>
-
-          <Link to="/payments">
-            Payments
-          </Link>
-
-          <Link to="/invoices">
-            Invoices
-          </Link>
-
-          <Link to="/reports">
-            Reports
-          </Link>
-
-          <Link to="/settings">
-            Settings
-          </Link>
+          <Link to="/">Dashboard</Link>
+          <Link to="/products">Products</Link>
+          <Link to="/categories">Categories</Link>
+          <Link to="/billing">Billing</Link>
+          <Link to="/inventory">Inventory</Link>
+          <Link to="/customers">Customers</Link>
+          <Link to="/payments">Payments</Link>
+          <Link to="/invoices">Invoices</Link>
+          <Link to="/reports">Reports</Link>
+          <Link to="/settings">Settings</Link>
         </nav>
+
+        <div
+          className="sidebar-user"
+          style={{
+            marginTop: "auto",
+            padding: "16px",
+            borderTop:
+              "1px solid rgba(148, 163, 184, 0.18)",
+          }}
+        >
+          <div style={{ marginBottom: "10px" }}>
+            <strong
+              style={{
+                display: "block",
+                fontSize: "13px",
+              }}
+            >
+              {user.name}
+            </strong>
+
+            <span
+              style={{
+                display: "block",
+                marginTop: "4px",
+                fontSize: "11px",
+                opacity: 0.7,
+              }}
+            >
+              {user.role}
+            </span>
+
+            {user.email && (
+              <span
+                style={{
+                  display: "block",
+                  marginTop: "3px",
+                  fontSize: "11px",
+                  opacity: 0.7,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user.email}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{
+              width: "100%",
+              padding: "9px 12px",
+              borderRadius: "8px",
+              border:
+                "1px solid rgba(148, 163, 184, 0.3)",
+              background: "transparent",
+              color: "inherit",
+              cursor: "pointer",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </aside>
 
       <div className="main-area">
         <header className="topbar">
           <div>
-            <strong>
-              {businessName}
-            </strong>
+            <strong>{businessName}</strong>
           </div>
 
           <div className="topbar-status-group">
@@ -303,9 +394,7 @@ function AppLayout() {
             >
               <span className="status-dot" />
 
-              {isOnline
-                ? "Online"
-                : "Offline"}
+              {isOnline ? "Online" : "Offline"}
             </div>
 
             <div
@@ -383,9 +472,58 @@ function AppLayout() {
 }
 
 function App() {
+  const [
+    authenticatedUser,
+    setAuthenticatedUser,
+  ] = useState<AuthenticatedUser | null>(
+    () => loadStoredUser()
+  );
+
+  function handleLogin(
+    user: AuthenticatedUser
+  ) {
+    localStorage.setItem(
+      AUTH_SESSION_KEY,
+      JSON.stringify(user)
+    );
+
+    window.history.replaceState(
+      null,
+      "",
+      "/"
+    );
+
+    setAuthenticatedUser(user);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(
+      AUTH_SESSION_KEY
+    );
+
+    window.history.replaceState(
+      null,
+      "",
+      "/"
+    );
+
+    setAuthenticatedUser(null);
+  }
+
+  if (!authenticatedUser) {
+    return (
+      <LoginPage
+        onLoginSuccess={handleLogin}
+      />
+    );
+  }
+
   return (
     <BrowserRouter>
-      <AppLayout />
+      <AppLayout
+        user={authenticatedUser}
+        onLogout={handleLogout}
+      />
     </BrowserRouter>
   );
 }
