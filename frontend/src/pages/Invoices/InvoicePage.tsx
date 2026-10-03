@@ -7,10 +7,6 @@ import { useNavigate } from "react-router-dom";
 
 import invoiceService from "../../services/invoice.service";
 
-import {
-  getSettings,
-} from "../../services/settings.service";
-
 import type {
   Invoice,
   InvoiceItem,
@@ -118,26 +114,11 @@ function InvoicePage() {
   const [error, setError] =
     useState<string | null>(null);
 
-  const [businessName, setBusinessName] =
-    useState("Offline Billing");
+  const [downloadingPdf, setDownloadingPdf] =
+    useState(false);
 
-  async function loadBusinessSettings() {
-    try {
-      const settings = await getSettings();
-
-      setBusinessName(
-        settings.business.businessName?.trim() ||
-          "Offline Billing"
-      );
-    } catch (err) {
-      console.error(
-        "Failed to load business settings:",
-        err
-      );
-
-      setBusinessName("Offline Billing");
-    }
-  }
+  const [sharingInvoice, setSharingInvoice] =
+    useState(false);
 
   async function loadInvoices() {
     try {
@@ -183,7 +164,6 @@ function InvoicePage() {
 
   useEffect(() => {
     loadInvoices();
-    loadBusinessSettings();
   }, []);
 
   function openInvoice(invoice: Invoice) {
@@ -199,6 +179,138 @@ function InvoicePage() {
     window.print();
   }
 
+  async function handleDownloadPdf() {
+    if (!selectedInvoice || downloadingPdf) {
+      return;
+    }
+
+    try {
+      setDownloadingPdf(true);
+      setError(null);
+
+      const result =
+        await invoiceService.downloadPdf(
+          selectedInvoice.invoiceNumber
+        );
+
+      if (result?.canceled) {
+        return;
+      }
+
+      if (result?.filePath) {
+        window.alert(
+          `Invoice PDF saved successfully.\n\n${result.filePath}`
+        );
+        return;
+      }
+
+      setError(
+        "Invoice PDF could not be saved."
+      );
+    } catch (err) {
+      console.error(
+        "Failed to download invoice PDF:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to download invoice PDF."
+      );
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
+
+  async function handleShare() {
+  if (
+    !selectedInvoice ||
+    sharingInvoice
+  ) {
+    return;
+  }
+
+  try {
+    setSharingInvoice(true);
+    setError(null);
+
+    const shareText = [
+      "Invoice",
+      `Bill No: ${selectedInvoice.invoiceNumber}`,
+      `Date: ${formatDateTime(
+        selectedInvoice.createdAt
+      )}`,
+      `Payment: ${getPaymentMethodLabel(
+        selectedInvoice.paymentMethod
+      )}`,
+      `Status: ${selectedInvoice.paymentStatus}`,
+      `Subtotal: ${formatCurrency(
+        selectedInvoice.subtotal
+      )}`,
+      `Discount: ${formatCurrency(
+        selectedInvoice.discount
+      )}`,
+      `GST / Tax: ${formatCurrency(
+        selectedInvoice.tax
+      )}`,
+      `Total: ${formatCurrency(
+        selectedInvoice.total
+      )}`,
+      "",
+      "Thank you for your purchase.",
+    ].join("\n");
+
+    try {
+      await invoiceService.shareInvoice(
+        shareText
+      );
+
+      try {
+        await navigator.clipboard.writeText(
+          shareText
+        );
+      } catch {
+        // Clipboard is only a fallback.
+      }
+
+      window.alert(
+        "WhatsApp Web has been opened with the invoice details."
+      );
+    } catch (shareError) {
+      console.error(
+        "WhatsApp sharing failed:",
+        shareError
+      );
+
+      try {
+        await navigator.clipboard.writeText(
+          shareText
+        );
+
+        window.alert(
+          "Invoice details were copied successfully. Paste them into WhatsApp, email, or another messaging app."
+        );
+      } catch {
+        throw shareError;
+      }
+    }
+  } catch (err) {
+    console.error(
+      "Failed to share invoice:",
+      err
+    );
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Failed to share invoice."
+    );
+  } finally {
+    setSharingInvoice(false);
+  }
+}
+
   function handleNewBill() {
     navigate("/billing");
   }
@@ -211,9 +323,7 @@ function InvoicePage() {
             INVOICES
           </p>
 
-          <h1>
-            Invoice / Receipt
-          </h1>
+          <h1>Invoice / Receipt</h1>
 
           <p className="page-description">
             View generated bills and print customer
@@ -372,26 +482,42 @@ function InvoicePage() {
                     type="button"
                     className="secondary-button"
                     onClick={handlePrint}
+                    disabled={
+                      downloadingPdf ||
+                      sharingInvoice
+                    }
                   >
                     Print
                   </button>
 
                   <button
                     type="button"
-                    className="secondary-button invoice-disabled-action"
-                    disabled
-                    title="PDF export will be connected in the next step."
+                    className="secondary-button"
+                    onClick={
+                      handleDownloadPdf
+                    }
+                    disabled={
+                      downloadingPdf ||
+                      sharingInvoice
+                    }
                   >
-                    Download PDF
+                    {downloadingPdf
+                      ? "Saving PDF..."
+                      : "Download PDF"}
                   </button>
 
                   <button
                     type="button"
-                    className="secondary-button invoice-disabled-action"
-                    disabled
-                    title="Invoice sharing will be connected in the next step."
+                    className="secondary-button"
+                    onClick={handleShare}
+                    disabled={
+                      downloadingPdf ||
+                      sharingInvoice
+                    }
                   >
-                    Share
+                    {sharingInvoice
+                      ? "Sharing..."
+                      : "Share"}
                   </button>
 
                   <button
@@ -408,7 +534,7 @@ function InvoicePage() {
                 <div className="invoice-paper-header">
                   <div>
                     <p className="invoice-business-name">
-                      {businessName}
+                      Offline Billing
                     </p>
 
                     <p className="invoice-business-subtitle">
@@ -422,7 +548,9 @@ function InvoicePage() {
                     </h3>
 
                     <span>
-                      {selectedInvoice.invoiceNumber}
+                      {
+                        selectedInvoice.invoiceNumber
+                      }
                     </span>
                   </div>
                 </div>

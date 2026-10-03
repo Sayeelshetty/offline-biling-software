@@ -9,6 +9,10 @@ export type DownloadPdfResult = {
   filePath: string | null;
 };
 
+export type ShareInvoiceResult = {
+  success: boolean;
+};
+
 type DesktopInvoiceApi = {
   create: (
     input: CreateInvoiceInput
@@ -92,6 +96,14 @@ async function downloadInvoicePdf(
   );
 }
 
+async function shareInvoice(
+  shareText: string
+): Promise<ShareInvoiceResult> {
+  return getInvoiceApi().share(
+    shareText
+  );
+}
+
 const invoiceService = {
   createInvoice,
   getInvoiceById,
@@ -99,6 +111,9 @@ const invoiceService = {
   getInvoiceByNumber,
   getRecentInvoices,
   downloadInvoicePdf,
+  downloadPdf:
+    downloadInvoicePdf,
+  shareInvoice,
 };
 
 export default invoiceService;

@@ -443,6 +443,13 @@ interface DesktopAPI {
     filePath: string | null;
   }>;
 
+
+  share: (
+  shareText: string
+) => Promise<{
+  success: boolean;
+}>;
+
   // =========================
   // Reports
   // =========================
