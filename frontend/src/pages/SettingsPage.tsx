@@ -310,6 +310,97 @@ async function handleBackup() {
 }
 
 
+async function handleExportProducts() {
+  try {
+    const result =
+      await window.desktopAPI.products.exportCsv();
+
+    if (result.canceled) {
+      return;
+    }
+
+    if (
+      result.success &&
+      result.path
+    ) {
+      window.alert(
+        `Products exported successfully.\n\nSaved to:\n${result.path}\n\nTotal products: ${result.count ?? 0}`
+      );
+
+      return;
+    }
+
+    window.alert(
+      result.error ||
+        "Failed to export products."
+    );
+  } catch (error) {
+    console.error(
+      "Product export failed:",
+      error
+    );
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to export products."
+    );
+  }
+}
+
+
+async function handleImportProducts() {
+  try {
+    const result =
+      await window.desktopAPI.products.importCsv();
+
+    if (result.canceled) {
+      return;
+    }
+
+    if (result.success) {
+      const importedCount =
+        result.count ?? 0;
+
+      const importErrors =
+        result.errors ?? [];
+
+      if (importErrors.length > 0) {
+        window.alert(
+          `Product import completed with errors.\n\nImported products: ${importedCount}\n\nErrors:\n${importErrors.join(
+            "\n"
+          )}`
+        );
+
+        return;
+      }
+
+      window.alert(
+        `Products imported successfully.\n\nImported products: ${importedCount}`
+      );
+
+      return;
+    }
+
+    window.alert(
+      result.error ||
+        "Failed to import products."
+    );
+  } catch (error) {
+    console.error(
+      "Product import failed:",
+      error
+    );
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to import products."
+    );
+  }
+}
+
+
 async function handleRestore() {
   const confirmed =
     window.confirm(
@@ -1123,21 +1214,33 @@ async function handleRestore() {
     </span>
   </button>
 
-  <button
-    type="button"
-    className="settings-data-action"
-    disabled
-    title="Import and export will be connected here."
-  >
-    <strong>
-      Import / Export
-    </strong>
+ <button
+  type="button"
+  className="settings-data-action"
+  onClick={handleExportProducts}
+>
+  <strong>
+    Export Products
+  </strong>
 
-    <span>
-      Manage supported data import and
-      export operations.
-    </span>
-  </button>
+  <span>
+    Export product data to a CSV file.
+  </span>
+</button>
+
+<button
+  type="button"
+  className="settings-data-action"
+  onClick={handleImportProducts}
+>
+  <strong>
+    Import Products
+  </strong>
+
+  <span>
+    Import product data from a CSV file.
+  </span>
+</button>
 </div>
         </section>
       </div>
