@@ -1,10 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const Database = require("better-sqlite3");
 
-/**
- * Creates a safe SQLite backup using
- * the active better-sqlite3 connection.
- */
 async function backupDatabase(
   database,
   destinationPath
@@ -16,8 +13,7 @@ async function backupDatabase(
   }
 
   if (
-    typeof database.backup !==
-    "function"
+    typeof database.backup !== "function"
   ) {
     throw new Error(
       "SQLite backup functionality is not available."
@@ -42,9 +38,7 @@ async function backupDatabase(
     path.dirname(destination);
 
   if (
-    !fs.existsSync(
-      destinationDirectory
-    )
+    !fs.existsSync(destinationDirectory)
   ) {
     fs.mkdirSync(
       destinationDirectory,
@@ -58,9 +52,7 @@ async function backupDatabase(
     destination
   );
 
-  if (
-    !fs.existsSync(destination)
-  ) {
+  if (!fs.existsSync(destination)) {
     throw new Error(
       "Backup file was not created."
     );
@@ -78,9 +70,6 @@ async function backupDatabase(
   return destination;
 }
 
-/**
- * Checks whether a file is a SQLite database.
- */
 function isSQLiteDatabase(
   filePath
 ) {
@@ -130,27 +119,21 @@ function isSQLiteDatabase(
   }
 }
 
-/**
- * Restores a SQLite database from
- * a previously created backup file.
+/*
+ * Restores the contents of a SQLite backup
+ * into the currently open database connection.
+ *
+ * The target connection remains open, so
+ * repositories that already hold the connection
+ * continue to work after the restore.
  */
 function restoreDatabase(
   sourcePath,
-  databasePath
+  targetDatabase
 ) {
-  const source =
-    path.resolve(
-      String(sourcePath || "")
-    );
-
-  const destination =
-    path.resolve(
-      String(databasePath || "")
-    );
-
   if (
-    !source ||
-    !fs.existsSync(source)
+    !sourcePath ||
+    !fs.existsSync(sourcePath)
   ) {
     throw new Error(
       "Backup file does not exist."
@@ -158,74 +141,173 @@ function restoreDatabase(
   }
 
   if (
-    !isSQLiteDatabase(source)
+    !isSQLiteDatabase(sourcePath)
   ) {
     throw new Error(
       "The selected file is not a valid SQLite database backup."
     );
   }
 
-  if (source === destination) {
+  if (!targetDatabase) {
     throw new Error(
-      "The selected backup cannot be the active database."
+      "SQLite database connection is not available."
     );
   }
 
-  const destinationDirectory =
-    path.dirname(destination);
-
-  if (
-    !fs.existsSync(
-      destinationDirectory
-    )
-  ) {
-    fs.mkdirSync(
-      destinationDirectory,
+  const source =
+    new Database(
+      path.resolve(sourcePath),
       {
-        recursive: true,
+        readonly: true,
       }
     );
-  }
-
-  const tempPath =
-    `${destination}.restore-${Date.now()}.tmp`;
-
-  fs.copyFileSync(
-    source,
-    tempPath
-  );
-
-  const tempStats =
-    fs.statSync(tempPath);
-
-  if (tempStats.size <= 0) {
-    try {
-      fs.unlinkSync(
-        tempPath
-      );
-    } catch {
-      // Ignore cleanup errors.
-    }
-
-    throw new Error(
-      "The restore file is empty."
-    );
-  }
-
-  fs.copyFileSync(
-    tempPath,
-    destination
-  );
 
   try {
-    fs.unlinkSync(
-      tempPath
-    );
-  } catch {
-    // Temporary file cleanup is best effort.
-  }
+    const tables =
+      source
+        .prepare(`
+          SELECT name
+          FROM sqlite_master
+          WHERE type = 'table'
+            AND name NOT LIKE 'sqlite_%'
+          ORDER BY name
+        `)
+        .all();
 
-  return destination;
+    const sourceTableInfo =
+      new Map();
+
+    for (const table of tables) {
+      const columns =
+        source
+          .prepare(
+            `PRAGMA table_info("${table.name}")`
+          )
+          .all();
+
+      sourceTableInfo.set(
+        table.name,
+        columns
+      );
+    }
+
+    targetDatabase.pragma(
+      "foreign_keys = OFF"
+    );
+
+    const restoreTransaction =
+      targetDatabase.transaction(() => {
+        /*
+         * Remove existing application data.
+         */
+        for (
+          const table of tables
+        ) {
+          targetDatabase
+            .prepare(
+              `DELETE FROM "${table.name}"`
+            )
+            .run();
+        }
+
+        /*
+         * Insert backup data.
+         */
+        for (
+          const table of tables
+        ) {
+          const columns =
+            sourceTableInfo.get(
+              table.name
+            ) || [];
+
+          if (
+            columns.length === 0
+          ) {
+            continue;
+          }
+
+          const columnNames =
+            columns.map(
+              (column) =>
+                `"${column.name}"`
+            );
+
+          const placeholders =
+            columns.map(
+              () => "?"
+            );
+
+          const insertStatement =
+            targetDatabase.prepare(`
+              INSERT INTO "${table.name}" (
+                ${columnNames.join(", ")}
+              )
+              VALUES (
+                ${placeholders.join(", ")}
+              )
+            `);
+
+          const rows =
+            source
+              .prepare(
+                `SELECT * FROM "${table.name}"`
+              )
+              .all();
+
+          for (
+            const row of rows
+          ) {
+            const values =
+              columns.map(
+                (column) =>
+                  row[column.name]
+              );
+
+            insertStatement.run(
+              ...values
+            );
+          }
+        }
+      });
+
+    restoreTransaction();
+
+    targetDatabase.pragma(
+      "foreign_keys = ON"
+    );
+
+    /*
+     * Make sure the restored database
+     * has no foreign-key violations.
+     */
+    const foreignKeyProblems =
+      targetDatabase
+        .prepare(
+          "PRAGMA foreign_key_check"
+        )
+        .all();
+
+    if (
+      foreignKeyProblems.length > 0
+    ) {
+      throw new Error(
+        "Restore completed with foreign-key integrity errors."
+      );
+    }
+
+    return true;
+  } finally {
+    source.close();
+
+    try {
+      targetDatabase.pragma(
+        "foreign_keys = ON"
+      );
+    } catch {
+      // Best effort.
+    }
+  }
 }
 
 module.exports = {

@@ -2005,7 +2005,6 @@ ipcMain.handle(
   }
 );
 
-
 ipcMain.handle(
   "settings:restore",
   async (event) => {
@@ -2026,11 +2025,9 @@ ipcMain.handle(
           {
             title:
               "Restore Local Database",
-
             properties: [
               "openFile",
             ],
-
             filters: [
               {
                 name:
@@ -2102,6 +2099,10 @@ ipcMain.handle(
         };
       }
 
+      /*
+       * Keep the current SQLite connection open.
+       * First create a safety backup.
+       */
       const safetyBackupPath =
         path.join(
           app.getPath(
@@ -2110,26 +2111,32 @@ ipcMain.handle(
           `offline-billing-before-restore-${Date.now()}.db`
         );
 
-      const currentDatabase =
+      const database =
         getDatabase();
 
       await backupDatabase(
-        currentDatabase,
+        database,
         safetyBackupPath
       );
 
-      closeDatabase();
-
+      /*
+       * Restore the selected backup
+       * directly into the currently open
+       * SQLite database.
+       */
       restoreDatabase(
         selectedPath,
-        databasePath
+        database
       );
-
-      getDatabase();
 
       console.log(
         "Database restored successfully:",
         selectedPath
+      );
+
+      console.log(
+        "Safety backup created:",
+        safetyBackupPath
       );
 
       return {
@@ -2143,12 +2150,6 @@ ipcMain.handle(
         error
       );
 
-      try {
-        getDatabase();
-      } catch {
-        // Database will be reopened on the next operation.
-      }
-
       return {
         success: false,
         canceled: false,
@@ -2161,7 +2162,6 @@ ipcMain.handle(
     }
   }
 );
-
 // --------------------------------------------------------------------------
 // Reports IPC
 // --------------------------------------------------------------------------

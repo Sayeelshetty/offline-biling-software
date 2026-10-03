@@ -333,10 +333,8 @@ async function handleRestore() {
       result.filePath
     ) {
       window.alert(
-        "Database restored successfully.\n\nThe application will restart to load the restored data."
+        "Database restored successfully.\n\nThe application will restart automatically to load the restored data."
       );
-
-      window.location.reload();
 
       return;
     }
@@ -358,6 +356,7 @@ async function handleRestore() {
     );
   }
 }
+
 
   async function handleReset() {
     const confirmed = window.confirm(
@@ -1075,26 +1074,26 @@ async function handleRestore() {
             </div>
           </div>
 
-      <div className="settings-data-grid">
+     <div className="settings-data-grid">
   <button
-  type="button"
-  className="settings-data-action"
-  onClick={handleRestore}
->
-  <strong>
-    Restore Database
-  </strong>
+    type="button"
+    className="settings-data-action"
+    onClick={handleBackup}
+  >
+    <strong>
+      Backup Database
+    </strong>
 
-  <span>
-    Restore data from a local backup.
-  </span>
-</button>
+    <span>
+      Save a local copy of the SQLite
+      database.
+    </span>
+  </button>
 
   <button
     type="button"
     className="settings-data-action"
-    disabled
-    title="Restore will be connected next."
+    onClick={handleRestore}
   >
     <strong>
       Restore Database
