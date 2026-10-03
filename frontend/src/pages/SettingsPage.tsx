@@ -271,6 +271,94 @@ function SettingsPage() {
   }
 }
 
+async function handleBackup() {
+  try {
+    const result =
+      await window.desktopAPI.settings.backup();
+
+    if (result.canceled) {
+      return;
+    }
+
+    if (
+      result.success &&
+      result.filePath
+    ) {
+      window.alert(
+        `Local database backup created successfully.\n\nSaved to:\n${result.filePath}`
+      );
+
+      return;
+    }
+
+    window.alert(
+      result.error ||
+        "Failed to create local database backup."
+    );
+  } catch (error) {
+    console.error(
+      "Database backup failed:",
+      error
+    );
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to create local database backup."
+    );
+  }
+}
+
+
+async function handleRestore() {
+  const confirmed =
+    window.confirm(
+      "Restore a database backup?\n\nThis will replace the current local billing data. A safety backup will be created automatically before restore."
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const result =
+      await window.desktopAPI.settings.restore();
+
+    if (result.canceled) {
+      return;
+    }
+
+    if (
+      result.success &&
+      result.filePath
+    ) {
+      window.alert(
+        "Database restored successfully.\n\nThe application will restart to load the restored data."
+      );
+
+      window.location.reload();
+
+      return;
+    }
+
+    window.alert(
+      result.error ||
+        "Failed to restore database."
+    );
+  } catch (error) {
+    console.error(
+      "Database restore failed:",
+      error
+    );
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to restore database."
+    );
+  }
+}
+
   async function handleReset() {
     const confirmed = window.confirm(
       "Reset all settings to their default values?"
@@ -987,73 +1075,71 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="settings-data-grid">
-            <button
-              type="button"
-              className="settings-data-action"
-              disabled
-              title="Backup will be connected next."
-            >
-              <strong>
-                Backup Database
-              </strong>
+      <div className="settings-data-grid">
+  <button
+  type="button"
+  className="settings-data-action"
+  onClick={handleRestore}
+>
+  <strong>
+    Restore Database
+  </strong>
 
-              <span>
-                Save a local copy of the SQLite
-                database.
-              </span>
-            </button>
+  <span>
+    Restore data from a local backup.
+  </span>
+</button>
 
-            <button
-              type="button"
-              className="settings-data-action"
-              disabled
-              title="Restore will be connected next."
-            >
-              <strong>
-                Restore Database
-              </strong>
+  <button
+    type="button"
+    className="settings-data-action"
+    disabled
+    title="Restore will be connected next."
+  >
+    <strong>
+      Restore Database
+    </strong>
 
-              <span>
-                Restore data from a local backup.
-              </span>
-            </button>
+    <span>
+      Restore data from a local backup.
+    </span>
+  </button>
 
-            <button
-              type="button"
-              className="settings-data-action"
-              onClick={() =>
-                window.alert(
-                  "Use the Sync status in the application header to monitor synchronization."
-                )
-              }
-            >
-              <strong>
-                Sync Status
-              </strong>
+  <button
+    type="button"
+    className="settings-data-action"
+    onClick={() =>
+      window.alert(
+        "Use the Sync status in the application header to monitor synchronization."
+      )
+    }
+  >
+    <strong>
+      Sync Status
+    </strong>
 
-              <span>
-                Monitor pending and synchronized
-                records.
-              </span>
-            </button>
+    <span>
+      Monitor pending and synchronized
+      records.
+    </span>
+  </button>
 
-            <button
-              type="button"
-              className="settings-data-action"
-              disabled
-              title="Import and export will be connected here."
-            >
-              <strong>
-                Import / Export
-              </strong>
+  <button
+    type="button"
+    className="settings-data-action"
+    disabled
+    title="Import and export will be connected here."
+  >
+    <strong>
+      Import / Export
+    </strong>
 
-              <span>
-                Manage supported data import and
-                export operations.
-              </span>
-            </button>
-          </div>
+    <span>
+      Manage supported data import and
+      export operations.
+    </span>
+  </button>
+</div>
         </section>
       </div>
     </section>

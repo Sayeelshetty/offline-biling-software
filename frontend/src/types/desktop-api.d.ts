@@ -558,7 +558,11 @@ interface DesktopAPI {
 
  settings: {
   get: () => Promise<SettingsData>;
-  update: (settings: SettingsData) => Promise<SettingsData>;
+
+  update: (
+    settings: SettingsData
+  ) => Promise<SettingsData>;
+
   reset: () => Promise<SettingsData>;
 
   selectLogo: () => Promise<{
@@ -566,10 +570,14 @@ interface DesktopAPI {
     filePath: string | null;
   }>;
 
-  getLogoData: () => Promise<string | null>;
+  getLogoData: () =>
+    Promise<string | null>;
 
-  backup?: () => Promise<BackupResponse>;
-  restore?: () => Promise<RestoreResponse>;
+backup: () =>
+  Promise<BackupResponse>;
+
+restore: () =>
+  Promise<RestoreResponse>;
 };
 }
 

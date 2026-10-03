@@ -3,11 +3,18 @@ const {
   BrowserWindow,
   ipcMain,
   dialog,
+  shell,
 } = require("electron");
 
 const fs = require("fs");
-
 const path = require("path");
+
+const {
+  backupDatabase,
+  restoreDatabase,
+} = require(
+  "./services/backup.service.cjs"
+);
 
 const { runMigrations } = require("./database/migrations.cjs");
 
@@ -1457,6 +1464,33 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  "invoices:share",
+  async (_event, shareText) => {
+    const text =
+      String(shareText || "").trim();
+
+    if (!text) {
+      throw new Error(
+        "Invoice share content is empty."
+      );
+    }
+
+    const whatsappUrl =
+      `https://wa.me/?text=${encodeURIComponent(
+        text
+      )}`;
+
+    await shell.openExternal(
+      whatsappUrl
+    );
+
+    return {
+      success: true,
+    };
+  }
+);
+
+ipcMain.handle(
   "payments:get-by-id",
   (_event, paymentId) =>
     paymentRepository.getPaymentById(
@@ -1499,6 +1533,147 @@ ipcMain.handle(
         event.sender
       );
 
+      ipcMain.handle(
+  "invoices:share",
+  async (_event, shareText) => {
+    const text =
+      String(shareText || "").trim();
+
+    if (!text) {
+      throw new Error(
+        "Invoice share content is empty."
+      );
+    }
+
+    const whatsappUrl =
+      `https://wa.me/?text=${encodeURIComponent(
+        text
+      )}`;
+
+    await shell.openExternal(
+      whatsappUrl
+    );
+
+    return {
+      success: true,
+    };
+  }
+);
+
+ipcMain.handle(
+  "settings:backup",
+  async (event) => {
+    const win =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+
+    try {
+      const database =
+        getDatabase();
+
+      const databasePath =
+        path.resolve(
+          getDatabasePath()
+        );
+
+      const timestamp =
+        new Date()
+          .toISOString()
+          .replace(
+            /[:.]/g,
+            "-"
+          );
+
+      const defaultFileName =
+        `offline-billing-backup-${timestamp}.db`;
+
+      const result =
+        await dialog.showSaveDialog(
+          win,
+          {
+            title:
+              "Backup Local Database",
+            defaultPath:
+              path.join(
+                app.getPath(
+                  "documents"
+                ),
+                defaultFileName
+              ),
+            filters: [
+              {
+                name:
+                  "SQLite Database",
+                extensions: [
+                  "db",
+                ],
+              },
+            ],
+          }
+        );
+
+      if (
+        result.canceled ||
+        !result.filePath
+      ) {
+        return {
+          success: true,
+          canceled: true,
+          filePath: null,
+        };
+      }
+
+      const selectedPath =
+        path.resolve(
+          result.filePath
+        );
+
+      if (
+        selectedPath ===
+        databasePath
+      ) {
+        return {
+          success: false,
+          error:
+            "You cannot overwrite the active application database with its own backup.",
+        };
+      }
+
+      const backupPath =
+        await backupDatabase(
+          database,
+          selectedPath
+        );
+
+      console.log(
+        "Local database backup created:",
+        backupPath
+      );
+
+      return {
+        success: true,
+        canceled: false,
+        filePath: backupPath,
+      };
+    } catch (error) {
+      console.error(
+        "Database backup failed:",
+        error
+      );
+
+      return {
+        success: false,
+        canceled: false,
+        filePath: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create database backup.",
+      };
+    }
+  }
+);
 
 
 
@@ -1543,6 +1718,28 @@ ipcMain.handle(
         filePath: null,
       };
     }
+
+    const settings =
+  settingsRepository.getSettings();
+
+const printFormat =
+  settings?.invoice?.printFormat ===
+  "THERMAL"
+    ? "THERMAL"
+    : "A4";
+
+const paperWidth =
+  settings?.printer?.paperWidth === 58
+    ? 58
+    : 80;
+
+const pageSize =
+  printFormat === "THERMAL"
+    ? {
+        width: paperWidth / 25.4,
+        height: 11.69,
+      }
+    : "A4";
 
     const pdfData =
       await win.webContents.printToPDF({
@@ -1685,6 +1882,283 @@ ipcMain.handle(
   "settings:reset",
   () => {
     return settingsRepository.resetSettings();
+  }
+);
+
+
+ipcMain.handle(
+  "settings:backup",
+  async (event) => {
+    const win =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+
+    try {
+      const database =
+        getDatabase();
+
+      const databasePath =
+        path.resolve(
+          getDatabasePath()
+        );
+
+      const timestamp =
+        new Date()
+          .toISOString()
+          .replace(
+            /[:.]/g,
+            "-"
+          );
+
+      const defaultFileName =
+        `offline-billing-backup-${timestamp}.db`;
+
+      const result =
+        await dialog.showSaveDialog(
+          win,
+          {
+            title:
+              "Backup Local Database",
+
+            defaultPath:
+              path.join(
+                app.getPath(
+                  "documents"
+                ),
+                defaultFileName
+              ),
+
+            filters: [
+              {
+                name:
+                  "SQLite Database",
+                extensions: [
+                  "db",
+                ],
+              },
+            ],
+          }
+        );
+
+      if (
+        result.canceled ||
+        !result.filePath
+      ) {
+        return {
+          success: true,
+          canceled: true,
+          filePath: null,
+        };
+      }
+
+      const selectedPath =
+        path.resolve(
+          result.filePath
+        );
+
+      if (
+        selectedPath ===
+        databasePath
+      ) {
+        return {
+          success: false,
+          canceled: false,
+          filePath: null,
+          error:
+            "You cannot overwrite the active application database with its own backup.",
+        };
+      }
+
+      const backupPath =
+        await backupDatabase(
+          database,
+          selectedPath
+        );
+
+      console.log(
+        "Local database backup created:",
+        backupPath
+      );
+
+      return {
+        success: true,
+        canceled: false,
+        filePath: backupPath,
+      };
+    } catch (error) {
+      console.error(
+        "Database backup failed:",
+        error
+      );
+
+      return {
+        success: false,
+        canceled: false,
+        filePath: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create local database backup.",
+      };
+    }
+  }
+);
+
+
+ipcMain.handle(
+  "settings:restore",
+  async (event) => {
+    const win =
+      BrowserWindow.fromWebContents(
+        event.sender
+      );
+
+    try {
+      const databasePath =
+        path.resolve(
+          getDatabasePath()
+        );
+
+      const result =
+        await dialog.showOpenDialog(
+          win,
+          {
+            title:
+              "Restore Local Database",
+
+            properties: [
+              "openFile",
+            ],
+
+            filters: [
+              {
+                name:
+                  "SQLite Database",
+                extensions: [
+                  "db",
+                ],
+              },
+            ],
+          }
+        );
+
+      if (
+        result.canceled ||
+        !result.filePaths?.length
+      ) {
+        return {
+          success: true,
+          canceled: true,
+          filePath: null,
+        };
+      }
+
+      const selectedPath =
+        path.resolve(
+          result.filePaths[0]
+        );
+
+      if (
+        selectedPath ===
+        databasePath
+      ) {
+        return {
+          success: false,
+          canceled: false,
+          filePath: null,
+          error:
+            "The selected file is already the active database.",
+        };
+      }
+
+      const confirmation =
+        await dialog.showMessageBox(
+          win,
+          {
+            type: "warning",
+            title:
+              "Restore Database",
+            message:
+              "Restore this database backup?",
+            detail:
+              "This will replace the current local billing database. A safety backup of the current database will be created first.",
+            buttons: [
+              "Restore",
+              "Cancel",
+            ],
+            defaultId: 1,
+            cancelId: 1,
+          }
+        );
+
+      if (
+        confirmation.response !== 0
+      ) {
+        return {
+          success: true,
+          canceled: true,
+          filePath: null,
+        };
+      }
+
+      const safetyBackupPath =
+        path.join(
+          app.getPath(
+            "documents"
+          ),
+          `offline-billing-before-restore-${Date.now()}.db`
+        );
+
+      const currentDatabase =
+        getDatabase();
+
+      await backupDatabase(
+        currentDatabase,
+        safetyBackupPath
+      );
+
+      closeDatabase();
+
+      restoreDatabase(
+        selectedPath,
+        databasePath
+      );
+
+      getDatabase();
+
+      console.log(
+        "Database restored successfully:",
+        selectedPath
+      );
+
+      return {
+        success: true,
+        canceled: false,
+        filePath: selectedPath,
+      };
+    } catch (error) {
+      console.error(
+        "Database restore failed:",
+        error
+      );
+
+      try {
+        getDatabase();
+      } catch {
+        // Database will be reopened on the next operation.
+      }
+
+      return {
+        success: false,
+        canceled: false,
+        filePath: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to restore database.",
+      };
+    }
   }
 );
 

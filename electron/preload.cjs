@@ -288,47 +288,49 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   // =========================
   // Invoices
   // =========================
+invoices: {
+  create: (input) =>
+    ipcRenderer.invoke(
+      "invoices:create",
+      input
+    ),
 
-  invoices: {
-    create: (input) =>
-      ipcRenderer.invoke(
-        "invoices:create",
-        input
-      ),
+  getById: (invoiceId) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-id",
+      invoiceId
+    ),
 
-    getById: (invoiceId) =>
-      ipcRenderer.invoke(
-        "invoices:get-by-id",
-        invoiceId
-      ),
-
-    getByTransactionId: (
+  getByTransactionId: (transactionId) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-transaction-id",
       transactionId
-    ) =>
-      ipcRenderer.invoke(
-        "invoices:get-by-transaction-id",
-        transactionId
-      ),
+    ),
 
-    getByNumber: (invoiceNumber) =>
-      ipcRenderer.invoke(
-        "invoices:get-by-number",
-        invoiceNumber
-      ),
+  getByNumber: (invoiceNumber) =>
+    ipcRenderer.invoke(
+      "invoices:get-by-number",
+      invoiceNumber
+    ),
 
-    getRecent: (limit) =>
-      ipcRenderer.invoke(
-        "invoices:get-recent",
-        limit
-      ),
+  getRecent: (limit) =>
+    ipcRenderer.invoke(
+      "invoices:get-recent",
+      limit
+    ),
 
-    downloadPdf: (invoiceNumber) =>
-      ipcRenderer.invoke(
-        "invoices:download-pdf",
-        invoiceNumber
-      ),
-  },
+  downloadPdf: (invoiceNumber) =>
+    ipcRenderer.invoke(
+      "invoices:download-pdf",
+      invoiceNumber
+    ),
 
+  share: (shareText) =>
+    ipcRenderer.invoke(
+      "invoices:share",
+      shareText
+    ),
+},
   // =========================
   // Payments
   // =========================
@@ -369,6 +371,12 @@ contextBridge.exposeInMainWorld("desktopAPI", {
       "invoices:download-pdf",
       invoiceNumber
     ),
+
+    share: (shareText) =>
+  ipcRenderer.invoke(
+    "invoices:share",
+    shareText
+  ),
 
   // =========================
   // Reports
@@ -547,7 +555,9 @@ contextBridge.exposeInMainWorld("desktopAPI", {
 
 settings: {
   get: () =>
-    ipcRenderer.invoke("settings:get"),
+    ipcRenderer.invoke(
+      "settings:get"
+    ),
 
   update: (settings) =>
     ipcRenderer.invoke(
@@ -556,7 +566,9 @@ settings: {
     ),
 
   reset: () =>
-    ipcRenderer.invoke("settings:reset"),
+    ipcRenderer.invoke(
+      "settings:reset"
+    ),
 
   selectLogo: () =>
     ipcRenderer.invoke(
@@ -567,5 +579,15 @@ settings: {
     ipcRenderer.invoke(
       "settings:get-logo-data"
     ),
+
+  backup: () =>
+    ipcRenderer.invoke(
+      "settings:backup"
+    ),
+
+    restore: () =>
+  ipcRenderer.invoke(
+    "settings:restore"
+  ),
 },
 });
