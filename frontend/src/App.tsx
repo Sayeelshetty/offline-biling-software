@@ -378,6 +378,36 @@ function AppLayout({
         </div>
       </aside>
 
+
+            <nav className="mobile-bottom-nav">
+        <Link to="/" aria-label="Home">
+          <span>⌂</span>
+          <span>Home</span>
+        </Link>
+
+        <Link to="/billing" aria-label="Billing">
+          <span>▣</span>
+          <span>Billing</span>
+        </Link>
+
+        <Link to="/products" aria-label="Products">
+          <span>□</span>
+          <span>Products</span>
+        </Link>
+
+        <Link to="/reports" aria-label="Reports">
+          <span>▤</span>
+          <span>Reports</span>
+        </Link>
+
+        <Link to="/settings" aria-label="More">
+          <span>⋯</span>
+          <span>More</span>
+        </Link>
+      </nav>
+
+      
+
       <div className="main-area">
         <header className="topbar">
           <div>
@@ -412,6 +442,8 @@ function AppLayout({
             </div>
           </div>
         </header>
+
+        
 
         <main className="page-container">
           <Routes>
