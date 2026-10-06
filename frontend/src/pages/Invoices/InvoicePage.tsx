@@ -10,7 +10,7 @@ import invoiceService from "../../services/invoice.service";
 import type {
   Invoice,
   InvoiceItem,
-} from "../../../shared/types/invoice";
+} from  "../../types/invoice";;
 
 import "./InvoicePage.css";
 

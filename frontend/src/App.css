@@ -345,3 +345,34 @@ a {
     padding-bottom: 82px;
   }
 }
+
+
+@media (max-width: 700px) {
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  .navigation a {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 700px) {
+  .billing-table-wrapper,
+  .categories-table-wrapper,
+  .customer-table-wrapper,
+  .inventory-table-wrapper,
+  .payments-table-wrapper,
+  .table-wrapper,
+  .reports-table-wrapper {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}

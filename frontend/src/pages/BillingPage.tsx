@@ -5,27 +5,22 @@ import {
   useState,
 } from "react";
 
-import productService, {
-  type Product,
-} from "../services/product.service";
+import productService from "../services/product.service";
 
-import {
-  getSettings,
-} from "../services/settings.service";
+import BarcodeScanner from "../components/BarcodeScanner";
+
+import type { Product } from "../types/product";
 
 import invoiceService from "../services/invoice.service";
 
 import type {
   PaymentMethod,
   PaymentStatus,
-} from "../../../shared/types/invoice";
+} from "../types/invoice";
 
-import type {
-  Customer,
-} from "../../../shared/types/customer";
+import type { Customer } from "../types/customer";
 
 import "./BillingPage.css";
-
 type BillingLine = {
   product: Product;
   quantity: number;
@@ -64,6 +59,8 @@ function getDeviceId(): string {
 
   return generated;
 }
+
+
 
 function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
@@ -219,6 +216,10 @@ const [
     successMessage,
     setSuccessMessage,
   ] = useState<string | null>(null);
+
+
+  const [showBarcodeScanner, setShowBarcodeScanner] =
+  useState(false);
 
   const searchInputRef =
     useRef<HTMLInputElement | null>(null);
@@ -505,6 +506,31 @@ useEffect(() => {
       setLoadingCustomers(false);
     }
   }
+
+
+  async function handleBarcodeDetected(barcode: string) {
+  try {
+    setShowBarcodeScanner(false);
+    setError(null);
+
+    const product = await productService.getProductByBarcode(barcode);
+
+    if (!product) {
+      setSearchTerm(barcode);
+      setError(`No product found for barcode: ${barcode}`);
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    addProduct(product);
+  } catch (err) {
+    console.error("Barcode lookup failed:", err);
+
+    setShowBarcodeScanner(false);
+    setError("Unable to find the scanned product.");
+    searchInputRef.current?.focus();
+  }
+}
 
   function addProduct(product: Product) {
     setError(null);
@@ -804,6 +830,18 @@ useEffect(() => {
                 Scanner / Enter
               </span>
             </div>
+
+
+            <button
+  type="button"
+  className="billing-camera-button"
+  onClick={() => {
+    setError(null);
+    setShowBarcodeScanner(true);
+  }}
+>
+  📷 Scan with Camera
+</button>
 
             {searchTerm.trim() && (
               <div className="search-results">
@@ -1330,7 +1368,14 @@ useEffect(() => {
             the sync module.
           </p>
         </aside>
-      </div>
+       </div>
+
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onDetected={handleBarcodeDetected}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
     </section>
   );
 }

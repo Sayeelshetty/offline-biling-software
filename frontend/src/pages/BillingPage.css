@@ -661,3 +661,32 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.billing-camera-button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.billing-camera-button:hover {
+  transform: translateY(-1px);
+}
+
+@media (min-width: 701px) {
+  .billing-camera-button {
+    width: auto;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 700px) {
+  .billing-camera-button {
+    min-height: 48px;
+    font-size: 15px;
+  }
+}

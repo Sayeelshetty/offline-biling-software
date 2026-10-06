@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 
-import type { Product } from "../../../shared/types/product";
+import type { Product } from "../../types/product";
 
 import type {
   StockMovement,
   StockSummary,
-} from "../../../shared/types/inventory";
+}  from "../../types/inventory";
 
 import productService from "../../services/product.service";
 

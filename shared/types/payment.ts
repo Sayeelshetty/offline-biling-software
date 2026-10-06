@@ -1,7 +1,15 @@
-import type {
-  PaymentMethod,
-  PaymentStatus,
-} from "./invoice";
+export type PaymentMethod =
+  | "CASH"
+  | "UPI"
+  | "CARD"
+  | "CREDIT"
+  | "OTHER";
+
+export type PaymentStatus =
+  | "PAID"
+  | "PENDING"
+  | "PARTIAL"
+  | "CANCELLED";
 
 export type PaymentSyncStatus =
   | "PENDING"

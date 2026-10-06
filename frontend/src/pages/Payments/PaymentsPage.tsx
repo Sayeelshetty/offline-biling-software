@@ -6,7 +6,7 @@ import type {
   OutstandingPayment,
   PaymentMethod,
   PaymentSummary,
-} from "../../../shared/types/payment";
+} from "../../../../shared/types/payment";
 
 import "./PaymentsPage.css";
 
