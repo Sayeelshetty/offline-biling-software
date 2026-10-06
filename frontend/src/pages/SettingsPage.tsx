@@ -348,6 +348,40 @@ async function handleExportProducts() {
   }
 }
 
+async function handleCloudBackup() {
+  try {
+    const result =
+      await window.desktopAPI.settings.cloudBackup();
+
+    if (
+      result.success &&
+      result.backup
+    ) {
+      window.alert(
+        `Cloud backup completed successfully.\n\nFile:\n${result.backup.fileName}\n\nSize: ${result.backup.fileSize} bytes`
+      );
+
+      return;
+    }
+
+    window.alert(
+      result.error ||
+        "Failed to create cloud backup."
+    );
+  } catch (error) {
+    console.error(
+      "Cloud backup failed:",
+      error
+    );
+
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to create cloud backup."
+    );
+  }
+}
+
 
 async function handleImportProducts() {
   try {
@@ -1180,6 +1214,22 @@ async function handleRestore() {
       database.
     </span>
   </button>
+
+
+  <button
+  type="button"
+  className="settings-data-action"
+  onClick={handleCloudBackup}
+>
+  <strong>
+    Cloud Backup
+  </strong>
+
+  <span>
+    Upload a secure copy of the SQLite
+    database to the cloud.
+  </span>
+</button>
 
   <button
     type="button"

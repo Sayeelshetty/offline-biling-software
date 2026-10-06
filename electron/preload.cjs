@@ -585,6 +585,11 @@ settings: {
       "settings:backup"
     ),
 
+    cloudBackup: () =>
+  ipcRenderer.invoke(
+    "settings:cloud-backup"
+  ),
+
     restore: () =>
   ipcRenderer.invoke(
     "settings:restore"

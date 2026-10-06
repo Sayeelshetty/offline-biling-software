@@ -588,6 +588,19 @@ interface DesktopAPI {
 backup: () =>
   Promise<BackupResponse>;
 
+cloudBackup: () =>
+  Promise<{
+    success: boolean;
+    backup?: {
+      backupId: string;
+      fileName: string;
+      fileSize: number;
+      deviceId: string;
+      createdAt: string;
+    } | null;
+    error?: string;
+  }>;
+
 restore: () =>
   Promise<RestoreResponse>;
 };

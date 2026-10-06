@@ -22,6 +22,12 @@ const {
   "./services/backup.service.cjs"
 );
 
+const {
+  uploadDatabaseBackup,
+} = require(
+  "./services/cloud-backup.service.cjs"
+);
+
 const { runMigrations } = require("./database/migrations.cjs");
 
 const invoiceRepository = require(
@@ -2168,6 +2174,81 @@ ipcMain.handle(
     }
   }
 );
+
+ipcMain.handle(
+  "settings:cloud-backup",
+  async () => {
+    let temporaryBackupPath = null;
+
+    try {
+      const database =
+        getDatabase();
+
+      const timestamp =
+        Date.now();
+
+      temporaryBackupPath =
+        path.join(
+          app.getPath("temp"),
+          `offline-billing-cloud-backup-${timestamp}.db`
+        );
+
+      await backupDatabase(
+        database,
+        temporaryBackupPath
+      );
+
+      const result =
+        await uploadDatabaseBackup(
+          temporaryBackupPath,
+          "ELECTRON-DESKTOP"
+        );
+
+      console.log(
+        "Cloud database backup uploaded successfully:",
+        result
+      );
+
+      return {
+        success: true,
+        backup:
+          result.backup || null,
+      };
+    } catch (error) {
+      console.error(
+        "Cloud database backup failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create cloud database backup.",
+      };
+    } finally {
+      if (
+        temporaryBackupPath &&
+        fs.existsSync(
+          temporaryBackupPath
+        )
+      ) {
+        try {
+          fs.unlinkSync(
+            temporaryBackupPath
+          );
+        } catch (cleanupError) {
+          console.warn(
+            "Unable to remove temporary cloud backup file:",
+            cleanupError
+          );
+        }
+      }
+    }
+  }
+);
+
 // --------------------------------------------------------------------------
 // Reports IPC
 // --------------------------------------------------------------------------
