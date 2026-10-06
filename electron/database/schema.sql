@@ -337,3 +337,38 @@ ON sync_queue(status);
 
 CREATE INDEX IF NOT EXISTS idx_sync_queue_entity
 ON sync_queue(entity_type, entity_id);
+
+-- Cloud database backups
+CREATE TABLE IF NOT EXISTS cloud_backups (
+    id BIGSERIAL PRIMARY KEY,
+
+    backup_id UUID NOT NULL UNIQUE,
+
+    file_name TEXT NOT NULL,
+
+    file_size BIGINT NOT NULL,
+
+    device_id TEXT NOT NULL,
+
+    file_data BYTEA NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Cloud database backups
+CREATE TABLE IF NOT EXISTS cloud_backups (
+    id BIGSERIAL PRIMARY KEY,
+
+    backup_id UUID NOT NULL UNIQUE,
+
+    file_name TEXT NOT NULL,
+
+    file_size BIGINT NOT NULL,
+
+    device_id TEXT NOT NULL,
+
+    file_data BYTEA NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
