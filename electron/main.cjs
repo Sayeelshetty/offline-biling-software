@@ -1537,6 +1537,7 @@ ipcMain.handle(
       input
     )
 );
+
 ipcMain.handle(
   "invoices:download-pdf",
   async (event, invoiceNumber) => {
@@ -1545,173 +1546,26 @@ ipcMain.handle(
         event.sender
       );
 
-      ipcMain.handle(
-  "invoices:share",
-  async (_event, shareText) => {
-    const text =
-      String(shareText || "").trim();
-
-    if (!text) {
-      throw new Error(
-        "Invoice share content is empty."
-      );
-    }
-
-    const whatsappUrl =
-      `https://wa.me/?text=${encodeURIComponent(
-        text
-      )}`;
-
-    await shell.openExternal(
-      whatsappUrl
-    );
-
-    return {
-      success: true,
-    };
-  }
-);
-
-ipcMain.handle(
-  "settings:backup",
-  async (event) => {
-    const win =
-      BrowserWindow.fromWebContents(
-        event.sender
-      );
-
-    try {
-      const database =
-        getDatabase();
-
-      const databasePath =
-        path.resolve(
-          getDatabasePath()
-        );
-
-      const timestamp =
-        new Date()
-          .toISOString()
-          .replace(
-            /[:.]/g,
-            "-"
-          );
-
-      const defaultFileName =
-        `offline-billing-backup-${timestamp}.db`;
-
-      const result =
-        await dialog.showSaveDialog(
-          win,
-          {
-            title:
-              "Backup Local Database",
-            defaultPath:
-              path.join(
-                app.getPath(
-                  "documents"
-                ),
-                defaultFileName
-              ),
-            filters: [
-              {
-                name:
-                  "SQLite Database",
-                extensions: [
-                  "db",
-                ],
-              },
-            ],
-          }
-        );
-
-      if (
-        result.canceled ||
-        !result.filePath
-      ) {
-        return {
-          success: true,
-          canceled: true,
-          filePath: null,
-        };
-      }
-
-      const selectedPath =
-        path.resolve(
-          result.filePath
-        );
-
-      if (
-        selectedPath ===
-        databasePath
-      ) {
-        return {
-          success: false,
-          error:
-            "You cannot overwrite the active application database with its own backup.",
-        };
-      }
-
-      const backupPath =
-        await backupDatabase(
-          database,
-          selectedPath
-        );
-
-      console.log(
-        "Local database backup created:",
-        backupPath
-      );
-
-      return {
-        success: true,
-        canceled: false,
-        filePath: backupPath,
-      };
-    } catch (error) {
-      console.error(
-        "Database backup failed:",
-        error
-      );
-
-      return {
-        success: false,
-        canceled: false,
-        filePath: null,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create database backup.",
-      };
-    }
-  }
-);
-
-
-
     if (!win) {
       throw new Error(
         "Invoice window is not available."
       );
     }
 
-    const safeInvoiceNumber =
-      String(
-        invoiceNumber || "invoice"
-      ).replace(
-        /[<>:"/\\|?*]+/g,
-        "_"
-      );
+    const safeInvoiceNumber = String(
+      invoiceNumber || "invoice"
+    ).replace(
+      /[<>:"/\\|?*]+/g,
+      "_"
+    );
 
     const result =
       await dialog.showSaveDialog(
         win,
         {
           title: "Save Invoice as PDF",
-
           defaultPath:
             `${safeInvoiceNumber}.pdf`,
-
           filters: [
             {
               name: "PDF Files",
@@ -1731,35 +1585,12 @@ ipcMain.handle(
       };
     }
 
-    const settings =
-  settingsRepository.getSettings();
-
-const printFormat =
-  settings?.invoice?.printFormat ===
-  "THERMAL"
-    ? "THERMAL"
-    : "A4";
-
-const paperWidth =
-  settings?.printer?.paperWidth === 58
-    ? 58
-    : 80;
-
-const pageSize =
-  printFormat === "THERMAL"
-    ? {
-        width: paperWidth / 25.4,
-        height: 11.69,
-      }
-    : "A4";
-
     const pdfData =
       await win.webContents.printToPDF({
         pageSize: "A4",
         printBackground: true,
         displayHeaderFooter: false,
         preferCSSPageSize: true,
-
         margins: {
           top: 0,
           bottom: 0,
