@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import {
-  BrowserRouter,
+  HashRouter,
   Link,
   Route,
   Routes,
@@ -550,14 +550,14 @@ function App() {
     );
   }
 
-  return (
-    <BrowserRouter>
-      <AppLayout
-        user={authenticatedUser}
-        onLogout={handleLogout}
-      />
-    </BrowserRouter>
-  );
+return (
+  <HashRouter>
+    <AppLayout
+      user={authenticatedUser}
+      onLogout={handleLogout}
+    />
+  </HashRouter>
+);
 }
 
 export default App;
