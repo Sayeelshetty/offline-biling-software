@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const { getDatabase } =
   require("../connection.cjs");
 
+
 const settingsRepository =
   require("./settings.repository.cjs");
 
@@ -443,26 +444,24 @@ function calculateInvoiceSummary(
   };
 }
 
-function getNextInvoiceNumber(
-  transaction
-) {
-  const settings =
-    settingsRepository.getSettings();
+function getNextInvoiceNumber(transaction) {
+  const settings = settingsRepository.getSettings();
 
   const configuredPrefix =
     String(
-      settings?.invoice?.invoicePrefix ??
-        "INV"
-    ).trim();
-
-  const configuredStartingNumber =
-    Number(
-      settings?.invoice?.startingNumber ??
-        1
-    );
+      settings?.invoice?.invoicePrefix || "INV"
+    )
+      .trim()
+      .replace(/[<>:"/\\|?*]+/g, "")
+      .replace(/\s+/g, "-");
 
   const prefix =
     configuredPrefix || "INV";
+
+  const configuredStartingNumber =
+    Number(
+      settings?.invoice?.startingNumber
+    );
 
   const startingNumber =
     Number.isInteger(
@@ -472,35 +471,46 @@ function getNextInvoiceNumber(
       ? configuredStartingNumber
       : 1;
 
-  const numberPrefix =
-    `${prefix}-`;
+  const invoicePrefixPattern =
+    `${prefix}-%`;
 
-  const findExistingInvoice =
-    transaction.prepare(`
-      SELECT 1
+  const row = transaction
+    .prepare(
+      `
+      SELECT invoice_number
       FROM invoices
-      WHERE invoice_number = ?
+      WHERE invoice_number LIKE ?
+      ORDER BY invoice_number DESC
       LIMIT 1
-    `);
+      `
+    )
+    .get(invoicePrefixPattern);
 
   let nextNumber =
     startingNumber;
 
-  while (true) {
-    const candidate =
-      `${numberPrefix}${String(
-        nextNumber
-      ).padStart(4, "0")}`;
+  if (row?.invoice_number) {
+    const lastPart =
+      String(row.invoice_number)
+        .slice(
+          `${prefix}-`.length
+        );
 
-    const existing =
-      findExistingInvoice.get(candidate);
+    const parsed =
+      Number(lastPart);
 
-    if (!existing) {
-      return candidate;
+    if (Number.isInteger(parsed)) {
+      nextNumber =
+        Math.max(
+          startingNumber,
+          parsed + 1
+        );
     }
-
-    nextNumber += 1;
   }
+
+  return `${prefix}-${String(
+    nextNumber
+  ).padStart(4, "0")}`;
 }
 
 

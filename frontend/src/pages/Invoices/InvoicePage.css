@@ -213,12 +213,185 @@
 }
 
 .invoice-paper-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 122px;
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22px 22px 20px;
+  border-bottom: 2px solid #172033;
+}
+
+.invoice-branding {
+  min-width: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 22px;
-  border-bottom: 2px solid #0f172a;
+  align-items: center;
+  gap: 10px;
+}
+
+.invoice-logo {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  flex: 0 0 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.invoice-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.invoice-logo span {
+  font-size: 13px;
+  font-weight: 800;
+  color: #172033;
+}
+
+.invoice-business-details {
+  min-width: 0;
+  width: 100%;
+}
+
+.invoice-business-details h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.invoice-address {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-contact-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 5px;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.invoice-contact-row span {
+  white-space: nowrap;
+}
+
+.invoice-contact-dot {
+  flex: 0 0 auto;
+  color: #94a3b8;
+}
+
+.invoice-title-block {
+  min-width: 0;
+  width: 122px;
+  text-align: right;
+}
+
+.invoice-title-block h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.invoice-title-block span {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .invoice-paper-header {
+    grid-template-columns: minmax(0, 1fr) 116px;
+    column-gap: 12px;
+    padding: 18px 16px 16px;
+  }
+
+  .invoice-branding {
+    gap: 8px;
+  }
+
+  .invoice-logo {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+  .invoice-business-details h2 {
+    font-size: 18px;
+  }
+
+ .invoice-address {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+  .invoice-contact-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 5px;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+  .invoice-title-block {
+    width: 116px;
+  }
+
+  .invoice-title-block h3 {
+    font-size: 15px;
+  }
+
+  .invoice-title-block span {
+    font-size: 9px;
+  }
 }
 
 .invoice-business-name {
@@ -678,5 +851,254 @@
   .invoice-paper-footer {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+}
+
+
+/* =========================================================
+   FINAL INVOICE HEADER
+   ========================================================= */
+
+.invoice-paper .invoice-paper-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 18px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22px 22px 20px;
+  border-bottom: 2px solid #172033;
+}
+
+/* LEFT: logo + business information */
+.invoice-paper .invoice-branding {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  column-gap: 11px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Small professional logo */
+.invoice-paper .invoice-logo {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.invoice-paper .invoice-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Business text stays directly beside logo */
+.invoice-paper .invoice-business-details {
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+
+.invoice-paper .invoice-business-details h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.invoice-paper .invoice-address {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* Phone + GST stay on one neat line */
+.invoice-paper .invoice-contact-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 5px;
+  width: 100%;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: left;
+}
+
+.invoice-paper .invoice-contact-row span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.invoice-paper .invoice-gstin-print {
+  display: none;
+}
+
+.invoice-paper .invoice-contact-dot {
+  color: #94a3b8;
+}
+
+/* RIGHT: Tax invoice */
+.invoice-paper .invoice-title-block {
+  width: 138px;
+  min-width: 138px;
+  text-align: right;
+  justify-self: end;
+}
+
+.invoice-paper .invoice-title-block h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
+
+.invoice-paper .invoice-title-block span {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   NARROW PREVIEW
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .invoice-paper .invoice-paper-header {
+    grid-template-columns: minmax(0, 1fr) 112px;
+    column-gap: 10px;
+    padding: 18px 14px 16px;
+  }
+
+  .invoice-paper .invoice-branding {
+    grid-template-columns: 38px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .invoice-paper .invoice-logo {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    max-width: 38px;
+  }
+
+  .invoice-paper .invoice-business-details h2 {
+    font-size: 18px;
+  }
+
+  .invoice-paper .invoice-address {
+    font-size: 9px;
+  }
+
+  .invoice-paper .invoice-contact-row {
+    font-size: 7px;
+    gap: 4px;
+  }
+
+  .invoice-paper .invoice-title-block {
+    width: 112px;
+    min-width: 112px;
+  }
+
+  .invoice-paper .invoice-title-block h3 {
+    font-size: 14px;
+  }
+
+  .invoice-paper .invoice-title-block span {
+    font-size: 9px;
+    margin-top: 4px;
+  }
+}
+
+/* =========================================================
+   PRINT / PDF
+   ========================================================= */
+
+@media print {
+  .invoice-paper .invoice-paper-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    align-items: center;
+    column-gap: 20px;
+    padding: 22px 28px 20px;
+  }
+
+  .invoice-paper .invoice-gstin-print {
+  display: inline;
+}
+
+  .invoice-paper .invoice-branding {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    justify-content: start;
+    column-gap: 12px;
+  }
+
+  .invoice-paper .invoice-logo {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    max-width: 46px;
+  }
+
+  .invoice-paper .invoice-business-details h2 {
+    font-size: 23px;
+  }
+
+  .invoice-paper .invoice-address {
+    font-size: 11px;
+  }
+
+  .invoice-paper .invoice-contact-row {
+    font-size: 9px;
+    gap: 6px;
+  }
+
+  .invoice-paper .invoice-title-block {
+    width: 150px;
+    min-width: 150px;
+    text-align: right;
+  }
+
+  .invoice-paper .invoice-title-block h3 {
+    font-size: 19px;
+  }
+
+  .invoice-paper .invoice-title-block span {
+    font-size: 11px;
+    margin-top: 5px;
   }
 }

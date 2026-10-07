@@ -7,6 +7,11 @@ import { useNavigate } from "react-router-dom";
 
 import invoiceService from "../../services/invoice.service";
 
+import {
+  getSettings,
+  getLogoData,
+} from "../../services/settings.service";
+
 import type {
   Invoice,
   InvoiceItem,
@@ -114,6 +119,15 @@ function InvoicePage() {
   const [error, setError] =
     useState<string | null>(null);
 
+    const [businessInfo, setBusinessInfo] =
+  useState({
+    businessName: "Offline Billing",
+    address: "",
+    phone: "",
+    gstNumber: "",
+    logoData: null as string | null,
+  });
+
   const [downloadingPdf, setDownloadingPdf] =
     useState(false);
 
@@ -165,6 +179,54 @@ function InvoicePage() {
   useEffect(() => {
     loadInvoices();
   }, []);
+
+  useEffect(() => {
+  let mounted = true;
+
+  async function loadBusinessInfo() {
+    try {
+      const [
+        settings,
+        logoData,
+      ] = await Promise.all([
+        getSettings(),
+        getLogoData(),
+      ]);
+
+      if (!mounted) {
+        return;
+      }
+
+      setBusinessInfo({
+        businessName:
+          settings.business.businessName?.trim() ||
+          "Offline Billing",
+
+        address:
+          settings.business.address?.trim() || "",
+
+        phone:
+          settings.business.phone?.trim() || "",
+
+        gstNumber:
+          settings.business.gstNumber?.trim() || "",
+
+        logoData,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to load invoice business information:",
+        error
+      );
+    }
+  }
+
+  loadBusinessInfo();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
 
   function openInvoice(invoice: Invoice) {
     setSelectedInvoice(invoice);
@@ -531,30 +593,59 @@ function InvoicePage() {
               </div>
 
               <div className="invoice-paper">
-                <div className="invoice-paper-header">
-                  <div>
-                    <p className="invoice-business-name">
-                      Offline Billing
-                    </p>
+   <div className="invoice-paper-header">
+  <div className="invoice-branding">
+    <div className="invoice-logo">
+      {businessInfo.logoData ? (
+        <img
+          src={businessInfo.logoData}
+          alt={`${businessInfo.businessName} logo`}
+        />
+      ) : (
+        <span>
+          {(businessInfo.businessName || "OB")
+            .slice(0, 2)
+            .toUpperCase()}
+        </span>
+      )}
+    </div>
 
-                    <p className="invoice-business-subtitle">
-                      POS Billing System
-                    </p>
-                  </div>
+    <div className="invoice-business-details">
+      <h2>
+        {businessInfo.businessName}
+      </h2>
 
-                  <div className="invoice-title-block">
-                    <h3>
-                      TAX INVOICE
-                    </h3>
+      {businessInfo.address && (
+        <p className="invoice-address">
+          {businessInfo.address}
+        </p>
+      )}
 
-                    <span>
-                      {
-                        selectedInvoice.invoiceNumber
-                      }
-                    </span>
-                  </div>
-                </div>
+  <div className="invoice-contact-row">
+  {businessInfo.phone && (
+    <span>
+      Phone: {businessInfo.phone}
+    </span>
+  )}
 
+  {businessInfo.gstNumber && (
+    <span className="invoice-gstin-print">
+      • GSTIN: {businessInfo.gstNumber}
+    </span>
+  )}
+</div>
+       
+    </div>
+  </div>
+
+  <div className="invoice-title-block">
+    <h3>TAX INVOICE</h3>
+
+    <span>
+      {selectedInvoice.invoiceNumber}
+    </span>
+  </div>
+</div>
                 <div className="invoice-meta-grid">
                   <div>
                     <span>
@@ -689,17 +780,29 @@ function InvoicePage() {
                 </div>
 
                 <div className="invoice-total-section">
-                  <div className="invoice-total-notes">
-                    <span>
-                      Thank you for your purchase.
-                    </span>
-
-                    <small>
-                      This invoice was generated
-                      locally and is stored in the
-                      offline database.
-                    </small>
-                  </div>
+                 <div
+  className="invoice-total-notes"
+  style={{
+    alignSelf: "stretch",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    minHeight: "86px",
+  }}
+>
+  <span
+    style={{
+      fontSize: "14px",
+      fontWeight: 800,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      color: "#172033",
+    }}
+  >
+    THANK YOU VISIT AGAIN
+  </span>
+</div>
 
                   <div className="invoice-totals">
                     <div>
