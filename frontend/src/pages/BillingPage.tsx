@@ -13,6 +13,8 @@ import type { Product } from "../types/product";
 
 import invoiceService from "../services/invoice.service";
 
+import { getSettings } from "../services/settings.service";
+
 import type {
   PaymentMethod,
   PaymentStatus,
@@ -104,26 +106,7 @@ function getEffectiveGstRate(
   return 0;
 }
 
-function calculateLineTax(
-  line: BillingLine,
-  taxEnabled: boolean,
-  defaultGstRate: number
-): number {
-  const taxableAmount =
-    calculateLineAmount(line);
 
-  const gstRate =
-    getEffectiveGstRate(
-      line,
-      taxEnabled,
-      defaultGstRate
-    );
-
-  return (
-    taxableAmount *
-    (gstRate / 100)
-  );
-}
 
 function BillingPage() {
   const [

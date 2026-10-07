@@ -1,9 +1,8 @@
 import {
-  FormEvent,
   useEffect,
   useState,
 } from "react";
-
+import type { FormEvent } from "react";
 import type {
   Product,
   ProductInput,
@@ -301,12 +300,14 @@ function ProductForm({
     if (product) {
       const updateData: ProductUpdateInput = {
         ...baseData,
+        barcode: form.barcode.trim() || undefined,
       };
 
       await onSubmit(updateData);
     } else {
       const createData: ProductInput = {
         ...baseData,
+         barcode: form.barcode.trim() || undefined,
         currentStock: Number(
           form.currentStock
         ),

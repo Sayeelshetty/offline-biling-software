@@ -175,6 +175,12 @@ interface CategoryOptions {
 }
 
 interface DesktopAPI {
+  auth: {
+    login: (
+      input: LoginInput
+    ) => Promise<LoginResponse>;
+  };
+
   // =========================
   // Application
   // =========================
@@ -408,6 +414,10 @@ interface DesktopAPI {
       canceled: boolean;
       filePath: string | null;
     }>;
+
+    share: (
+  shareText: string
+) => Promise<ShareInvoiceResult>;
   };
 
   // =========================

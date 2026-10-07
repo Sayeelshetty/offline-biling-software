@@ -30,12 +30,6 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 export default function CustomerPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);

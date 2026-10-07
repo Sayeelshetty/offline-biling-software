@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import type { AuthenticatedUser } from "../../../shared/auth";
 import { login } from "../services/auth.service";
 import "./LoginPage.css";

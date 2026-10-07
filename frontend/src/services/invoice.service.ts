@@ -2,7 +2,7 @@ import type {
   CreateInvoiceInput,
   CreateInvoiceResult,
   Invoice,
-} from "../../../shared/types/invoice";
+} from "../types/invoice";
 
 export type DownloadPdfResult = {
   canceled: boolean;
@@ -37,6 +37,10 @@ type DesktopInvoiceApi = {
   downloadPdf: (
     invoiceNumber: string
   ) => Promise<DownloadPdfResult>;
+
+ share: (
+    shareText: string
+  ) => Promise<ShareInvoiceResult>;
 };
 
 function getInvoiceApi(): DesktopInvoiceApi {

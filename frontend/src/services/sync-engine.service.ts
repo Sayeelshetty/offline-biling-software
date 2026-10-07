@@ -269,14 +269,22 @@ class SyncEngineService {
         cloudResult.results || [];
 
       for (const result of results) {
-        try {
-          if (
-            result.status === "SYNCED"
-          ) {
-            await syncService.markSyncItemSynced(
-              result.queueId,
-              result.serverId
-            );
+  try {
+    if (!result.queueId) {
+      console.error(
+        "[SYNC] Cloud returned a sync result without a queueId.",
+        result
+      );
+      continue;
+    }
+
+    if (
+      result.status === "SYNCED"
+    ) {
+      await syncService.markSyncItemSynced(
+        result.queueId,
+        result.serverId
+      );
 
             console.log(
               `[SYNC] Synced ${result.entityType} ${result.entityId}`
