@@ -33,6 +33,10 @@ import type {
   SyncEngineStatus,
 } from "../../shared/types/sync";
 
+
+import { getLowStock } from "./services/report.service";
+import invoiceService from "./services/invoice.service";
+
 import "./App.css";
 
 const AUTH_SESSION_KEY = "offline-billing-auth-user";
@@ -99,11 +103,115 @@ function loadStoredUser(): AuthenticatedUser | null {
 }
 
 function DashboardPage() {
+  const [sales, setSales] = useState({
+    totalBills: 0,
+    totalSales: 0,
+  });
+
+  const [pendingPayments, setPendingPayments] =
+    useState(0);
+
+  const [lowStockCount, setLowStockCount] =
+    useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadDashboardData() {
+      try {
+        const [
+          recentInvoices,
+          lowStockProducts,
+          paymentSummary,
+        ] = await Promise.all([
+          invoiceService.getRecentInvoices(500),
+          getLowStock(),
+          window.desktopAPI.payments.getSummary(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        /*
+         * Convert the current local date to YYYY-MM-DD.
+         * Invoice createdAt values are stored as ISO timestamps.
+         */
+        const today = new Date()
+          .toLocaleDateString("en-CA");
+
+        const todaysInvoices =
+          recentInvoices.filter((invoice) => {
+            if (
+              invoice.paymentStatus ===
+              "CANCELLED"
+            ) {
+              return false;
+            }
+
+            const invoiceDate =
+              new Date(
+                invoice.createdAt
+              ).toLocaleDateString("en-CA");
+
+            return invoiceDate === today;
+          });
+
+        const todaysSales =
+          todaysInvoices.reduce(
+            (total, invoice) =>
+              total + Number(invoice.total || 0),
+            0
+          );
+
+        setSales({
+          totalBills: todaysInvoices.length,
+          totalSales: todaysSales,
+        });
+
+        setLowStockCount(
+          lowStockProducts.length
+        );
+
+        setPendingPayments(
+          Number(
+            paymentSummary.totalOutstanding ?? 0
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load dashboard data:",
+          error
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        setSales({
+          totalBills: 0,
+          totalSales: 0,
+        });
+
+        setPendingPayments(0);
+        setLowStockCount(0);
+      }
+    }
+
+    loadDashboardData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">DASHBOARD</p>
+          <p className="eyebrow">
+            DASHBOARD
+          </p>
 
           <h1>Dashboard</h1>
 
@@ -116,27 +224,54 @@ function DashboardPage() {
       <div className="dashboard-grid">
         <div className="dashboard-card">
           <span>Today's Sales</span>
-          <strong>₹0</strong>
+
+          <strong>
+            ₹
+            {sales.totalSales.toLocaleString(
+              "en-IN",
+              {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              }
+            )}
+          </strong>
         </div>
 
         <div className="dashboard-card">
           <span>Bills Generated</span>
-          <strong>0</strong>
+
+          <strong>
+            {sales.totalBills}
+          </strong>
         </div>
 
         <div className="dashboard-card">
           <span>Pending Payments</span>
-          <strong>₹0</strong>
+
+          <strong>
+            ₹
+            {pendingPayments.toLocaleString(
+              "en-IN",
+              {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              }
+            )}
+          </strong>
         </div>
 
         <div className="dashboard-card">
           <span>Low Stock</span>
-          <strong>0</strong>
+
+          <strong>
+            {lowStockCount}
+          </strong>
         </div>
       </div>
     </section>
   );
 }
+
 
 type AppLayoutProps = {
   user: AuthenticatedUser;
