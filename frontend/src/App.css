@@ -716,3 +716,83 @@ a {
     white-space: normal;
   }
 }
+
+
+/* =========================================================
+   Desktop Layout Width Fix
+   ========================================================= */
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.app-layout {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.main-area {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.page-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Large desktop screens */
+@media (min-width: 1401px) {
+  .dashboard-page {
+    max-width: none;
+  }
+
+  .page-container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1000px) {
+  .page-container {
+    padding: 24px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 320px;
+  }
+
+  .main-area {
+    width: 100%;
+  }
+
+  .page-container {
+    width: 100%;
+    padding: 18px 14px 82px;
+  }
+
+  .dashboard-page {
+    width: 100%;
+    max-width: none;
+  }
+}
