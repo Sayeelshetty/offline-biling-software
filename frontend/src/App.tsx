@@ -106,6 +106,7 @@ function DashboardPage() {
   const [sales, setSales] = useState({
     totalBills: 0,
     totalSales: 0,
+    totalRevenue: 0,
   });
 
   const [pendingPayments, setPendingPayments] =
@@ -113,6 +114,12 @@ function DashboardPage() {
 
   const [lowStockCount, setLowStockCount] =
     useState(0);
+
+  const [lowStockProducts, setLowStockProducts] =
+    useState<any[]>([]);
+
+  const [recentBills, setRecentBills] =
+    useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -137,8 +144,8 @@ function DashboardPage() {
          * Convert the current local date to YYYY-MM-DD.
          * Invoice createdAt values are stored as ISO timestamps.
          */
-        const today = new Date()
-          .toLocaleDateString("en-CA");
+        const today =
+          new Date().toLocaleDateString("en-CA");
 
         const todaysInvoices =
           recentInvoices.filter((invoice) => {
@@ -160,14 +167,39 @@ function DashboardPage() {
         const todaysSales =
           todaysInvoices.reduce(
             (total, invoice) =>
-              total + Number(invoice.total || 0),
+              total +
+              Number(invoice.total || 0),
+            0
+          );
+
+        const todaysRevenue =
+          todaysInvoices.reduce(
+            (total, invoice) =>
+              total +
+              Number(invoice.subtotal || 0) -
+              Number(invoice.discount || 0),
             0
           );
 
         setSales({
           totalBills: todaysInvoices.length,
           totalSales: todaysSales,
+          totalRevenue: todaysRevenue,
         });
+
+        setRecentBills(
+          recentInvoices
+            .filter(
+              (invoice) =>
+                invoice.paymentStatus !==
+                "CANCELLED"
+            )
+            .slice(0, 5)
+        );
+
+        setLowStockProducts(
+          lowStockProducts.slice(0, 5)
+        );
 
         setLowStockCount(
           lowStockProducts.length
@@ -191,10 +223,14 @@ function DashboardPage() {
         setSales({
           totalBills: 0,
           totalSales: 0,
+          totalRevenue: 0,
         });
 
         setPendingPayments(0);
         setLowStockCount(0);
+
+        setRecentBills([]);
+        setLowStockProducts([]);
       }
     }
 
@@ -206,27 +242,36 @@ function DashboardPage() {
   }, []);
 
   return (
-    <section className="page">
-      <div className="page-header">
+    <section className="page dashboard-page">
+      <div className="page-header dashboard-header">
         <div>
-          <p className="eyebrow">
-            DASHBOARD
-          </p>
+          <p className="eyebrow">OVERVIEW</p>
 
           <h1>Dashboard</h1>
 
           <p className="page-description">
-            Overview of your billing and business activity.
+            Overview of your billing and business
+            activity.
           </p>
         </div>
+
+        <Link
+          to="/billing"
+          className="dashboard-new-bill-button"
+        >
+          <span aria-hidden="true">+</span>
+          New Bill
+        </Link>
       </div>
 
       <div className="dashboard-grid">
-        <div className="dashboard-card">
-          <span>Today's Sales</span>
+        <div className="dashboard-card dashboard-card-primary">
+          <div className="dashboard-card-top">
+            <span>Today's Sales</span>
+          </div>
 
           <strong>
-            ₹
+            {"\u20B9"}
             {sales.totalSales.toLocaleString(
               "en-IN",
               {
@@ -235,21 +280,54 @@ function DashboardPage() {
               }
             )}
           </strong>
+
+          <small>
+            Total amount billed today
+          </small>
         </div>
 
         <div className="dashboard-card">
-          <span>Bills Generated</span>
+          <div className="dashboard-card-top">
+            <span>Bills Generated</span>
+          </div>
 
           <strong>
             {sales.totalBills}
           </strong>
+
+          <small>
+            Bills created today
+          </small>
         </div>
 
         <div className="dashboard-card">
-          <span>Pending Payments</span>
+          <div className="dashboard-card-top">
+            <span>Today's Revenue</span>
+          </div>
 
           <strong>
-            ₹
+            {"\u20B9"}
+            {sales.totalRevenue.toLocaleString(
+              "en-IN",
+              {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              }
+            )}
+          </strong>
+
+          <small>
+            Net sales before tax
+          </small>
+        </div>
+
+        <div className="dashboard-card">
+          <div className="dashboard-card-top">
+            <span>Pending Payments</span>
+          </div>
+
+          <strong>
+            {"\u20B9"}
             {pendingPayments.toLocaleString(
               "en-IN",
               {
@@ -258,20 +336,152 @@ function DashboardPage() {
               }
             )}
           </strong>
-        </div>
 
-        <div className="dashboard-card">
-          <span>Low Stock</span>
-
-          <strong>
-            {lowStockCount}
-          </strong>
+          <small>
+            Amount currently outstanding
+          </small>
         </div>
+      </div>
+
+      <div className="dashboard-content-grid">
+        <section className="dashboard-section-card">
+          <div className="dashboard-section-header">
+            <div>
+              <h2>Low Stock</h2>
+
+              <p>
+                Products that need attention
+              </p>
+            </div>
+
+            <span className="dashboard-section-count">
+              {lowStockCount}
+            </span>
+          </div>
+
+          <div className="dashboard-list">
+            {lowStockProducts.length === 0 ? (
+              <div className="dashboard-empty-state">
+                <strong>
+                  Stock looks good
+                </strong>
+
+                <span>
+                  No products are currently low
+                  in stock.
+                </span>
+              </div>
+            ) : (
+              lowStockProducts.map((product) => (
+                <div
+                  className="dashboard-list-row"
+                  key={
+                    product.productId ??
+                    product.id ??
+                    product.productName
+                  }
+                >
+                  <div>
+                    <strong>
+                      {product.productName ??
+                        product.name}
+                    </strong>
+
+                    <span>
+                      Minimum stock:{" "}
+                      {Number(
+                        product.minimumStock ?? 0
+                      )}
+                    </span>
+                  </div>
+
+                  <span className="dashboard-stock-warning">
+                    {Number(
+                      product.currentStock ?? 0
+                    )}{" "}
+                    {product.unit || "PCS"} left
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="dashboard-section-card">
+          <div className="dashboard-section-header">
+            <div>
+              <h2>Recent Bills</h2>
+
+              <p>
+                Latest billing transactions
+              </p>
+            </div>
+
+            <Link
+              to="/invoices"
+              className="dashboard-view-link"
+            >
+              View all
+            </Link>
+          </div>
+
+          <div className="dashboard-list">
+            {recentBills.length === 0 ? (
+              <div className="dashboard-empty-state">
+                <strong>
+                  No recent bills
+                </strong>
+
+                <span>
+                  Completed invoices will appear
+                  here.
+                </span>
+              </div>
+            ) : (
+              recentBills.map((invoice) => (
+                <div
+                  className="dashboard-list-row"
+                  key={invoice.id}
+                >
+                  <div>
+                    <strong>
+                      #{invoice.invoiceNumber}
+                    </strong>
+
+                    <span>
+                      {new Date(
+                        invoice.createdAt
+                      ).toLocaleTimeString(
+                        "en-IN",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </span>
+                  </div>
+
+                  <strong className="dashboard-bill-amount">
+                    {"\u20B9"}
+                    {Number(
+                      invoice.total ?? 0
+                    ).toLocaleString(
+                      "en-IN",
+                      {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      }
+                    )}
+                  </strong>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </section>
   );
 }
-
 
 type AppLayoutProps = {
   user: AuthenticatedUser;
