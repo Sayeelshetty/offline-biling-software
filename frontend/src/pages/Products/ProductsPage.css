@@ -8,6 +8,29 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
+  width: 100%;
+}
+
+.products-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.products-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.products-header-actions .primary-button,
+.products-header-actions .secondary-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .products-header h1 {
@@ -317,6 +340,17 @@
 @media (max-width: 900px) {
   .products-header {
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .products-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .products-header-actions .primary-button,
+  .products-header-actions .secondary-button {
+    flex: 1;
   }
 
   .toolbar {
@@ -325,6 +359,36 @@
 
   .product-total {
     width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .products-header {
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .products-header h1 {
+    font-size: 24px;
+  }
+
+  .page-description {
+    line-height: 1.5;
+  }
+
+  .products-header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .products-header-actions .secondary-button {
+    width: 100%;
+  }
+
+  .products-header-actions .primary-button {
+    width: 100%;
+    grid-column: 1 / -1;
   }
 }
 

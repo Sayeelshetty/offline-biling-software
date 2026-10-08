@@ -522,7 +522,7 @@ function ProductsPage() {
           </p>
 
           <h1>
-            Product Management
+            Products
           </h1>
 
           <p className="page-description">
