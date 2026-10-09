@@ -388,53 +388,174 @@ a {
   margin: 0 auto;
   box-sizing: border-box;
 }
+/* =========================================================
+   Dashboard Header
+   ========================================================= */
+
+/* =========================================================
+   Dashboard Premium Header
+   ========================================================= */
+/* =========================================================
+   Dashboard Header
+   ========================================================= */
 
 .dashboard-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 32px;
+  min-height: 150px;
   margin-bottom: 28px;
+  padding: 28px 30px;
+  box-sizing: border-box;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  background: #ffffff;
 }
 
-.dashboard-header > div {
+.dashboard-header-content {
+  flex: 1 1 auto;
   min-width: 0;
+  text-align: left;
 }
 
-.dashboard-header .eyebrow {
-  margin-bottom: 8px;
+.dashboard-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 11px;
+  color: #667085;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.dashboard-eyebrow-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #dfe3e8;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #344054;
+  font-size: 9px;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: clamp(28px, 3vw, 38px);
-  line-height: 1.1;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  color: #101828;
+  font-size: clamp(32px, 3vw, 40px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-align: left;
 }
 
-.dashboard-header .page-description {
-  margin-top: 8px;
-  max-width: 620px;
+.dashboard-header-description {
+  margin: 9px 0 0;
+  max-width: 720px;
+  color: #667085;
+  font-size: 14px;
   line-height: 1.5;
+  text-align: left;
 }
 
-/* Main action */
+/* =========================================================
+   Create New Bill
+   ========================================================= */
 
 .dashboard-new-bill-button {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 15px 0 10px;
+  border: 1px solid #172033;
   border-radius: 10px;
-  text-decoration: none;
-  font-size: 14px;
+  background: #172033;
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 700;
+  text-decoration: none;
   white-space: nowrap;
-  box-sizing: border-box;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.dashboard-new-bill-button:hover {
+  background: #101828;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.dashboard-new-bill-button:active {
+  transform: translateY(0);
+}
+
+.dashboard-new-bill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #344054;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* =========================================================
+   Tablet
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .dashboard-header {
+    gap: 20px;
+    padding: 24px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 34px;
+  }
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    min-height: auto;
+    margin-bottom: 22px;
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 30px;
+  }
+
+  .dashboard-header-description {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .dashboard-new-bill-button {
+    width: 100%;
+    min-height: 46px;
+  }
 }
 
 /* Summary cards */
@@ -795,4 +916,48 @@ body,
     width: 100%;
     max-width: none;
   }
+}
+
+
+/* =========================================================
+   Dashboard - Clear Borders and Section Separation
+   ========================================================= */
+
+.dashboard-header,
+.dashboard-card,
+.dashboard-section-card {
+  border: 1px solid #c7d0dc !important;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.05);
+}
+
+/* Dashboard header */
+.dashboard-header {
+  border-radius: 15px;
+}
+
+/* Summary metric cards */
+.dashboard-card {
+  border-radius: 13px;
+}
+
+/* Low Stock and Recent Bills panels */
+.dashboard-section-card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Separate section headings from their contents */
+.dashboard-section-card > div:first-child {
+  border-bottom: 1px solid #d5dce6;
+}
+
+/* Make individual bill and stock rows easier to distinguish */
+.dashboard-list-row {
+  border-bottom: 1px solid #e0e5ed !important;
+}
+
+/* Avoid an unnecessary divider after the last row */
+.dashboard-list-row:last-child {
+  border-bottom: none !important;
 }

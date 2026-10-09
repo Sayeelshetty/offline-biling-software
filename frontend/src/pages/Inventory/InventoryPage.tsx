@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Product } from "../../types/product";
 
@@ -52,6 +52,18 @@ function InventoryPage() {
 
   const [selectedProductId, setSelectedProductId] =
     useState("");
+
+const [productSearchTerm, setProductSearchTerm] =
+  useState("");
+
+const [showProductResults, setShowProductResults] =
+  useState(false);
+
+const [highlightedProductIndex, setHighlightedProductIndex] =
+  useState(-1);
+
+const [visibleProductCount, setVisibleProductCount] =
+  useState(50);
 
   const [operation, setOperation] =
     useState<InventoryOperation>("STOCK_IN");
@@ -343,6 +355,75 @@ function InventoryPage() {
     }
   }
 
+
+  const normalizedProductQuery =
+  productSearchTerm.trim().toLowerCase();
+
+const selectedInventoryProduct = useMemo(
+  () =>
+    products.find(
+      (product) =>
+        String(product.id) === String(selectedProductId)
+    ),
+  [products, selectedProductId]
+);
+
+const selectedInventoryProductLabel =
+  selectedInventoryProduct
+    ? `${selectedInventoryProduct.name}${
+        selectedInventoryProduct.sku
+          ? ` — ${selectedInventoryProduct.sku}`
+          : ""
+      }`
+    : "";
+
+const matchingInventoryProducts = useMemo(() => {
+  // Large catalogs require a more specific search.
+  if (
+    products.length > 100 &&
+    normalizedProductQuery.length < 2
+  ) {
+    return [];
+  }
+
+  return products.filter((product) => {
+    if (!normalizedProductQuery) {
+      return true;
+    }
+
+    const searchableText = [
+      product.name,
+      product.sku,
+      product.barcode,
+    ]
+      .map((value) => String(value ?? ""))
+      .join(" ")
+      .toLowerCase();
+
+    return searchableText.includes(normalizedProductQuery);
+  });
+}, [products, normalizedProductQuery]);
+
+const visibleInventoryProducts = useMemo(
+  () =>
+    matchingInventoryProducts.slice(
+      0,
+      visibleProductCount
+    ),
+  [matchingInventoryProducts, visibleProductCount]
+);
+
+function chooseInventoryProduct(product: Product) {
+  // Keep the existing selection handler so stock and
+  // movement information continue to update correctly.
+  handleProductChange(String(product.id));
+
+  setProductSearchTerm("");
+  setShowProductResults(false);
+  setHighlightedProductIndex(-1);
+  setVisibleProductCount(50);
+}
+
   /*
   |--------------------------------------------------------------------------
   | Summary Helpers
@@ -532,43 +613,295 @@ function InventoryPage() {
             handleInventoryOperation
           }
         >
-          <div className="inventory-field">
-            <label htmlFor="inventory-product">
-              Product
-            </label>
+          <div className="inventory-field inventory-product-field">
+  <label htmlFor="inventory-product-search">
+    Product
+  </label>
 
-            <select
-              id="inventory-product"
-              value={
-                selectedProductId
-              }
-              onChange={(event) =>
-                handleProductChange(
-                  event.target.value
-                )
-              }
-              disabled={
-                saving ||
-                loading
-              }
-            >
-              <option value="">
-                Select product
-              </option>
+  <div className="inventory-product-picker">
+    <div className="inventory-product-picker-control">
+      <input
+        id="inventory-product-search"
+        className="inventory-product-search-input"
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
+        aria-expanded={showProductResults}
+        aria-controls="inventory-product-options"
+        aria-activedescendant={
+          showProductResults &&
+          visibleInventoryProducts[highlightedProductIndex]
+            ? `inventory-product-option-${highlightedProductIndex}`
+            : undefined
+        }
+        autoComplete="off"
+        spellCheck={false}
+        placeholder={
+          loading
+            ? "Loading products..."
+            : "Search product name, SKU or barcode..."
+        }
+        value={
+          showProductResults
+            ? productSearchTerm
+            : selectedInventoryProductLabel
+        }
+        disabled={saving || loading}
+        onFocus={() => {
+          setProductSearchTerm("");
+          setVisibleProductCount(50);
+          setHighlightedProductIndex(0);
+          setShowProductResults(true);
+        }}
+        onChange={(event) => {
+          setProductSearchTerm(event.target.value);
+          setVisibleProductCount(50);
+          setHighlightedProductIndex(0);
+          setShowProductResults(true);
+        }}
+       onKeyDown={(event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    setShowProductResults(false);
+    setProductSearchTerm("");
+    setHighlightedProductIndex(-1);
+    return;
+  }
 
-              {products.map(
-                (product) => (
-                  <option
-                    key={product.id}
-                    value={product.id}
-                  >
-                    {product.name} —{" "}
-                    {product.sku}
-                  </option>
-                )
-              )}
-            </select>
+  if (!showProductResults) {
+    return;
+  }
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+
+    if (
+      highlightedProductIndex <
+      visibleInventoryProducts.length - 1
+    ) {
+      setHighlightedProductIndex((current) => current + 1);
+    } else if (
+      visibleInventoryProducts.length <
+      matchingInventoryProducts.length
+    ) {
+      const nextIndex = visibleInventoryProducts.length;
+
+      setVisibleProductCount((current) =>
+        Math.min(
+          current + 50,
+          matchingInventoryProducts.length
+        )
+      );
+
+      setHighlightedProductIndex(nextIndex);
+    }
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+
+    setHighlightedProductIndex((current) =>
+      current <= 0 ? -1 : current - 1
+    );
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+
+    const product =
+      highlightedProductIndex >= 0
+        ? visibleInventoryProducts[highlightedProductIndex]
+        : normalizedProductQuery &&
+            visibleInventoryProducts.length === 1
+          ? visibleInventoryProducts[0]
+          : undefined;
+
+    if (product) {
+      chooseInventoryProduct(product);
+    }
+  }
+}}
+        onBlur={() => {
+          window.setTimeout(() => {
+            setShowProductResults(false);
+            setProductSearchTerm("");
+            setHighlightedProductIndex(0);
+          }, 150);
+        }}
+      />
+
+      <div className="inventory-product-picker-actions">
+  {selectedProductId && (
+    <button
+      type="button"
+      className="inventory-product-clear-button"
+      aria-label="Clear selected product"
+      title="Clear selected product"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => {
+        handleProductChange("");
+        setProductSearchTerm("");
+        setShowProductResults(false);
+        setHighlightedProductIndex(-1);
+        setVisibleProductCount(50);
+      }}
+    >
+      ×
+    </button>
+  )}
+
+  <button
+    type="button"
+    className={`inventory-product-picker-chevron ${
+      showProductResults ? "is-open" : ""
+    }`}
+    aria-label={
+      showProductResults
+        ? "Close product results"
+        : "Open product results"
+    }
+    aria-expanded={showProductResults}
+    onMouseDown={(event) => event.preventDefault()}
+    onClick={() => {
+      if (showProductResults) {
+        setShowProductResults(false);
+        setProductSearchTerm("");
+        setHighlightedProductIndex(-1);
+      } else {
+        setProductSearchTerm("");
+        setVisibleProductCount(50);
+        setHighlightedProductIndex(-1);
+        setShowProductResults(true);
+      }
+    }}
+  >
+    <svg
+      viewBox="0 0 20 20"
+      width="16"
+      height="16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="m5.5 7.5 4.5 4.5 4.5-4.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </button>
+</div>
+    </div>
+
+    {showProductResults && !loading && (
+      <div
+        id="inventory-product-options"
+        className="inventory-product-options"
+        role="listbox"
+      >
+        {products.length > 100 &&
+        normalizedProductQuery.length < 2 ? (
+          <div className="inventory-product-picker-message">
+            <strong>Search for a product</strong>
+            <span>
+              Enter at least two characters to search
+              {` ${products.length.toLocaleString()}`} products.
+            </span>
           </div>
+        ) : matchingInventoryProducts.length === 0 ? (
+          <div className="inventory-product-picker-message">
+            <strong>No products found</strong>
+            <span>
+              Try another product name, SKU or barcode.
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="inventory-product-options-header">
+              <span>
+                {matchingInventoryProducts.length.toLocaleString()}{" "}
+                matching products
+              </span>
+
+              <span>
+                Showing{" "}
+                {visibleInventoryProducts.length.toLocaleString()}{" "}
+                of{" "}
+                {matchingInventoryProducts.length.toLocaleString()}
+              </span>
+            </div>
+
+            {visibleInventoryProducts.map(
+              (product, index) => {
+                const isSelected =
+                  String(product.id) ===
+                  String(selectedProductId);
+
+                const isHighlighted =
+                  highlightedProductIndex === index;
+
+                return (
+                  <button
+                    id={`inventory-product-option-${index}`}
+                    key={product.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`inventory-product-option ${
+                      isSelected ? "is-selected" : ""
+                    } ${
+                      isHighlighted ? "is-highlighted" : ""
+                    }`}
+                    onMouseDown={(event) =>
+                      event.preventDefault()
+                    }
+                    onClick={() =>
+                      chooseInventoryProduct(product)
+                    }
+                  >
+                    <span className="inventory-product-option-name">
+                      {product.name}
+                    </span>
+
+                    <span className="inventory-product-option-meta">
+                      SKU: {product.sku || "Not assigned"}
+                      {product.barcode
+                        ? ` · Barcode: ${product.barcode}`
+                        : ""}
+                    </span>
+                  </button>
+                );
+              }
+            )}
+
+            {visibleInventoryProducts.length <
+              matchingInventoryProducts.length && (
+              <button
+                type="button"
+                className="inventory-product-load-more"
+                onMouseDown={(event) =>
+                  event.preventDefault()
+                }
+                onClick={() => {
+                  setVisibleProductCount((current) =>
+                    Math.min(
+                      current + 50,
+                      matchingInventoryProducts.length
+                    )
+                  );
+                }}
+              >
+                Load next 50 products
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    )}
+  </div>
+</div>
 
           <div className="inventory-field">
             <label htmlFor="inventory-operation">

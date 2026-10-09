@@ -243,26 +243,28 @@ function DashboardPage() {
 
   return (
     <section className="page dashboard-page">
-      <div className="page-header dashboard-header">
-        <div>
-          <p className="eyebrow">OVERVIEW</p>
+<div className="dashboard-header">
+  <div className="dashboard-header-content">
+    <div className="dashboard-eyebrow">
+      <span className="dashboard-eyebrow-mark">◈</span>
+      <span>Business Overview</span>
+    </div>
 
-          <h1>Dashboard</h1>
+    <h1>Dashboard</h1>
 
-          <p className="page-description">
-            Overview of your billing and business
-            activity.
-          </p>
-        </div>
+    <p className="dashboard-header-description">
+      Monitor today&apos;s sales, bills, inventory alerts, and outstanding payments.
+    </p>
+  </div>
 
-        <Link
-          to="/billing"
-          className="dashboard-new-bill-button"
-        >
-          <span aria-hidden="true">+</span>
-          New Bill
-        </Link>
-      </div>
+  <Link
+    to="/billing"
+    className="dashboard-new-bill-button"
+  >
+    <span className="dashboard-new-bill-icon">+</span>
+    <span>Create New Bill</span>
+  </Link>
+</div>
 
       <div className="dashboard-grid">
         <div className="dashboard-card dashboard-card-primary">

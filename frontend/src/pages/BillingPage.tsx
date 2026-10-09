@@ -132,6 +132,29 @@ function BillingPage() {
     setSelectedCustomerId,
   ] = useState<string>("");
 
+  const [customerSearchTerm, setCustomerSearchTerm] =
+  useState("");
+
+const [showCustomerResults, setShowCustomerResults] =
+  useState(false);
+
+
+const customerComboboxControlRef =
+  useRef<HTMLDivElement>(null);
+
+const [
+  customerDropdownPlacement,
+  setCustomerDropdownPlacement,
+] = useState<"above" | "below">("below");
+
+const [
+  customerDropdownMaxHeight,
+  setCustomerDropdownMaxHeight,
+] = useState(240);
+
+const [highlightedCustomerIndex, setHighlightedCustomerIndex] =
+  useState(0);
+
   const [
     paymentMethod,
     setPaymentMethod,
@@ -214,6 +237,8 @@ const [
       0
     );
 
+    
+
     const itemDiscount = cart.reduce(
       (sum, line) => sum + line.discount,
       0
@@ -244,6 +269,8 @@ const [
           sum + calculateLineAmount(line),
         0
       );
+
+      
 
     let remainingDiscount =
       finalInvoiceDiscount;
@@ -751,6 +778,80 @@ useEffect(() => {
     }
   }
 
+const selectedCustomer = customers.find(
+  (customer) =>
+    String(customer.id) === String(selectedCustomerId)
+);
+
+const selectedCustomerLabel = selectedCustomer
+  ? `${selectedCustomer.name}${
+      selectedCustomer.mobile
+        ? ` — ${selectedCustomer.mobile}`
+        : ""
+    }`
+  : "Walk-in Customer";
+
+const normalizedCustomerQuery =
+  customerSearchTerm.trim().toLowerCase();
+
+const filteredCustomers = customers.filter((customer) => {
+  const name = String(customer.name ?? "").toLowerCase();
+  const mobile = String(customer.mobile ?? "").toLowerCase();
+
+  return (
+    name.includes(normalizedCustomerQuery) ||
+    mobile.includes(normalizedCustomerQuery)
+  );
+});
+
+const updateCustomerDropdownPosition = (
+  ensureSpaceBelow = false
+) => {
+  const control = customerComboboxControlRef.current;
+
+  if (!control) return;
+
+  let rect = control.getBoundingClientRect();
+
+  let spaceBelow =
+    (document.documentElement.clientHeight || window.innerHeight) -
+    rect.bottom -
+    12;
+
+  // When needed, move the customer field into view so
+  // the dropdown has room to open downward.
+  if (ensureSpaceBelow && spaceBelow < 280) {
+    control.scrollIntoView({
+      block: "center",
+      behavior: "auto",
+    });
+
+    rect = control.getBoundingClientRect();
+
+    spaceBelow =
+      (document.documentElement.clientHeight || window.innerHeight) -
+      rect.bottom -
+      12;
+  }
+
+  // Always open below the input.
+  setCustomerDropdownPlacement("below");
+
+  setCustomerDropdownMaxHeight(
+    Math.max(100, Math.min(260, spaceBelow - 8))
+  );
+};
+
+const handleCustomerSelect = (customer: Customer | null) => {
+  setSelectedCustomerId(
+    customer ? String(customer.id) : ""
+  );
+
+  setCustomerSearchTerm("");
+  setShowCustomerResults(false);
+  setHighlightedCustomerIndex(0);
+};
+
   return (
     <section className="billing-page">
       <div className="billing-header">
@@ -815,7 +916,7 @@ useEffect(() => {
             </div>
 
 
-            <button
+         <button
   type="button"
   className="billing-camera-button"
   onClick={() => {
@@ -823,7 +924,29 @@ useEffect(() => {
     setShowBarcodeScanner(true);
   }}
 >
-  📷 Scan with Camera
+  <svg
+    className="billing-camera-icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.5-2h4l1.5 2h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-9Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle
+      cx="12"
+      cy="12.5"
+      r="3.2"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    />
+  </svg>
+
+  <span>Scan with Camera</span>
 </button>
 
             {searchTerm.trim() && (
@@ -888,18 +1011,58 @@ useEffect(() => {
           <div className="billing-table-wrapper">
             {cart.length === 0 ? (
               <div className="billing-empty-state">
-                <div className="empty-icon">
-                  +
-                </div>
+               <div className="empty-icon" aria-hidden="true">
+  <svg
+    viewBox="0 0 48 48"
+    fill="none"
+    focusable="false"
+  >
+    <path
+      d="M6.5 9h5l4.5 21h19l5-15.5H14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
 
-                <h3>
-                  No products added
-                </h3>
+    <circle
+      cx="20"
+      cy="36"
+      r="2.2"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
 
-                <p>
-                  Search for a product above
-                  to start a new bill.
-                </p>
+    <circle
+      cx="34"
+      cy="36"
+      r="2.2"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+
+    <circle
+      cx="36"
+      cy="10"
+      r="8"
+      fill="#dcfce7"
+      stroke="#86efac"
+      strokeWidth="1.2"
+    />
+
+    <path
+      d="M36 6.5v7M32.5 10h7"
+      stroke="#15803d"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+</div>
+                <h3>No products added</h3>
+
+<p>
+  Search above or scan a barcode to add your first item.
+</p>
               </div>
             ) : (
               <table className="billing-table">
@@ -1101,42 +1264,213 @@ useEffect(() => {
           </div>
 
           <div className="billing-bottom-tools">
-            <div className="customer-field">
-              <label htmlFor="billing-customer">
-                Customer
-              </label>
+        <div className="customer-field">
+  <label htmlFor="billing-customer-search">
+    Customer
+  </label>
 
-              <select
-                id="billing-customer"
-                value={selectedCustomerId}
-                onChange={(event) =>
-                  setSelectedCustomerId(
-                    event.target.value
-                  )
+  <div className="customer-combobox">
+    <div
+      className="customer-combobox-control"
+      ref={customerComboboxControlRef}
+    >
+      <input
+        id="billing-customer-search"
+        className="customer-search-input"
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
+        aria-expanded={showCustomerResults}
+        aria-controls="billing-customer-options"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder={
+          loadingCustomers
+            ? "Loading customers..."
+            : "Search by name or phone number..."
+        }
+        value={
+          showCustomerResults
+            ? customerSearchTerm
+            : selectedCustomerLabel
+        }
+        disabled={generatingBill || loadingCustomers}
+        onFocus={() => {
+          setCustomerSearchTerm("");
+          setHighlightedCustomerIndex(0);
+          setShowCustomerResults(true);
+          updateCustomerDropdownPosition();
+        }}
+        onChange={(event) => {
+          const value = event.target.value;
+          const query = value.trim().toLowerCase();
+
+          setCustomerSearchTerm(value);
+          setShowCustomerResults(true);
+
+          const hasMatch = customers.some(
+            (customer) =>
+              String(customer.name ?? "")
+                .toLowerCase()
+                .includes(query) ||
+              String(customer.mobile ?? "")
+                .toLowerCase()
+                .includes(query)
+          );
+
+          setHighlightedCustomerIndex(
+            query && hasMatch ? 1 : 0
+          );
+
+          updateCustomerDropdownPosition();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setCustomerSearchTerm("");
+            setShowCustomerResults(false);
+            setHighlightedCustomerIndex(0);
+          }
+
+          if (
+            event.key === "ArrowDown" &&
+            showCustomerResults
+          ) {
+            event.preventDefault();
+            setHighlightedCustomerIndex((current) =>
+              Math.min(current + 1, filteredCustomers.length)
+            );
+          }
+
+          if (
+            event.key === "ArrowUp" &&
+            showCustomerResults
+          ) {
+            event.preventDefault();
+            setHighlightedCustomerIndex((current) =>
+              Math.max(current - 1, 0)
+            );
+          }
+
+          if (
+            event.key === "Enter" &&
+            showCustomerResults
+          ) {
+            event.preventDefault();
+
+            if (highlightedCustomerIndex === 0) {
+              if (!customerSearchTerm.trim()) {
+                handleCustomerSelect(null);
+              }
+
+              return;
+            }
+
+            const customer =
+              filteredCustomers[highlightedCustomerIndex - 1];
+
+            if (customer) {
+              handleCustomerSelect(customer);
+            }
+          }
+        }}
+        onBlur={() => {
+          setShowCustomerResults(false);
+          setCustomerSearchTerm("");
+          setHighlightedCustomerIndex(0);
+        }}
+      />
+
+      <span
+        className="customer-combobox-chevron"
+        aria-hidden="true"
+      >
+        ▾
+      </span>
+    </div>
+
+    {showCustomerResults && !loadingCustomers && (
+      <div
+        id="billing-customer-options"
+        className={`customer-options ${
+          customerDropdownPlacement === "above"
+            ? "opens-above"
+            : ""
+        }`}
+        style={{
+          maxHeight: `${customerDropdownMaxHeight}px`,
+        }}
+        role="listbox"
+      >
+        <button
+          id="customer-option-walk-in"
+          type="button"
+          role="option"
+          aria-selected={!selectedCustomerId}
+          className={`customer-option ${
+            !selectedCustomerId ? "is-selected" : ""
+          } ${
+            highlightedCustomerIndex === 0
+              ? "is-highlighted"
+              : ""
+          }`}
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => handleCustomerSelect(null)}
+        >
+          <span className="customer-option-name">
+            Walk-in Customer
+          </span>
+          <span className="customer-option-detail">
+            No saved customer required
+          </span>
+        </button>
+
+        {filteredCustomers.length === 0 ? (
+          <div className="customer-options-empty">
+            <strong>No matching customers</strong>
+            <span>Try another name or phone number.</span>
+          </div>
+        ) : (
+          filteredCustomers.map((customer, index) => {
+            const isSelected =
+              String(customer.id) === String(selectedCustomerId);
+
+            const isHighlighted =
+              highlightedCustomerIndex === index + 1;
+
+            return (
+              <button
+                id={`customer-option-${index + 1}`}
+                key={customer.id}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`customer-option ${
+                  isSelected ? "is-selected" : ""
+                } ${
+                  isHighlighted ? "is-highlighted" : ""
+                }`}
+                onPointerDown={(event) =>
+                  event.preventDefault()
                 }
-                disabled={
-                  generatingBill ||
-                  loadingCustomers
-                }
+                onClick={() => handleCustomerSelect(customer)}
               >
-                <option value="">
-                  Walk-in Customer
-                </option>
+                <span className="customer-option-name">
+                  {customer.name}
+                </span>
 
-                {customers.map(
-                  (customer) => (
-                    <option
-                      key={customer.id}
-                      value={customer.id}
-                    >
-                      {customer.name} —{" "}
-                      {customer.mobile}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
+                <span className="customer-option-detail">
+                  {customer.mobile || "No phone number"}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    )}
+  </div>
+</div>
             <button
               type="button"
               className="clear-bill-button"
@@ -1228,15 +1562,12 @@ useEffect(() => {
             </strong>
           </div>
 
-          <div className="payment-section">
-            <label>
-              Payment Method
-            </label>
-
-           <div className="payment-section">
-  <label>
-    Payment Method
-  </label>
+       <div className="billing-payment-container">
+  <div className="payment-section">
+    <label>
+      Payment Method
+    </label>
+          
 
   <div className="payment-methods">
     {paymentMethods.length === 0 ? (
@@ -1345,11 +1676,6 @@ useEffect(() => {
               : "Generate Bill"}
           </button>
 
-          <p className="offline-note">
-            Bill is saved locally first. Cloud
-            synchronisation will be handled by
-            the sync module.
-          </p>
         </aside>
        </div>
 

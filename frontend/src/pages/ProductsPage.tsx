@@ -681,13 +681,19 @@ function ProductsPage() {
 
         {/* Total */}
 
-        <div className="product-total">
-          <span>Total</span>
+    <div className="product-total">
+  <div className="product-total-info">
+    <span className="product-total-label">
+      Total Products
+    </span>
 
-          <strong>
-            {products.length}
-          </strong>
-        </div>
+    <span className="product-total-description">
+      Showing products in the current view
+    </span>
+  </div>
+
+  <strong>{products.length}</strong>
+</div>
       </div>
 
       {/* Product Table */}
