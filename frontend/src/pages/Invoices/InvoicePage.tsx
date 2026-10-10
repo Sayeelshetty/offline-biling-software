@@ -385,7 +385,7 @@ function InvoicePage() {
             INVOICES
           </p>
 
-          <h1>Invoice / Receipt</h1>
+          <h1>Invoices</h1>
 
           <p className="page-description">
             View generated bills and print customer
@@ -780,29 +780,26 @@ function InvoicePage() {
                 </div>
 
                 <div className="invoice-total-section">
-                 <div
-  className="invoice-total-notes"
-  style={{
-    alignSelf: "stretch",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    minHeight: "86px",
-  }}
->
-  <span
-    style={{
-      fontSize: "14px",
-      fontWeight: 800,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      color: "#172033",
-    }}
+             
+<div className="invoice-total-notes">
+  {/* <div
+    className="invoice-thank-you-icon"
+    aria-hidden="true"
   >
-    THANK YOU VISIT AGAIN
-  </span>
+    ✓
+  </div> */}
+
+  <div className="invoice-thank-you-copy">
+    <span className="invoice-thank-you-label">
+      THANK YOU
+    </span>
+
+    <strong>Thank you for your purchase!</strong>
+
+    <p>We look forward to seeing you again.</p>
+  </div>
 </div>
+
 
                   <div className="invoice-totals">
                     <div>
