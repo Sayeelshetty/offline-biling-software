@@ -43,6 +43,58 @@ function ProductsPage() {
 
   const [message, setMessage] = useState<string | null>(null);
 
+
+  const [productToDeactivate, setProductToDeactivate] =
+  useState<Product | null>(null);
+
+const [isDeactivating, setIsDeactivating] =
+  useState(false);
+
+
+  
+useEffect(() => {
+  const currentError = error ?? "";
+
+  const isDuplicateSkuWarning =
+    /^Import failed:/i.test(currentError) &&
+    /SKU\s+"[^"]+"\s+already exists/i.test(
+      currentError
+    );
+
+  if (!isDuplicateSkuWarning) {
+    return;
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    setError((latestError) =>
+      latestError === currentError
+        ? null
+        : latestError
+    );
+  }, 5000);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [error]);
+
+
+  
+useEffect(() => {
+  if (!message) {
+    return;
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    setMessage(null);
+  }, 5000);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [message]);
+
+
   const [showForm, setShowForm] = useState(false);
 
   const [editingProduct, setEditingProduct] =
@@ -297,9 +349,17 @@ function ProductsPage() {
         return;
       }
 
-      setMessage(
-        `${result.count ?? 0} product(s) exported successfully.`
-      );
+     
+const exportedCount = result.count ?? 0;
+
+setMessage(
+  exportedCount === 0
+    ? "CSV export completed. No products were exported."
+    : `CSV export completed. ${exportedCount} product${
+        exportedCount === 1 ? "" : "s"
+      } exported successfully.`
+);
+
     } catch (err) {
       console.error(
         "Failed to export products:",
@@ -387,44 +447,45 @@ function ProductsPage() {
   |--------------------------------------------------------------------------
   */
 
-  async function handleDeactivate(
-    product: Product
-  ) {
-    const confirmed =
-      window.confirm(
-        `Deactivate "${product.name}"?`
-      );
+function handleDeactivate(product: Product) {
+  setProductToDeactivate(product);
+}
 
-    if (!confirmed) {
-      return;
-    }
+async function confirmDeactivate() {
+  const product = productToDeactivate;
 
-    try {
-      setError(null);
-      setMessage(null);
-
-      await productService.deactivateProduct(
-        product.id
-      );
-
-      setMessage(
-        `"${product.name}" was deactivated successfully.`
-      );
-
-      await loadProducts();
-    } catch (err) {
-      console.error(
-        "Failed to deactivate product:",
-        err
-      );
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to deactivate product."
-      );
-    }
+  if (!product || isDeactivating) {
+    return;
   }
+
+  try {
+    setIsDeactivating(true);
+    setError(null);
+    setMessage(null);
+
+    await productService.deactivateProduct(product.id);
+
+    setMessage(
+      `"${product.name}" was deactivated successfully.`
+    );
+
+    setProductToDeactivate(null);
+
+    await loadProducts();
+  } catch (err) {
+    console.error("Failed to deactivate product:", err);
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Failed to deactivate product."
+    );
+
+    setProductToDeactivate(null);
+  } finally {
+    setIsDeactivating(false);
+  }
+}
 
   /*
   |--------------------------------------------------------------------------
@@ -507,6 +568,37 @@ function ProductsPage() {
     return category?.name ?? "—";
   }
 
+
+  
+  // Convert duplicate-SKU validation messages into readable rows.
+  const importErrorText = error ?? "";
+
+  const duplicateSkuIssues: Array<{
+    row: string;
+    sku: string;
+  }> = [];
+
+  const duplicateSkuPattern =
+    /Row\s+(\d+):\s*SKU\s+"([^"]+)"\s+already exists\.?/gi;
+
+  let duplicateMatch: RegExpExecArray | null;
+
+  while (
+    (duplicateMatch = duplicateSkuPattern.exec(
+      importErrorText
+    )) !== null
+  ) {
+    duplicateSkuIssues.push({
+      row: duplicateMatch[1],
+      sku: duplicateMatch[2],
+    });
+  }
+
+
+    const isDuplicateSkuWarning =
+  /SKU\s+"[^"]+"\s+already exists/i.test(error ?? "");
+
+
   /*
   |--------------------------------------------------------------------------
   | Render
@@ -580,17 +672,76 @@ function ProductsPage() {
         </div>
       </div>
 
-      {message && (
-        <div className="message success-message">
-          {message}
-        </div>
-      )}
+     {message && (
+  <div
+    className="products-success-notice"
+    role="status"
+    aria-live="polite"
+  >
+    <span
+      className="products-success-icon"
+      aria-hidden="true"
+    >
+      ✓
+    </span>
 
-      {error && (
-        <div className="message error-message">
-          {error}
-        </div>
-      )}
+    <div className="products-success-content">
+      <strong>Completed successfully</strong>
+      <span>{message}</span>
+    </div>
+
+    <button
+      type="button"
+      className="products-success-dismiss"
+      onClick={() => setMessage(null)}
+      aria-label="Dismiss success notification"
+      title="Dismiss notification"
+    >
+      ×
+    </button>
+  </div>
+)}
+
+
+     
+{error && (
+  <div
+    className={
+      isDuplicateSkuWarning
+        ? "products-duplicate-inline"
+        : "message error-message"
+    }
+    role="status"
+  >
+    {isDuplicateSkuWarning ? (
+      <>
+        <span
+          className="products-duplicate-inline__dot"
+          aria-hidden="true"
+        />
+
+        <span className="products-duplicate-inline__text">
+          <strong>Products already exist.</strong>{" "}
+          This CSV contains existing SKUs. No products
+          were imported.
+        </span>
+      </>
+    ) : (
+      error
+    )}
+
+    <button
+      type="button"
+      className="products-duplicate-inline__dismiss"
+      onClick={() => setError(null)}
+      aria-label="Dismiss message"
+      title="Dismiss"
+    >
+      ×
+    </button>
+  </div>
+)}
+
 
       <div className="toolbar">
         {/* Search */}
@@ -872,6 +1023,8 @@ function ProductsPage() {
 
       {/* Product Form Modal */}
 
+
+      {/* Add / Edit Product Modal */}
       {showForm && (
         <div className="modal-backdrop">
           <div
@@ -882,17 +1035,102 @@ function ProductsPage() {
           >
             <ProductForm
               product={editingProduct}
-              onSubmit={
-                handleProductSubmit
-              }
+              onSubmit={handleProductSubmit}
               onCancel={closeForm}
               isSubmitting={saving}
             />
           </div>
         </div>
       )}
-    </section>
-  );
+
+      {/* Deactivate Confirmation Modal — independent of showForm */}
+      {productToDeactivate && (
+        <div
+          className="deactivate-confirm-backdrop"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              !isDeactivating
+            ) {
+              setProductToDeactivate(null);
+            }
+          }}
+        >
+          <section
+            className="deactivate-confirm-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="deactivate-confirm-title"
+            aria-describedby="deactivate-confirm-description"
+          >
+            <div className="deactivate-confirm-header">
+              <div
+                className="deactivate-confirm-icon"
+                aria-hidden="true"
+              >
+                !
+              </div>
+
+              <button
+                type="button"
+                className="deactivate-confirm-close"
+                onClick={() => setProductToDeactivate(null)}
+                disabled={isDeactivating}
+                aria-label="Close confirmation"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="deactivate-confirm-copy">
+              <span className="deactivate-confirm-eyebrow">
+                PRODUCT STATUS
+              </span>
+
+              <h2 id="deactivate-confirm-title">
+                Deactivate this product?
+              </h2>
+
+              <p id="deactivate-confirm-description">
+                This product will be marked inactive.
+                Its existing records will remain unchanged.
+              </p>
+            </div>
+
+            <div className="deactivate-confirm-product">
+              <span>Product name</span>
+              <strong>{productToDeactivate.name}</strong>
+
+              <span>SKU</span>
+              <strong>{productToDeactivate.sku}</strong>
+            </div>
+
+            <div className="deactivate-confirm-actions">
+              <button
+                type="button"
+                className="deactivate-cancel-button"
+                onClick={() => setProductToDeactivate(null)}
+                disabled={isDeactivating}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="deactivate-confirm-button"
+                onClick={confirmDeactivate}
+                disabled={isDeactivating}
+              >
+                {isDeactivating
+                  ? "Deactivating..."
+                  : "Confirm Deactivate"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      </section>
+  );
 }
 
 export default ProductsPage;

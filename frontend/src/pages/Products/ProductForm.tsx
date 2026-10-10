@@ -150,20 +150,31 @@ function ProductForm({
   |--------------------------------------------------------------------------
   */
 
-  function handleChange(
-    field: keyof FormState,
-    value: string
-  ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
 
-    setErrors((current) => ({
-      ...current,
-      [field]: "",
-    }));
+function handleChange(
+  field: keyof FormState,
+  value: string
+) {
+  // Keep barcodes numeric and limit them to 14 digits.
+  if (field === "barcode") {
+    value = value.replace(/\D/g, "").slice(0, 14);
   }
+
+  setForm((current) => ({
+    ...current,
+    [field]: value,
+  }));
+
+  setErrors((current) => ({
+    ...current,
+    [field]:
+      field === "barcode" &&
+      value.length > 14
+        ? "Barcode cannot exceed 14 digits."
+        : "",
+  }));
+}
+
 
   /*
   |--------------------------------------------------------------------------
@@ -182,6 +193,17 @@ function ProductForm({
     if (!form.sku.trim()) {
       nextErrors.sku = "SKU is required.";
     }
+
+
+   const barcode = form.barcode.trim();
+
+if (
+  barcode !== "" &&
+  !/^\d{1,14}$/.test(barcode)
+) {
+  nextErrors.barcode =
+    "Barcode must contain numbers only, up to 14 digits.";
+}
 
     if (!form.categoryId) {
       nextErrors.categoryId =
@@ -401,24 +423,51 @@ function ProductForm({
         {/* Barcode */}
 
         <div className="form-field">
-          <label htmlFor="product-barcode">
-            Barcode
-          </label>
+  <label htmlFor="product-barcode">
+    Barcode
+  </label>
 
-          <input
-            id="product-barcode"
-            type="text"
-            value={form.barcode}
-            onChange={(event) =>
-              handleChange(
-                "barcode",
-                event.target.value
-              )
-            }
-            placeholder="Enter barcode"
-            disabled={isSubmitting}
-          />
-        </div>
+ <input
+  id="product-barcode"
+  type="text"
+  value={form.barcode}
+  onChange={(event) =>
+    handleChange("barcode", event.target.value)
+  }
+  placeholder="Enter barcode"
+  disabled={isSubmitting}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  maxLength={14}
+  autoComplete="off"
+  spellCheck={false}
+/>
+
+  <div className="barcode-field-meta">
+    <span
+      id="product-barcode-help"
+      className={
+        errors.barcode
+          ? "field-error"
+          : "barcode-field-hint"
+      }
+      role={errors.barcode ? "alert" : undefined}
+    >
+      {errors.barcode ||
+        "Optional · Up to 14 letters or numbers"}
+    </span>
+
+    <span
+      className={
+        form.barcode.length > 14
+          ? "barcode-character-count is-invalid"
+          : "barcode-character-count"
+      }
+    >
+      {form.barcode.length}/14
+    </span>
+  </div>
+</div>
 
         {/* Category */}
 

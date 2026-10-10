@@ -526,3 +526,980 @@
     align-items: flex-start;
   }
 }
+
+
+/* =========================================================
+   SETTINGS PAGE — UI REFINEMENT
+   Consistent spacing, alignment, borders and interactions.
+   Keeps existing settings logic and component structure.
+   ========================================================= */
+
+@media screen {
+  /* Page layout */
+  .settings-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 28px 24px;
+    box-sizing: border-box;
+    color: #172033;
+  }
+
+  /* Page heading */
+  .settings-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .settings-header > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .settings-eyebrow {
+    margin: 0 0 8px;
+    color: #58677d;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.4;
+    letter-spacing: 0.09em;
+    text-align: left;
+    opacity: 1;
+  }
+
+  .settings-header h1 {
+    margin: 0;
+    color: #111827;
+    font-size: clamp(30px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+    text-align: left;
+  }
+
+  .settings-description {
+    max-width: 680px;
+    margin: 10px 0 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: left;
+    opacity: 1;
+  }
+
+  .settings-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  /* Header action buttons */
+  .settings-primary-button,
+  .settings-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    box-sizing: border-box;
+
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+
+  .settings-primary-button {
+    color: #ffffff;
+    background: #172033;
+    border-color: #172033;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1);
+  }
+
+  .settings-primary-button:hover:not(:disabled) {
+    color: #ffffff;
+    background: #293951;
+    border-color: #293951;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+    transform: translateY(-1px);
+  }
+
+  .settings-secondary-button {
+    color: #344256;
+    background: #ffffff;
+    border-color: #d7e0eb;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+  }
+
+  .settings-secondary-button:hover:not(:disabled) {
+    background: #f5f8fc;
+    border-color: #b9c7d8;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .settings-primary-button:active:not(:disabled),
+  .settings-secondary-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  .settings-primary-button:disabled,
+  .settings-secondary-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .settings-primary-button:focus-visible,
+  .settings-secondary-button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 3px;
+  }
+
+  /* Success and error messages */
+  .settings-message {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .settings-success {
+    color: #17613b;
+    background: #f0f9f3;
+    border: 1px solid #ccebd7;
+  }
+
+  .settings-error {
+    color: #9b2c2c;
+    background: #fff6f5;
+    border: 1px solid #f1d1ce;
+  }
+
+  /* Main cards: Business, Invoice, Billing, Printer, Data */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .settings-card {
+    min-width: 0;
+    padding: 24px;
+    box-sizing: border-box;
+
+    background: #ffffff;
+    border: 1px solid #e0e6ee;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.035);
+
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .settings-card:hover {
+    border-color: #d3dce7;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  }
+
+  /* Clear and consistent section hierarchy */
+  .settings-card-header {
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .settings-card-eyebrow {
+    margin: 0 0 6px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 1;
+  }
+
+  .settings-card-header h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -0.025em;
+  }
+
+  .settings-card-header p {
+    max-width: 520px;
+    margin: 7px auto 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+    opacity: 1;
+  }
+
+  /* Form layout */
+  .settings-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px 16px;
+  }
+
+  .settings-field {
+    min-width: 0;
+  }
+
+  .settings-field.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .settings-field label {
+    display: block;
+    margin: 0 0 8px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.45;
+    opacity: 1;
+  }
+
+  .settings-field input,
+  .settings-field textarea,
+  .settings-field select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 11px 13px;
+    box-sizing: border-box;
+
+    color: #263449;
+    background: #ffffff;
+    border: 1px solid #d7e0eb;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.45;
+    outline: none;
+
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .settings-field textarea {
+    min-height: 88px;
+    resize: vertical;
+  }
+
+  .settings-field input:hover,
+  .settings-field textarea:hover,
+  .settings-field select:hover {
+    border-color: #bdcad9;
+  }
+
+  .settings-field input:focus,
+  .settings-field textarea:focus,
+  .settings-field select:focus {
+    border-color: #64748b;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.13);
+  }
+
+  .settings-field input:disabled,
+  .settings-field textarea:disabled,
+  .settings-field select:disabled {
+    color: #7b8798;
+    background: #f5f7fa;
+    cursor: not-allowed;
+  }
+
+  .settings-help {
+    display: block;
+    margin-top: 7px;
+    color: #7b8798;
+    font-size: 11px;
+    line-height: 1.55;
+    opacity: 1;
+  }
+
+  /* Invoice preview and printer information */
+  .settings-preview-box,
+  .settings-info-box {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 18px;
+    padding: 18px;
+    box-sizing: border-box;
+
+    background: #f7f9fc;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+  }
+
+  .settings-preview-box span,
+  .settings-info-box span {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.55;
+    opacity: 1;
+  }
+
+  .settings-preview-box strong {
+    color: #172033;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -0.025em;
+  }
+
+  .settings-preview-box small {
+    color: #7b8798;
+    font-size: 11px;
+    line-height: 1.55;
+    opacity: 1;
+  }
+
+  .settings-info-box strong {
+    color: #263449;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.5;
+  }
+
+  /* Tax and discount toggles */
+  .settings-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .settings-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    min-width: 0;
+    padding: 15px 16px;
+    box-sizing: border-box;
+
+    background: #f8fafc;
+    border: 1px solid #e1e7ef;
+    border-radius: 12px;
+
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .settings-toggle-row:hover {
+    background: #f3f6fa;
+    border-color: #ccd7e4;
+  }
+
+  .settings-toggle-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .settings-toggle-row strong {
+    color: #263449;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.5;
+  }
+
+  .settings-toggle-row span {
+    color: #718096;
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 1;
+  }
+
+  .settings-toggle-row input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #172033;
+    cursor: pointer;
+  }
+
+  .settings-toggle-row input:focus-visible,
+  .settings-checkbox:focus-visible {
+    outline: 2px solid #64748b;
+    outline-offset: 3px;
+  }
+
+  /* Payment methods */
+  .settings-payment-methods {
+    margin-top: 20px;
+  }
+
+  .settings-section-label {
+    margin: 0 0 10px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.45;
+    opacity: 1;
+  }
+
+  .settings-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .settings-payment-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    min-width: 0;
+    min-height: 46px;
+    padding: 11px 13px;
+    box-sizing: border-box;
+
+    color: #344256;
+    background: #ffffff;
+    border: 1px solid #d9e1eb;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .settings-payment-option:hover {
+    background: #f7f9fc;
+    border-color: #b9c7d8;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  }
+
+  .settings-payment-option.selected {
+    color: #172033;
+    background: #eef2f7;
+    border-color: #aebccc;
+    font-weight: 750;
+    box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.025);
+  }
+
+  .settings-payment-option:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.24);
+    outline-offset: 2px;
+  }
+
+  .settings-payment-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+
+    color: #344256;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .settings-payment-option.selected .settings-payment-check {
+    color: #ffffff;
+    background: #172033;
+    border-color: #172033;
+  }
+
+  /* Data & Backup area */
+  .settings-data-card {
+    grid-column: 1 / -1;
+  }
+
+  .settings-data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .settings-data-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+
+    min-width: 0;
+    min-height: 112px;
+    padding: 18px;
+    box-sizing: border-box;
+
+    color: #263449;
+    background: #ffffff;
+    border: 1px solid #dce4ee;
+    border-radius: 12px;
+
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+
+  .settings-data-action:hover:not(:disabled) {
+    color: #172033;
+    background: #f8fafc;
+    border-color: #b9c7d8;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .settings-data-action:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  .settings-data-action:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 2px;
+  }
+
+  .settings-data-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .settings-data-action strong {
+    display: block;
+    margin-bottom: 7px;
+    color: #263449;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .settings-data-action span {
+    display: block;
+    color: #718096;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    opacity: 1;
+  }
+
+  /* Loading and error areas */
+  .settings-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    padding: 24px;
+    color: #64748b;
+    background: #ffffff;
+    border: 1px solid #e0e6ee;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+
+  .settings-error-card {
+    padding: 24px;
+    background: #fff8f7;
+    border: 1px solid #f0d2ce;
+    border-radius: 14px;
+  }
+
+  .settings-error-card h2 {
+    margin: 0;
+    color: #8f2929;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .settings-error-card p {
+    margin: 8px 0 18px;
+    color: #785b5b;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media screen and (max-width: 1050px) {
+  .settings-page {
+    max-width: 900px;
+  }
+
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-data-card {
+    grid-column: auto;
+  }
+
+  .settings-data-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   SMALL TABLET / MOBILE
+   ========================================================= */
+
+@media screen and (max-width: 760px) {
+  .settings-page {
+    padding: 20px 16px;
+  }
+
+  .settings-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .settings-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .settings-header-actions button {
+    flex: 0 1 auto;
+  }
+
+  .settings-header h1 {
+    font-size: 30px;
+  }
+
+  .settings-grid {
+    gap: 16px;
+  }
+
+  .settings-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .settings-card-header {
+    margin-bottom: 22px;
+  }
+
+  .settings-form-grid {
+    gap: 16px 14px;
+  }
+
+  .settings-payment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-data-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media screen and (max-width: 480px) {
+  .settings-page {
+    padding: 16px 12px;
+  }
+
+  .settings-header h1 {
+    font-size: 27px;
+  }
+
+  .settings-description {
+    font-size: 13px;
+  }
+
+  .settings-header-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .settings-header-actions button {
+    width: 100%;
+  }
+
+  .settings-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .settings-card-header {
+    margin-bottom: 20px;
+  }
+
+  .settings-card-header h2 {
+    font-size: 18px;
+  }
+
+  .settings-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .settings-field.full-width {
+    grid-column: auto;
+  }
+
+  .settings-toggle-row {
+    gap: 12px;
+    padding: 13px;
+  }
+
+  .settings-payment-grid,
+  .settings-data-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-data-action {
+    min-height: 92px;
+    padding: 16px;
+  }
+
+  .settings-preview-box,
+  .settings-info-box {
+    padding: 15px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .settings-card,
+  .settings-primary-button,
+  .settings-secondary-button,
+  .settings-payment-option,
+  .settings-data-action,
+  .settings-field input,
+  .settings-field textarea,
+  .settings-field select,
+  .settings-toggle-row {
+    transition: none;
+  }
+
+  .settings-primary-button:hover:not(:disabled),
+  .settings-secondary-button:hover:not(:disabled),
+  .settings-data-action:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+
+
+
+
+
+/* =====================================================
+   SETTINGS — PAYMENT METHODS & BUSINESS LOGO
+   ===================================================== */
+
+@media screen {
+  /* Payment methods section */
+  .settings-payment-methods {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e5eaf1;
+  }
+
+  .settings-section-label {
+    margin: 0 0 12px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.5;
+  }
+
+  .settings-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* Entire payment option is a clear clickable target */
+  .settings-payment-option {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+
+    color: #344256;
+    background: #ffffff;
+    border: 1px solid #d7e0eb;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      color 150ms ease;
+  }
+
+  .settings-payment-option:hover {
+    color: #172033;
+    background: #f7f9fc;
+    border-color: #aebed0;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.045);
+  }
+
+  /* Selected method */
+  .settings-payment-option.selected {
+    color: #172033;
+    background: #edf2f8;
+    border-color: #9eafc3;
+    box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.025);
+    font-weight: 750;
+  }
+
+  .settings-payment-option.selected:hover {
+    background: #e6edf6;
+    border-color: #879bb3;
+  }
+
+  /* Checkbox indicator */
+  .settings-payment-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+
+    width: 20px;
+    height: 20px;
+    box-sizing: border-box;
+
+    color: #ffffff;
+    background: #ffffff;
+    border: 1px solid #c5d0de;
+    border-radius: 6px;
+
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .settings-payment-option.selected .settings-payment-check {
+    color: #ffffff;
+    background: #172033;
+    border-color: #172033;
+  }
+
+  .settings-payment-option:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 2px;
+  }
+
+  .settings-payment-option:active {
+    background: #e9eef5;
+  }
+
+  /* Keep long business-logo paths from dominating the form */
+  .settings-field p {
+    max-width: 100%;
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Logo-related content stays inside its field */
+  .settings-field [class*="logo"] {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .settings-field input[type="file"] {
+    max-width: 100%;
+    font-size: 12px;
+  }
+}
+
+/* Mobile */
+@media screen and (max-width: 480px) {
+  .settings-payment-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-payment-option {
+    min-height: 48px;
+    padding: 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .settings-payment-option {
+    transition: none;
+  }
+}

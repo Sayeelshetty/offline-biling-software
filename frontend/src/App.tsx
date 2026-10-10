@@ -197,13 +197,14 @@ function DashboardPage() {
             .slice(0, 5)
         );
 
-        setLowStockProducts(
-          lowStockProducts.slice(0, 5)
-        );
+        
+setLowStockProducts(
+  lowStockProducts
+);
 
-        setLowStockCount(
-          lowStockProducts.length
-        );
+setLowStockCount(
+  lowStockProducts.length
+);
 
         setPendingPayments(
           Number(
@@ -361,17 +362,16 @@ function DashboardPage() {
             </span>
           </div>
 
-          <div className="dashboard-list">
+          <div className="dashboard-list dashboard-low-stock-list">
             {lowStockProducts.length === 0 ? (
               <div className="dashboard-empty-state">
-                <strong>
-                  Stock looks good
-                </strong>
+              <strong>
+  Inventory Up to Date
+</strong>
 
-                <span>
-                  No products are currently low
-                  in stock.
-                </span>
+<span>
+  No products need restocking at the moment.
+</span>
               </div>
             ) : (
               lowStockProducts.map((product) => (

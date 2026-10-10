@@ -961,3 +961,1916 @@ body,
 .dashboard-list-row:last-child {
   border-bottom: none !important;
 }
+
+
+/* =====================================================
+   APP SHELL — FIXED SIDEBAR & SMOOTH NAVIGATION
+   ===================================================== */
+
+@media screen {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  /* Keep the sidebar stationary; scroll the main area */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+
+    background: #f4f7fb;
+  }
+
+  /* Sidebar stays visible for the whole session */
+  .sidebar {
+    position: relative;
+    top: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    width: 240px;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    padding: 16px 12px 10px;
+    box-sizing: border-box;
+
+    overflow: hidden;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 12px rgba(15, 23, 42, 0.025);
+    z-index: 30;
+  }
+
+  /* Business branding */
+  .sidebar .brand {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 11px;
+
+    min-width: 0;
+    margin: 0 0 14px;
+    padding: 9px 8px 18px;
+
+    border-bottom: 1px solid #e8edf3;
+  }
+
+  .sidebar .brand-icon {
+    display: flex;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+
+    width: 44px;
+    height: 44px;
+    box-sizing: border-box;
+
+    color: #ffffff;
+    background: #172033;
+    border: 1px solid #172033;
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .sidebar .brand > div:last-child {
+    min-width: 0;
+  }
+
+  .sidebar .brand strong {
+    display: block;
+    color: #172033;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .sidebar .brand span {
+    display: block;
+    margin-top: 4px;
+    color: #718096;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Navigation can scroll internally if the window is short */
+  .sidebar .navigation {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+
+    min-width: 0;
+    min-height: 0;
+    padding: 4px 0 12px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .sidebar .navigation a {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+
+    min-width: 0;
+    min-height: 43px;
+    padding: 0 13px;
+    box-sizing: border-box;
+
+    color: #3c4b60;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: left;
+    text-decoration: none;
+
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease;
+  }
+
+  .sidebar .navigation a:hover {
+    color: #172033;
+    background: #f1f5f9;
+    border-color: #e7edf4;
+  }
+
+  .sidebar .navigation a:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 1px;
+  }
+
+  .sidebar .navigation a:active {
+    background: #e8eef5;
+  }
+
+  /* Keep the user account and Logout at the bottom */
+  .sidebar .sidebar-user {
+    flex: 0 0 auto;
+    min-width: 0;
+    margin-top: auto !important;
+    padding: 16px 10px 8px !important;
+
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0 !important;
+    text-align: center;
+  }
+
+  .sidebar .sidebar-user > div {
+    margin-bottom: 12px !important;
+    min-width: 0;
+  }
+
+  .sidebar .sidebar-user strong {
+    color: #172033;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .sidebar .sidebar-user span {
+    color: #64748b;
+    overflow-wrap: anywhere;
+  }
+
+  /* The JSX currently uses inline button styles, so !important
+     is necessary for the intended hover appearance. */
+  .sidebar .sidebar-user > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100% !important;
+    min-height: 40px;
+    padding: 10px 12px !important;
+    box-sizing: border-box;
+
+    color: #344256 !important;
+    background: #ffffff !important;
+    border: 1px solid #d7e0eb !important;
+    border-radius: 10px !important;
+
+    font-family: inherit;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .sidebar .sidebar-user > button:hover {
+    color: #172033 !important;
+    background: #f1f5f9 !important;
+    border-color: #b9c7d8 !important;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+  }
+
+  .sidebar .sidebar-user > button:active {
+    background: #e7edf4 !important;
+    box-shadow: none;
+  }
+
+  .sidebar .sidebar-user > button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 2px;
+  }
+
+  /* Only main content scrolls */
+  .app-layout > .main-area {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .main-area > .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.025);
+  }
+
+  .main-area > .page-container {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Compact desktop windows */
+@media screen and (max-width: 850px) {
+  .app-layout {
+    grid-template-columns: 205px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 205px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .sidebar .navigation a {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+}
+
+/* Keep interactions calm for reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .navigation a,
+  .sidebar .sidebar-user > button {
+    transition: none;
+  }
+}
+
+
+
+
+
+
+/* =====================================================
+   OFFLINE BILLING — PREMIUM SIDEBAR REFINEMENT
+   CSS only: preserves existing navigation and logout.
+   ===================================================== */
+
+@media screen {
+  /* Clean sidebar surface */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e1e7ef;
+    box-shadow: 3px 0 16px rgba(15, 23, 42, 0.025);
+  }
+
+  /* Brand area */
+  .sidebar .brand {
+    position: relative;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 10px 8px 20px;
+    border-bottom: 1px solid #e8edf4;
+  }
+
+  .sidebar .brand-icon {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: #172033;
+    border: 1px solid #172033;
+    box-shadow: 0 3px 7px rgba(15, 23, 42, 0.12);
+    transition:
+      border-radius 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .sidebar .brand strong {
+    color: #172033;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar .brand span {
+    color: #7a8799;
+    font-size: 12px;
+  }
+
+  /* Navigation spacing */
+  .sidebar .navigation {
+    gap: 5px;
+    padding: 4px 1px 14px;
+  }
+
+  .sidebar .navigation a {
+    position: relative;
+    isolation: isolate;
+
+    min-height: 44px;
+    padding: 0 13px 0 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    color: #48566a;
+    background: transparent;
+
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      padding-left 150ms ease;
+  }
+
+  /* Keep the hover effect subtle and predictable */
+  .sidebar .navigation a:hover {
+    color: #172033;
+    background: #f4f7fb;
+    border-color: #e7edf5;
+    padding-left: 19px;
+  }
+
+  /* Active page: React Router adds aria-current="page" */
+  .sidebar .navigation a[aria-current="page"] {
+    color: #172033;
+    background: #edf2f8;
+    border-color: #dbe4ef;
+    font-weight: 750;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.025);
+    padding-left: 19px;
+  }
+
+  /* Narrow accent for the active link */
+  .sidebar .navigation a[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #263a56;
+  }
+
+  .sidebar .navigation a[aria-current="page"]:hover {
+    background: #e8eef6;
+    border-color: #d1dce9;
+  }
+
+  .sidebar .navigation a:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 1px;
+  }
+
+  /* User section stays anchored and has a clearer hierarchy */
+  .sidebar .sidebar-user {
+    flex: 0 0 auto;
+    margin-top: auto !important;
+    padding: 17px 10px 8px !important;
+    border-top: 1px solid #e3e9f1 !important;
+    background: #ffffff;
+    text-align: center;
+  }
+
+  .sidebar .sidebar-user > div {
+    margin-bottom: 13px !important;
+  }
+
+  .sidebar .sidebar-user strong {
+    color: #172033;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .sidebar .sidebar-user span {
+    color: #758399;
+    line-height: 1.6;
+  }
+
+  /* Logout button */
+  .sidebar .sidebar-user > button {
+    min-height: 41px;
+    padding: 10px 12px !important;
+
+    color: #344256 !important;
+    background: #ffffff !important;
+    border: 1px solid #d7e0eb !important;
+    border-radius: 10px !important;
+
+    font-size: 12px !important;
+    font-weight: 750 !important;
+
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .sidebar .sidebar-user > button:hover {
+    color: #172033 !important;
+    background: #f1f5f9 !important;
+    border-color: #aebed0 !important;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+  }
+
+  .sidebar .sidebar-user > button:active {
+    background: #e6edf5 !important;
+    box-shadow: none;
+  }
+
+  .sidebar .sidebar-user > button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 2px;
+  }
+}
+
+/* Compact windows */
+@media screen and (max-width: 850px) {
+  .sidebar .navigation {
+    gap: 4px;
+  }
+
+  .sidebar .navigation a {
+    min-height: 42px;
+    padding-right: 10px;
+    padding-left: 12px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .brand-icon,
+  .sidebar .navigation a,
+  .sidebar .sidebar-user > button {
+    transition: none;
+  }
+}
+
+
+
+/* =====================================================
+   OFFLINE BILLING — SIDEBAR DESIGN REFINEMENT
+   Retains the existing layout and fixed sidebar behavior.
+   ===================================================== */
+
+@media screen {
+  /* Sidebar surface and spacing */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e1e7ef;
+    box-shadow: 3px 0 16px rgba(15, 23, 42, 0.035);
+  }
+
+  /* Brand header: logo, business name and POS label */
+  .sidebar .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    margin: 0 0 18px;
+    padding: 10px 8px 20px;
+    border-bottom: 1px solid #e4eaf2;
+  }
+
+  .sidebar .brand-icon {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+
+    color: #ffffff;
+    background: #172033;
+    border: 1px solid #172033;
+    border-radius: 14px;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+
+    font-size: 15px;
+    font-weight: 800;
+
+    transition:
+      box-shadow 160ms ease,
+      border-radius 160ms ease;
+  }
+
+  .sidebar .brand > div:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .sidebar .brand strong {
+    display: block;
+    color: #172033;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar .brand span {
+    display: block;
+    margin-top: 4px;
+    color: #718096;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* Navigation: slightly larger text and better touch targets */
+  .sidebar .navigation {
+    gap: 5px;
+    padding: 4px 1px 14px;
+  }
+
+  .sidebar .navigation a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+
+    min-height: 46px;
+    padding: 0 13px 0 16px;
+    box-sizing: border-box;
+
+    color: #3b4b62;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-decoration: none;
+
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      padding-left 150ms ease;
+  }
+
+  .sidebar .navigation a:hover {
+    padding-left: 19px;
+    color: #172033;
+    background: #f3f6fa;
+    border-color: #e4eaf2;
+  }
+
+  /* Highlight for the current route */
+  .sidebar .navigation a[aria-current="page"] {
+    padding-left: 19px;
+    color: #172033;
+    background: #edf2f8;
+    border-color: #d6e0ec;
+    font-weight: 750;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.035);
+  }
+
+  .sidebar .navigation a[aria-current="page"]::before,
+  .sidebar .navigation a:hover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #344a66;
+  }
+
+  .sidebar .navigation a[aria-current="page"]:hover {
+    background: #e7eef7;
+    border-color: #ccd8e7;
+  }
+
+  .sidebar .navigation a:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 1px;
+  }
+
+  /* Account area: separated from navigation and anchored below */
+  .sidebar .sidebar-user {
+    flex: 0 0 auto;
+    min-width: 0;
+    margin-top: auto !important;
+    padding: 17px 10px 9px !important;
+
+    background: #f8fafc;
+    border: 1px solid #e6ecf3 !important;
+    border-radius: 13px 13px 0 0;
+    border-bottom: 0 !important;
+
+    text-align: center;
+  }
+
+  .sidebar .sidebar-user > div {
+    min-width: 0;
+    margin-bottom: 13px !important;
+  }
+
+  .sidebar .sidebar-user strong {
+    display: block;
+    color: #172033;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .sidebar .sidebar-user span {
+    color: #65758b;
+    font-size: 12px !important;
+    line-height: 1.6;
+  }
+
+  /* Logout button: clear, responsive and recognizable */
+  .sidebar .sidebar-user > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100% !important;
+    min-height: 43px;
+    padding: 10px 12px !important;
+    box-sizing: border-box;
+
+    color: #344256 !important;
+    background: #ffffff !important;
+    border: 1px solid #ccd7e5 !important;
+    border-radius: 10px !important;
+
+    font-family: inherit;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    line-height: 1.3;
+
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  .sidebar .sidebar-user > button:hover {
+    color: #9f2525 !important;
+    background: #fff5f5 !important;
+    border-color: #e8b9b9 !important;
+    box-shadow: 0 3px 9px rgba(127, 29, 29, 0.07);
+    transform: translateY(-1px);
+  }
+
+  .sidebar .sidebar-user > button:active {
+    background: #feecec !important;
+    box-shadow: none;
+    transform: translateY(0);
+  }
+
+  .sidebar .sidebar-user > button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 2px;
+  }
+}
+
+/* Smaller desktop windows */
+@media screen and (max-width: 850px) {
+  .sidebar .brand {
+    gap: 10px;
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .sidebar .brand-icon {
+    flex-basis: 43px;
+    width: 43px;
+    height: 43px;
+  }
+
+  .sidebar .navigation a {
+    min-height: 44px;
+    padding-right: 10px;
+    padding-left: 12px;
+    font-size: 13px;
+  }
+}
+
+/* Respect system reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .brand-icon,
+  .sidebar .navigation a,
+  .sidebar .sidebar-user > button {
+    transition: none;
+  }
+
+  .sidebar .navigation a:hover,
+  .sidebar .sidebar-user > button:hover {
+    transform: none;
+  }
+}
+
+
+
+/* =====================================================
+   SIDEBAR ACCOUNT PANEL — FINAL UI POLISH
+   Keeps the current navigation and logout functionality.
+   ===================================================== */
+
+@media screen {
+  /* Lift the account panel slightly and give it its own surface */
+  .sidebar .sidebar-user {
+    flex: 0 0 auto;
+    min-width: 0;
+    margin: auto 4px 12px !important;
+    padding: 14px 11px 11px !important;
+    box-sizing: border-box;
+
+    background: linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #ffffff 100%
+    ) !important;
+
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+
+    box-shadow:
+      0 2px 6px rgba(15, 23, 42, 0.025),
+      0 5px 14px rgba(15, 23, 42, 0.025);
+
+    text-align: center;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .sidebar .sidebar-user:hover {
+    border-color: #d0dbe8 !important;
+    box-shadow:
+      0 3px 8px rgba(15, 23, 42, 0.035),
+      0 7px 16px rgba(15, 23, 42, 0.035);
+  }
+
+  /* Account details: tighter spacing and clearer hierarchy */
+  .sidebar .sidebar-user > div {
+    min-width: 0;
+    margin-bottom: 11px !important;
+  }
+
+  .sidebar .sidebar-user strong {
+    display: block;
+    margin: 0;
+    color: #172033 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  /* Role label */
+  .sidebar .sidebar-user > div > span:first-of-type {
+    display: inline-block !important;
+    margin-top: 6px !important;
+    padding: 3px 9px;
+    color: #52647c !important;
+    background: #edf2f8;
+    border: 1px solid #e1e8f1;
+    border-radius: 6px;
+
+    font-size: 10px !important;
+    font-weight: 750 !important;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+  }
+
+  /* Email */
+  .sidebar .sidebar-user > div > span:nth-of-type(2) {
+    display: block !important;
+    max-width: 100%;
+    margin-top: 7px !important;
+    padding: 0;
+
+    color: #718096 !important;
+    background: transparent;
+    border: 0;
+
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Logout: clear, full-width action */
+  .sidebar .sidebar-user > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100% !important;
+    min-height: 42px;
+    padding: 10px 12px !important;
+    box-sizing: border-box;
+
+    color: #344256 !important;
+    background: #ffffff !important;
+    border: 1px solid #cfd9e6 !important;
+    border-radius: 10px !important;
+
+    font-family: inherit;
+    font-size: 12px !important;
+    font-weight: 750 !important;
+    line-height: 1.4;
+
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  /* Hover is noticeable without being distracting */
+  .sidebar .sidebar-user > button:hover {
+    color: #a12e32 !important;
+    background: #fff5f5 !important;
+    border-color: #e6bfc1 !important;
+    box-shadow: 0 3px 9px rgba(127, 29, 29, 0.07);
+    transform: translateY(-1px);
+  }
+
+  .sidebar .sidebar-user > button:active {
+    color: #8f2529 !important;
+    background: #feecec !important;
+    border-color: #dfadaf !important;
+    box-shadow: none;
+    transform: translateY(0);
+  }
+
+  .sidebar .sidebar-user > button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.25);
+    outline-offset: 3px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .sidebar-user,
+  .sidebar .sidebar-user > button {
+    transition: none;
+  }
+
+  .sidebar .sidebar-user > button:hover {
+    transform: none;
+  }
+}
+
+
+/* =====================================================
+   SIDEBAR BRAND — PREMIUM HEADER REFINEMENT
+   ===================================================== */
+
+@media screen {
+  .sidebar .brand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    min-width: 0;
+    padding: 12px 9px 19px;
+    margin-bottom: 17px;
+
+    background: #ffffff;
+    border: 1px solid transparent;
+    border-bottom: 1px solid #e4eaf2;
+    border-radius: 14px 14px 0 0;
+
+    transition:
+      background-color 170ms ease,
+      border-color 170ms ease;
+  }
+
+  /* Subtle response when the pointer enters the brand area */
+  .sidebar .brand:hover {
+    background: #f9fbfd;
+    border-bottom-color: #d5dfeb;
+  }
+
+  /* Logo tile */
+  .sidebar .brand-icon {
+    position: relative;
+    isolation: isolate;
+
+    display: flex;
+    flex: 0 0 50px;
+    align-items: center;
+    justify-content: center;
+
+    width: 50px;
+    height: 50px;
+    box-sizing: border-box;
+    overflow: hidden;
+
+    color: #ffffff;
+    background: linear-gradient(145deg, #202c43, #111827);
+    border: 1px solid #27344a;
+    border-radius: 14px;
+
+    font-size: 15px;
+    font-weight: 850;
+    letter-spacing: 0.025em;
+
+    box-shadow:
+      0 3px 6px rgba(15, 23, 42, 0.09),
+      0 7px 16px rgba(15, 23, 42, 0.045);
+
+    transition:
+      border-radius 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  /* Preserve logo image sizing */
+  .sidebar .brand-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
+  }
+
+  .sidebar .brand:hover .brand-icon {
+    border-radius: 16px;
+    box-shadow:
+      0 4px 9px rgba(15, 23, 42, 0.12),
+      0 8px 18px rgba(15, 23, 42, 0.055);
+    transform: translateY(-1px);
+  }
+
+  /* Business name */
+  .sidebar .brand > div:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .sidebar .brand strong {
+    display: block;
+    margin: 0;
+
+    color: #172033;
+    font-size: 15px;
+    font-weight: 850;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* POS System label */
+  .sidebar .brand span {
+    display: inline-flex;
+    align-items: center;
+
+    margin-top: 5px;
+    padding: 3px 8px;
+
+    color: #66768d;
+    background: #f2f5f9;
+    border: 1px solid #e8edf4;
+    border-radius: 6px;
+
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.015em;
+
+    transition:
+      color 170ms ease,
+      background-color 170ms ease,
+      border-color 170ms ease;
+  }
+
+  .sidebar .brand:hover span {
+    color: #41536d;
+    background: #edf2f8;
+    border-color: #dce5ef;
+  }
+}
+
+/* Slightly compact branding on narrow layouts */
+@media screen and (max-width: 850px) {
+  .sidebar .brand {
+    gap: 10px;
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+
+  .sidebar .brand-icon {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .sidebar .brand strong {
+    font-size: 14px;
+  }
+}
+
+/* Honour reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .brand,
+  .sidebar .brand-icon,
+  .sidebar .brand span {
+    transition: none;
+  }
+
+  .sidebar .brand:hover .brand-icon {
+    transform: none;
+  }
+}
+
+
+/* =========================================
+   SIDEBAR ACCOUNT CARD — BORDER + SHADOW
+   ========================================= */
+
+@media screen {
+  .sidebar .sidebar-user {
+    margin: auto 4px 12px !important;
+    padding: 16px 12px 12px !important;
+    box-sizing: border-box;
+
+    background: linear-gradient(145deg, #ffffff, #f5f8fc) !important;
+    border: 1px solid #cbd7e6 !important;
+    border-radius: 14px !important;
+
+    box-shadow:
+      0 2px 5px rgba(15, 23, 42, 0.04),
+      0 6px 16px rgba(15, 23, 42, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+    transition:
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease,
+      background 180ms ease;
+  }
+
+  /* Lift the whole account card slightly on hover */
+  .sidebar .sidebar-user:hover {
+    background: #ffffff !important;
+    border-color: #9fb2ca !important;
+    box-shadow:
+      0 4px 8px rgba(15, 23, 42, 0.06),
+      0 10px 24px rgba(15, 23, 42, 0.10);
+    transform: translateY(-2px);
+  }
+
+  .sidebar .sidebar-user strong {
+    color: #142037 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  .sidebar .sidebar-user > div > span:first-of-type {
+    color: #405570 !important;
+    background: #eaf0f8 !important;
+    border: 1px solid #d2deed !important;
+    border-radius: 7px;
+    font-weight: 800 !important;
+  }
+
+  .sidebar .sidebar-user > div > span:nth-of-type(2) {
+    color: #64748b !important;
+  }
+
+  /* Logout button with its own depth */
+  .sidebar .sidebar-user > button {
+    width: 100% !important;
+    min-height: 43px;
+    margin-top: 2px !important;
+    box-sizing: border-box;
+
+    color: #293951 !important;
+    background: #ffffff !important;
+    border: 1px solid #bfcede !important;
+    border-radius: 10px !important;
+
+    font-size: 12px !important;
+    font-weight: 750 !important;
+    cursor: pointer;
+
+    box-shadow:
+      0 1px 3px rgba(15, 23, 42, 0.05),
+      inset 0 1px 0 #ffffff;
+
+    transition:
+      color 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .sidebar .sidebar-user > button:hover {
+    color: #982f35 !important;
+    background: #fff4f4 !important;
+    border-color: #dfabad !important;
+
+    box-shadow:
+      0 3px 7px rgba(127, 29, 29, 0.07),
+      0 6px 14px rgba(127, 29, 29, 0.06);
+
+    transform: translateY(-2px);
+  }
+
+  .sidebar .sidebar-user > button:active {
+    background: #fee9e9 !important;
+    box-shadow: none;
+    transform: translateY(0);
+  }
+
+  .sidebar .sidebar-user > button:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.3);
+    outline-offset: 3px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .sidebar-user,
+  .sidebar .sidebar-user > button {
+    transition: none;
+  }
+
+  .sidebar .sidebar-user:hover,
+  .sidebar .sidebar-user > button:hover {
+    transform: none;
+  }
+}
+
+
+/* =====================================================
+   OFFLINE BILLING — PREMIUM TOP STATUS BAR
+   ===================================================== */
+
+@media screen {
+  /* Header surface */
+  .main-area > .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    min-height: 78px;
+    padding: 15px 26px;
+    box-sizing: border-box;
+
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #dfe6ef;
+    box-shadow:
+      0 2px 8px rgba(15, 23, 42, 0.025),
+      0 6px 18px rgba(15, 23, 42, 0.018);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Business name */
+  .main-area > .topbar > div:first-child {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .main-area > .topbar > div:first-child strong {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #172033;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: -0.025em;
+
+    transition: color 160ms ease;
+  }
+
+  /* Connection and sync badge group */
+  .main-area .topbar-status-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .main-area .connection-status,
+  .main-area .sync-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 38px;
+    padding: 0 14px;
+    box-sizing: border-box;
+
+    border: 1px solid transparent;
+    border-radius: 999px;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.3;
+    white-space: nowrap;
+
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  /* Online */
+  .main-area .connection-status.connection-online {
+    color: #17673a;
+    background: #e7f8ed;
+    border-color: #c9efd6;
+  }
+
+  .main-area .connection-status.connection-online:hover {
+    background: #dcf5e5;
+    border-color: #b7e7c8;
+    box-shadow: 0 3px 8px rgba(22, 101, 52, 0.07);
+  }
+
+  /* Offline */
+  .main-area .connection-status.connection-offline {
+    color: #a62d32;
+    background: #fff0f0;
+    border-color: #f2d0d1;
+  }
+
+  .main-area .connection-status.connection-offline:hover {
+    background: #ffe6e7;
+    border-color: #eab9bc;
+    box-shadow: 0 3px 8px rgba(153, 27, 27, 0.06);
+  }
+
+  /* Connection dot */
+  .main-area .connection-status .status-dot {
+    display: inline-block;
+    flex: 0 0 8px;
+
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .main-area .connection-status.connection-online .status-dot {
+    animation: topbar-online-pulse 2.8s ease-in-out infinite;
+  }
+
+  /* All synced */
+  .main-area .sync-status.sync-status-success {
+    color: #17673a;
+    background: #e7f8ed;
+    border-color: #c9efd6;
+  }
+
+  .main-area .sync-status.sync-status-success::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #269657;
+  }
+
+  /* Sync in progress */
+  .main-area .sync-status.sync-status-syncing {
+    color: #245a9a;
+    background: #edf5ff;
+    border-color: #d3e5fb;
+  }
+
+  .main-area .sync-status.sync-status-syncing::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #397bc3;
+    animation: topbar-sync-pulse 1.25s ease-in-out infinite;
+  }
+
+  /* Items waiting to sync */
+  .main-area .sync-status.sync-status-pending {
+    color: #875a12;
+    background: #fff6df;
+    border-color: #f1e0b4;
+  }
+
+  .main-area .sync-status.sync-status-pending::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #c58a25;
+  }
+
+  /* Sync error */
+  .main-area .sync-status.sync-status-failed {
+    color: #a62d32;
+    background: #fff0f0;
+    border-color: #f2d0d1;
+  }
+
+  .main-area .sync-status.sync-status-failed::before {
+    content: "";
+    display: inline-block;
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #c64248;
+  }
+
+  /* Restrained hover lift for status chips */
+  .main-area .connection-status:hover,
+  .main-area .sync-status:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Very small laptop windows and tablets */
+@media screen and (max-width: 700px) {
+  .main-area > .topbar {
+    min-height: 70px;
+    padding: 12px 17px;
+    gap: 12px;
+  }
+
+  .main-area > .topbar > div:first-child strong {
+    font-size: 14px;
+  }
+
+  .main-area .topbar-status-group {
+    gap: 6px;
+  }
+
+  .main-area .connection-status,
+  .main-area .sync-status {
+    min-height: 34px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 11px;
+  }
+}
+
+/* Narrow layouts */
+@media screen and (max-width: 420px) {
+  .main-area > .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .main-area .topbar-status-group {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Status animations */
+@keyframes topbar-online-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(38, 150, 87, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px rgba(38, 150, 87, 0.10);
+  }
+}
+
+@keyframes topbar-sync-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+/* Respect accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  .main-area .connection-status,
+  .main-area .sync-status,
+  .main-area .connection-status .status-dot,
+  .main-area .sync-status::before {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .main-area .connection-status:hover,
+  .main-area .sync-status:hover {
+    transform: none;
+  }
+}
+
+
+
+/* =====================================================
+   DASHBOARD — RECENT BILLS "VIEW ALL" BUTTON
+   ===================================================== */
+
+.dashboard-section-card .dashboard-section-header .dashboard-view-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  min-height: 37px;
+  padding: 0 15px;
+  box-sizing: border-box;
+
+  color: #ffffff;
+  background: linear-gradient(135deg, #315fc5 0%, #4b50bd 100%);
+  border: 1px solid #3456b8;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+
+  box-shadow:
+    0 2px 4px rgba(49, 79, 180, 0.12),
+    0 4px 9px rgba(49, 79, 180, 0.08);
+
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+/* Hover — brighter color and gentle elevation */
+.dashboard-section-card .dashboard-section-header .dashboard-view-link:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, #244fae 0%, #403caf 100%);
+  border-color: #3048a8;
+
+  box-shadow:
+    0 4px 8px rgba(49, 79, 180, 0.18),
+    0 7px 15px rgba(49, 79, 180, 0.12);
+
+  transform: translateY(-2px);
+}
+
+/* Pressed state */
+.dashboard-section-card .dashboard-section-header .dashboard-view-link:active {
+  color: #ffffff;
+  background: #3048a8;
+  border-color: #3048a8;
+  box-shadow: 0 1px 3px rgba(49, 79, 180, 0.15);
+  transform: translateY(0);
+}
+
+/* Keyboard accessibility */
+.dashboard-section-card .dashboard-section-header .dashboard-view-link:focus-visible {
+  outline: 3px solid rgba(59, 102, 214, 0.28);
+  outline-offset: 3px;
+}
+
+/* Small-screen adjustment */
+@media screen and (max-width: 480px) {
+  .dashboard-section-card .dashboard-section-header .dashboard-view-link {
+    min-height: 39px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
+
+/* Respect reduced-motion settings */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-section-card .dashboard-section-header .dashboard-view-link {
+    transition: none;
+  }
+
+  .dashboard-section-card .dashboard-section-header .dashboard-view-link:hover {
+    transform: none;
+  }
+}
+
+
+
+
+/* =====================================================
+   DASHBOARD — LOW STOCK LIST SCROLL MANAGEMENT
+   Handles 2, 20 or 100+ low-stock products gracefully.
+   ===================================================== */
+
+.dashboard-section-card {
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Make the Low Stock list scroll inside its card */
+.dashboard-low-stock-list {
+  position: relative;
+
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+
+  max-height: clamp(240px, 44vh, 370px);
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #bac7d8 transparent;
+
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Keep the header visible above the scrolling content */
+.dashboard-section-card > .dashboard-section-header {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  background: #ffffff;
+}
+
+/* Keep each product row intact */
+.dashboard-low-stock-list > .dashboard-list-row {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 76px;
+  box-sizing: border-box;
+}
+
+/* Product names must not push the stock badge off-screen */
+.dashboard-low-stock-list .dashboard-list-row > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dashboard-low-stock-list .dashboard-list-row > div strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-low-stock-list .dashboard-stock-warning {
+  flex: 0 0 auto;
+  max-width: 45%;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Smooth, visible scrollbar */
+.dashboard-low-stock-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-low-stock-list::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+}
+
+.dashboard-low-stock-list::-webkit-scrollbar-thumb {
+  background: #c7d2e0;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+}
+
+.dashboard-low-stock-list::-webkit-scrollbar-thumb:hover {
+  background: #8fa2bb;
+}
+
+/* Product row hover feedback */
+.dashboard-low-stock-list > .dashboard-list-row {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.dashboard-low-stock-list > .dashboard-list-row:hover {
+  background-color: #f6f9fd;
+}
+
+/* Short laptop screens */
+@media screen and (max-height: 650px) {
+  .dashboard-low-stock-list {
+    max-height: 260px;
+  }
+}
+
+/* Mobile-friendly list */
+@media screen and (max-width: 600px) {
+  .dashboard-low-stock-list {
+    max-height: 320px;
+  }
+
+  .dashboard-low-stock-list > .dashboard-list-row {
+    min-height: 70px;
+  }
+
+  .dashboard-low-stock-list .dashboard-stock-warning {
+    max-width: 40%;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-low-stock-list {
+    scroll-behavior: auto;
+  }
+
+  .dashboard-low-stock-list > .dashboard-list-row {
+    transition: none;
+  }
+}
+
+
+/* =====================================================
+   DASHBOARD — LOW STOCK EMPTY STATE
+   Clear, friendly and visually balanced
+   ===================================================== */
+
+.dashboard-section-card .dashboard-low-stock-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Give the empty state a proper place within the card */
+.dashboard-section-card .dashboard-low-stock-list > .dashboard-empty-state {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-width: 0;
+  min-height: clamp(250px, 32vh, 310px);
+  margin: 12px;
+  padding: 28px 20px;
+  box-sizing: border-box;
+
+  text-align: center;
+
+  background: linear-gradient(
+    145deg,
+    #f3fbf6 0%,
+    #fbfefc 65%,
+    #ffffff 100%
+  );
+
+  border: 1px solid #d3eadb;
+  border-radius: 14px;
+
+  box-shadow:
+    0 2px 6px rgba(22, 101, 52, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Subtle success indicator */
+.dashboard-section-card
+.dashboard-low-stock-list
+.dashboard-empty-state::before {
+  content: "✓";
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  margin-bottom: 4px;
+  box-sizing: border-box;
+
+  color: #197448;
+  background: #e1f6e9;
+  border: 1px solid #c5ead3;
+  border-radius: 14px;
+
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+
+  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.06);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Strong, readable success heading */
+.dashboard-section-card
+.dashboard-low-stock-list
+.dashboard-empty-state strong {
+  display: block;
+  margin: 0;
+
+  color: #17633d;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+/* Supporting description */
+.dashboard-section-card
+.dashboard-low-stock-list
+.dashboard-empty-state span {
+  display: block;
+  max-width: 300px;
+  margin: 0;
+
+  color: #547461;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+/* Restrained hover effect */
+.dashboard-section-card
+.dashboard-low-stock-list
+.dashboard-empty-state:hover {
+  background: linear-gradient(
+    145deg,
+    #edf9f1,
+    #f8fdf9
+  );
+
+  border-color: #b9dfc7;
+
+  box-shadow:
+    0 5px 14px rgba(22, 101, 52, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dashboard-section-card
+.dashboard-low-stock-list
+.dashboard-empty-state:hover::before {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(22, 101, 52, 0.1);
+}
+
+/* Smaller screens */
+@media screen and (max-width: 600px) {
+  .dashboard-section-card
+  .dashboard-low-stock-list
+  > .dashboard-empty-state {
+    min-height: 240px;
+    margin: 10px;
+    padding: 24px 16px;
+  }
+
+  .dashboard-section-card
+  .dashboard-low-stock-list
+  .dashboard-empty-state strong {
+    font-size: 15px;
+  }
+
+  .dashboard-section-card
+  .dashboard-low-stock-list
+  .dashboard-empty-state span {
+    font-size: 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-section-card
+  .dashboard-low-stock-list
+  .dashboard-empty-state,
+  .dashboard-section-card
+  .dashboard-low-stock-list
+  .dashboard-empty-state::before {
+    transition: none;
+  }
+}

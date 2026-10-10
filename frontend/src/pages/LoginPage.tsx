@@ -166,7 +166,7 @@ export default function LoginPage({
                   onChange={(event) =>
                     setEmail(event.target.value)
                   }
-                  placeholder="admin@offlinebilling.local"
+                  placeholder="Enter your email"
                   autoComplete="username"
                   disabled={isLoading}
                   autoFocus
@@ -198,23 +198,52 @@ export default function LoginPage({
                     disabled={isLoading}
                   />
 
-                  <button
-                    type="button"
-                    className="login-password-toggle"
-                    onClick={() =>
-                      setShowPassword(
-                        (current) => !current
-                      )
-                    }
-                    disabled={isLoading}
-                    aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
-                    }
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
+                  
+<button
+  type="button"
+  className="password-toggle"
+  onClick={() => setShowPassword((visible) => !visible)}
+  aria-label={showPassword ? "Hide password" : "Show password"}
+  aria-pressed={showPassword}
+  title={showPassword ? "Hide password" : "Show password"}
+>
+  {showPassword ? (
+    /* Eye with a slash: password is visible */
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 3 21 21" />
+      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+      <path d="M9.9 5.2A11.2 11.2 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.2 4.2" />
+      <path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.2 0 2.3-.2 3.3-.6" />
+    </svg>
+  ) : (
+    /* Open eye: password is hidden */
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )}
+</button>
+
                 </div>
               </div>
 
