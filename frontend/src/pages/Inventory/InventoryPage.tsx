@@ -334,6 +334,16 @@ const [visibleProductCount, setVisibleProductCount] =
 
       setQuantity("");
 
+
+// Reset the form after a successful stock update
+setSelectedProductId("");
+setProductSearchTerm("");
+setShowProductResults(false);
+setHighlightedProductIndex(-1);
+setVisibleProductCount(50);
+
+
+
       await loadInventory();
 
       await loadProductMovements(

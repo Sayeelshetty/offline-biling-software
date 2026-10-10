@@ -833,12 +833,17 @@
   min-width: 0;
 }
 
+
+/* =========================================================
+   Inventory Product Picker — Search Input and Actions
+   ========================================================= */
+
 .inventory-field .inventory-product-search-input {
   display: block;
   width: 100%;
   min-width: 0;
   height: 44px;
-  padding: 0 80px 0 13px;
+  padding: 0 82px 0 13px;
   box-sizing: border-box;
   border: 1px solid #aebccc;
   border-radius: 10px;
@@ -853,6 +858,7 @@
 
 .inventory-field .inventory-product-search-input::placeholder {
   color: #8a94a6;
+  opacity: 1;
 }
 
 .inventory-field .inventory-product-search-input:hover {
@@ -870,16 +876,19 @@
   cursor: not-allowed;
 }
 
-/* Clear and dropdown buttons */
+/* =========================================================
+   Clear and Dropdown Buttons
+   ========================================================= */
+
 .inventory-product-picker-actions {
   position: absolute;
   top: 50%;
   right: 7px;
-  transform: translateY(-50%);
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  transform: translateY(-50%);
 }
 
 .inventory-product-clear-button,
@@ -890,42 +899,53 @@
   flex: 0 0 auto;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #ffffff;
   color: #475467;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .inventory-product-clear-button {
-  width: 26px;
-  height: 26px;
-  border-color: #d5dce6;
-  color: #667085;
+  width: 30px;
+  height: 30px;
+  border-color: #e5c3c3;
+  background: #fff6f5;
+  color: #b42318;
   font-family: inherit;
-  font-size: 19px;
+  font-size: 20px;
+  font-weight: 500;
   line-height: 1;
 }
 
 .inventory-product-clear-button:hover {
-  border-color: #e4a4a0;
+  border-color: #d98b86;
   background: #feeceb;
-  color: #b42318;
+  color: #912018;
 }
 
 .inventory-product-picker-chevron {
-  width: 30px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
+  border-color: #c5cfdb;
+  background: #f1f5f9;
+  color: #344054;
 }
 
 .inventory-product-picker-chevron:hover,
 .inventory-product-picker-chevron.is-open {
-  background: #edf2f7;
+  border-color: #94a3b8;
+  background: #dfe8f3;
   color: #172033;
 }
 
 .inventory-product-picker-chevron svg {
   display: block;
+  width: 17px;
+  height: 17px;
   transition: transform 150ms ease;
 }
 
@@ -935,11 +955,14 @@
 
 .inventory-product-clear-button:focus-visible,
 .inventory-product-picker-chevron:focus-visible {
-  outline: 2px solid #344054;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Results dropdown */
+/* =========================================================
+   Product Results Dropdown
+   ========================================================= */
+
 .inventory-product-options {
   position: absolute;
   top: calc(100% + 6px);
@@ -948,6 +971,7 @@
   z-index: 1000;
   width: 100%;
   max-height: min(300px, 45vh);
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -970,16 +994,16 @@
 }
 
 .inventory-product-options::-webkit-scrollbar-thumb {
-  background: #c5cfdb;
   border: 2px solid #f5f7fa;
   border-radius: 8px;
+  background: #c5cfdb;
 }
 
 .inventory-product-options::-webkit-scrollbar-thumb:hover {
   background: #8795a8;
 }
 
-/* Results count */
+/* Sticky results count */
 .inventory-product-options-header {
   position: sticky;
   top: -5px;
@@ -998,9 +1022,8 @@
   font-weight: 650;
 }
 
-
 /* =========================================================
-   Inventory Product Picker — Product Result Rows
+   Product Result Rows
    ========================================================= */
 
 .inventory-product-option {
@@ -1012,7 +1035,6 @@
   min-height: 51px;
   padding: 10px 12px;
   box-sizing: border-box;
-  cursor: pointer;
   border: none;
   border-left: 3px solid transparent;
   border-bottom: 1px solid #e5eaf0;
@@ -1020,14 +1042,11 @@
   background: #ffffff;
   color: #172033;
   text-align: left;
+  cursor: pointer;
   transition:
     background 140ms ease,
     border-color 140ms ease,
     box-shadow 140ms ease;
-}
-
-.inventory-product-option:last-of-type {
-  border-bottom-color: transparent;
 }
 
 /* Selected product */
@@ -1036,7 +1055,7 @@
   background: #f5f8fc;
 }
 
-/* Pointer hover — clear and noticeable */
+/* Clear pointer hover */
 .inventory-product-option:hover {
   border-left-color: #2563eb;
   background: #eaf2ff;
@@ -1050,13 +1069,11 @@
   box-shadow: inset 0 0 0 1px #e0e8f2;
 }
 
-/* Keyboard focus */
 .inventory-product-option:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: -2px;
 }
 
-/* Product name */
 .inventory-product-option-name {
   color: #172033;
   font-size: 13px;
@@ -1065,7 +1082,6 @@
   overflow-wrap: anywhere;
 }
 
-/* SKU and barcode */
 .inventory-product-option-meta {
   color: #667085;
   font-size: 11px;
@@ -1073,7 +1089,10 @@
   overflow-wrap: anywhere;
 }
 
-/* Search prompt and no-results state */
+/* =========================================================
+   Search Prompt and No Results
+   ========================================================= */
+
 .inventory-product-picker-message {
   display: flex;
   flex-direction: column;
@@ -1093,7 +1112,10 @@
   line-height: 1.5;
 }
 
-/* Progressive results button */
+/* =========================================================
+   Load More Products
+   ========================================================= */
+
 .inventory-product-load-more {
   display: block;
   width: 100%;
@@ -1107,9 +1129,7 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition:
-    background 150ms ease,
-    border-color 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease;
 }
 
 .inventory-product-load-more:hover {
@@ -1118,14 +1138,18 @@
 }
 
 .inventory-product-load-more:focus-visible {
-  outline: 2px solid #344054;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Responsive styling */
+/* =========================================================
+   Responsive Styling
+   ========================================================= */
+
 @media (max-width: 750px) {
   .inventory-field .inventory-product-search-input {
     height: 46px;
+    padding-right: 82px;
     font-size: 14px;
   }
 
@@ -1137,4 +1161,19 @@
     min-height: 52px;
     padding: 11px 12px;
   }
+}
+
+
+/* Center column headings in Current Inventory and Recent Stock Movements */
+.inventory-table thead th,
+.inventory-table th {
+  text-align: center !important;
+  vertical-align: middle;
+  padding: 14px 12px;
+}
+
+/* Keep heading text centered even if it wraps */
+.inventory-table th {
+  white-space: normal;
+  line-height: 1.5;
 }
