@@ -547,7 +547,7 @@ if (
 
         <div className="form-field">
           <label htmlFor="selling-price">
-            Selling Price *
+            Selling Price (before GST) *
           </label>
 
           <input

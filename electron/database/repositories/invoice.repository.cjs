@@ -346,171 +346,176 @@ function validateCreateInvoiceInput(input) {
   };
 }
 
-function calculateInvoiceSummary(
-  items,
-  invoiceDiscount
-) {
+
+function calculateInvoiceSummary(items, invoiceDiscount) {
   const subtotal = roundMoney(
     items.reduce(
-      (sum, item) =>
-        sum +
-        item.quantity * item.rate,
+      (sum, item) => sum + item.quantity * item.rate,
       0
     )
   );
 
   const itemDiscount = roundMoney(
     items.reduce(
-      (sum, item) =>
-        sum + item.discount,
+      (sum, item) => sum + item.discount,
       0
     )
   );
 
-  if (
-    invoiceDiscount + itemDiscount >
-    subtotal
-  ) {
+  const billDiscount = roundMoney(invoiceDiscount);
+
+  if (billDiscount + itemDiscount > subtotal) {
     throw new Error(
       "Total discount cannot exceed subtotal."
     );
   }
 
-  const taxableAmount = roundMoney(
-    subtotal -
-      itemDiscount -
-      invoiceDiscount
+  // Match the frontend: item discounts reduce taxable value first.
+  const lineNetAmounts = items.map((item) => {
+    const lineGross = roundMoney(
+      item.quantity * item.rate
+    );
+
+    return Math.max(
+      0,
+      roundMoney(lineGross - item.discount)
+    );
+  });
+
+  const taxableBeforeInvoiceDiscount = roundMoney(
+    lineNetAmounts.reduce((sum, amount) => sum + amount, 0)
   );
 
+  // Allocate the bill discount proportionally and use each item's GST.
   const tax = roundMoney(
-    items.reduce(
-      (sum, item) => {
-        const lineGross = roundMoney(
-          item.quantity * item.rate
-        );
+    items.reduce((sum, item, index) => {
+      const lineAmount = lineNetAmounts[index];
 
-        const lineNetBeforeInvoiceDiscount =
-          roundMoney(
-            lineGross -
-              item.discount
-          );
+      const proportion =
+        taxableBeforeInvoiceDiscount > 0
+          ? lineAmount / taxableBeforeInvoiceDiscount
+          : 0;
 
-        if (lineGross <= 0) {
-          return sum;
-        }
+      const allocatedDiscount = roundMoney(
+        billDiscount * proportion
+      );
 
-        const lineShare =
-          lineNetBeforeInvoiceDiscount /
-          subtotal;
+      const taxableLine = Math.max(
+        0,
+        roundMoney(lineAmount - allocatedDiscount)
+      );
 
-        const allocatedInvoiceDiscount =
-          roundMoney(
-            invoiceDiscount *
-              lineShare
-          );
+      const gstRate = Number(item.gstRate);
 
-        const taxableLine =
-          Math.max(
-            0,
-            roundMoney(
-              lineNetBeforeInvoiceDiscount -
-                allocatedInvoiceDiscount
-            )
-          );
+      const lineTax =
+        taxableLine *
+        (
+          Number.isFinite(gstRate) && gstRate >= 0
+            ? gstRate
+            : 0
+        ) /
+        100;
 
-        const lineTax = roundMoney(
-          taxableLine *
-            (item.gstRate / 100)
-        );
-
-        return sum + lineTax;
-      },
-      0
-    )
+      return sum + lineTax;
+    }, 0)
   );
 
-  const total = roundMoney(
-    taxableAmount + tax
+  const taxableAmount = roundMoney(
+    subtotal - itemDiscount - billDiscount
   );
+
+  const total = roundMoney(taxableAmount + tax);
 
   return {
     subtotal,
-    discount: roundMoney(
-      itemDiscount +
-        invoiceDiscount
-    ),
+    discount: roundMoney(itemDiscount + billDiscount),
     tax,
     total,
   };
 }
 
-function getNextInvoiceNumber(transaction) {
+
+
+function getNextInvoiceNumber(database) {
   const settings = settingsRepository.getSettings();
 
-  const configuredPrefix =
-    String(
-      settings?.invoice?.invoicePrefix || "INV"
-    )
-      .trim()
-      .replace(/[<>:"/\\|?*]+/g, "")
-      .replace(/\s+/g, "-");
+  const configuredPrefix = String(
+    settings?.invoice?.invoicePrefix || "INV"
+  )
+    .trim()
+    .replace(/[<>:"/\\|?*%_]+/g, "")
+    .replace(/\s+/g, "-");
 
-  const prefix =
-    configuredPrefix || "INV";
+  const prefix = configuredPrefix || "INV";
 
-  const configuredStartingNumber =
-    Number(
-      settings?.invoice?.startingNumber
-    );
+  const configuredStartingNumber = Number(
+    settings?.invoice?.startingNumber
+  );
 
   const startingNumber =
-    Number.isInteger(
-      configuredStartingNumber
-    ) &&
+    Number.isSafeInteger(configuredStartingNumber) &&
     configuredStartingNumber > 0
       ? configuredStartingNumber
       : 1;
 
-  const invoicePrefixPattern =
-    `${prefix}-%`;
-
-  const row = transaction
-    .prepare(
-      `
+  // Read existing invoice numbers for this prefix.
+  const rows = database
+    .prepare(`
       SELECT invoice_number
       FROM invoices
       WHERE invoice_number LIKE ?
-      ORDER BY invoice_number DESC
-      LIMIT 1
-      `
-    )
-    .get(invoicePrefixPattern);
+    `)
+    .all(`${prefix}-%`);
 
-  let nextNumber =
-    startingNumber;
+  // Find the largest trailing number, including older invoice formats.
+  let highestNumber = startingNumber - 1;
 
-  if (row?.invoice_number) {
-    const lastPart =
-      String(row.invoice_number)
-        .slice(
-          `${prefix}-`.length
-        );
+  for (const row of rows) {
+    const invoiceNumber = String(row.invoice_number || "");
 
-    const parsed =
-      Number(lastPart);
+    if (!invoiceNumber.startsWith(`${prefix}-`)) {
+      continue;
+    }
 
-    if (Number.isInteger(parsed)) {
-      nextNumber =
-        Math.max(
-          startingNumber,
-          parsed + 1
-        );
+    const match = invoiceNumber.match(/-(\d+)$/);
+
+    if (!match) {
+      continue;
+    }
+
+    const number = Number(match[1]);
+
+    if (Number.isSafeInteger(number)) {
+      highestNumber = Math.max(highestNumber, number);
     }
   }
 
-  return `${prefix}-${String(
-    nextNumber
-  ).padStart(4, "0")}`;
+  let nextNumber = Math.max(
+    startingNumber,
+    highestNumber + 1
+  );
+
+  const numberExists = database.prepare(`
+    SELECT 1
+    FROM invoices
+    WHERE invoice_number = ?
+    LIMIT 1
+  `);
+
+  // Never return a number that already exists.
+  let candidate;
+
+  do {
+    candidate = `${prefix}-${String(nextNumber).padStart(4, "0")}`;
+
+    if (numberExists.get(candidate)) {
+      nextNumber += 1;
+    } else {
+      break;
+    }
+  } while (true);
+
+  return candidate;
 }
 
 
