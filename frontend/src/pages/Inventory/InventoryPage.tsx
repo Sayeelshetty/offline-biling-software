@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo,useState } from "react";
 
 import type { Product } from "../../types/product";
 
@@ -13,10 +13,8 @@ import inventoryService from "../../services/inventory.service";
 
 import "./InventoryPage.css";
 
-type InventoryOperation =
-  | "STOCK_IN"
-  | "STOCK_OUT"
-  | "ADJUSTMENT";
+
+
 
 function getDeviceId(): string {
   const existingDeviceId = localStorage.getItem(
@@ -36,6 +34,10 @@ function getDeviceId(): string {
 
   return newDeviceId;
 }
+
+
+type InventoryOperation = "STOCK_IN" | "STOCK_OUT" | "ADJUSTMENT";
+
 
 function InventoryPage() {
   const [products, setProducts] = useState<Product[]>(
@@ -1261,3 +1263,4 @@ function chooseInventoryProduct(product: Product) {
 }
 
 export default InventoryPage;
+

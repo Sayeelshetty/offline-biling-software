@@ -1177,3 +1177,285 @@
   white-space: normal;
   line-height: 1.5;
 }
+
+
+
+/* ==========================================
+   INVENTORY — STOCK UPDATE FORM
+   ========================================== */
+
+.inventory-page .inventory-operation-form {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.35fr)
+    minmax(180px, 1fr)
+    minmax(230px, 1.1fr)
+    auto;
+  align-items: start;
+  gap: 18px;
+  padding: 22px 20px;
+}
+
+.inventory-page .inventory-operation-form .inventory-field {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  min-width: 0;
+}
+
+.inventory-page .inventory-operation-form .inventory-field label {
+  display: block;
+  min-height: 18px;
+  margin: 0 0 9px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.inventory-page .inventory-operation-form .inventory-field input,
+.inventory-page .inventory-operation-form .inventory-field select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid #c5cfdb;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #172033;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: normal;
+  box-sizing: border-box;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.inventory-page .inventory-operation-form .inventory-field input:hover,
+.inventory-page .inventory-operation-form .inventory-field select:hover {
+  border-color: #98a6b8;
+}
+
+.inventory-page .inventory-operation-form .inventory-field input:focus,
+.inventory-page .inventory-operation-form .inventory-field select:focus {
+  border-color: #475569;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.12);
+}
+
+/* Keep the adjustment hint readable without moving the input */
+.inventory-page .inventory-operation-form .inventory-field small {
+  display: block;
+  min-height: 30px;
+  margin: 7px 0 0;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Align Update Stock with the input controls, not the hint */
+.inventory-page .inventory-submit-button {
+  align-self: start;
+  min-width: 112px;
+  min-height: 44px;
+  height: 44px;
+  margin-top: 27px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.inventory-page .inventory-submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 9px rgba(16, 24, 40, 0.12);
+}
+
+.inventory-page .inventory-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ==========================================
+   STOCK UPDATE SUCCESS / ERROR MESSAGE
+   ========================================== */
+
+.inventory-page .inventory-message {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border: 1px solid;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.6;
+  text-align: left;
+  overflow-wrap: anywhere;
+  box-shadow: 0 2px 7px rgba(16, 24, 40, 0.04);
+  animation: inventory-message-enter 180ms ease-out;
+}
+
+/* Success: soft green with a clear check icon */
+.inventory-page .inventory-message.inventory-success {
+  border-color: #a7d9b8;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.inventory-page .inventory-message.inventory-success::before {
+  content: "✓";
+  display: flex;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #166534;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+/* Errors remain visibly different from success */
+.inventory-page .inventory-message.inventory-error {
+  border-color: #f1b4b4;
+  background: #fff5f5;
+  color: #991b1b;
+  white-space: pre-line;
+}
+
+.inventory-page .inventory-message.inventory-error::before {
+  content: "!";
+  display: flex;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #991b1b;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+@keyframes inventory-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================
+   TABLET
+   ========================================== */
+
+@media (max-width: 1050px) {
+  .inventory-page .inventory-operation-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 16px;
+  }
+
+  .inventory-page .inventory-submit-button {
+    grid-column: 2;
+    width: 100%;
+    margin-top: 27px;
+  }
+}
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+
+@media (max-width: 750px) {
+  .inventory-page .inventory-operation-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .inventory-page .inventory-operation-form .inventory-field small {
+    min-height: 0;
+  }
+
+  .inventory-page .inventory-submit-button {
+    grid-column: auto;
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .inventory-page .inventory-message {
+    align-items: flex-start;
+    padding: 12px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-page .inventory-message {
+    animation: none;
+  }
+
+  .inventory-page .inventory-submit-button {
+    transition: none;
+  }
+}
+
+
+
+
+/* Keep inventory tables contained with vertical scrollbars */
+.inventory-table-wrapper {
+  max-height: 560px;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #aab6c8 #f1f5f9;
+}
+
+/* Keep table headings visible while scrolling */
+.inventory-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+}
+
+/* Make scrollbars easy to see in Electron */
+.inventory-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.inventory-table-wrapper::-webkit-scrollbar-thumb {
+  background: #aab6c8;
+  border-radius: 8px;
+}
+
+.inventory-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
