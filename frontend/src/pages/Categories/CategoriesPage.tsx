@@ -50,6 +50,12 @@ function CategoriesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+
+  const [categoryToDeactivate, setCategoryToDeactivate] =
+  useState<Category | null>(null);
+
+const [isDeactivating, setIsDeactivating] = useState(false);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] =
     useState<Category | null>(null);
@@ -68,10 +74,10 @@ function CategoriesPage() {
       setErrorMessage("");
 
       if (searchTerm.trim()) {
-        const results = await searchCategories(
-          searchTerm,
-          statusFilter === "ALL"
-        );
+       const results = await searchCategories(
+  searchTerm,
+  statusFilter !== "ACTIVE"
+);
 
         const filteredResults =
           statusFilter === "ALL"
@@ -84,8 +90,8 @@ function CategoriesPage() {
         setCategories(filteredResults);
       } else {
         const results = await getAllCategories(
-          statusFilter === "ALL"
-        );
+  statusFilter !== "ACTIVE"
+);
 
         const filteredResults =
           statusFilter === "ALL"
@@ -109,6 +115,33 @@ function CategoriesPage() {
       setIsLoading(false);
     }
   };
+
+
+  const [successMessage, setSuccessMessage] = useState("");
+
+
+  useEffect(() => {
+  if (!successMessage) {
+    return;
+  }
+
+  const timer = window.setTimeout(() => {
+    setSuccessMessage("");
+  }, 3500);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [successMessage]);
+
+
+const [successType, setSuccessType] = useState<"success" | "danger">(
+  "success"
+);
+
+
+
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -207,62 +240,90 @@ function CategoriesPage() {
     }
   };
 
-  const handleDeactivate = async (
-    category: Category
-  ) => {
-    const confirmed = window.confirm(
-      `Deactivate "${category.name}"?`
+  const handleDeactivate = (category: Category) => {
+  setErrorMessage("");
+  setCategoryToDeactivate(category);
+};
+
+const closeDeactivateModal = () => {
+  if (isDeactivating) {
+    return;
+  }
+
+  setCategoryToDeactivate(null);
+  setErrorMessage("");
+};
+
+const confirmDeactivate = async () => {
+  if (!categoryToDeactivate || isDeactivating) {
+    return;
+  }
+
+  try {
+    setIsDeactivating(true);
+    setErrorMessage("");
+
+    const categoryName = categoryToDeactivate.name;
+
+    await deactivateCategory(categoryToDeactivate.id);
+
+    setCategoryToDeactivate(null);
+    setSuccessType("danger");
+    setSuccessMessage(`"${categoryName}" deactivated successfully.`);
+
+    await loadCategories();
+  } catch (error) {
+    console.error("Failed to deactivate category:", error);
+
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Failed to deactivate category."
     );
+  } finally {
+    setIsDeactivating(false);
+  }
+};
 
-    if (!confirmed) {
-      return;
-    }
+ const handleActivate = async (category: Category) => {
+  try {
+    setErrorMessage("");
 
-    try {
-      setErrorMessage("");
+    await activateCategory(category.id);
 
-      await deactivateCategory(category.id);
+    setSuccessType("success");
+    setSuccessMessage(`"${category.name}" activated successfully.`);
 
-      await loadCategories();
-    } catch (error) {
-      console.error(
-        "Failed to deactivate category:",
-        error
-      );
+    await loadCategories();
+  } catch (error) {
+    console.error("Failed to activate category:", error);
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to deactivate category"
-      );
-    }
-  };
-
-  const handleActivate = async (
-    category: Category
-  ) => {
-    try {
-      setErrorMessage("");
-
-      await activateCategory(category.id);
-
-      await loadCategories();
-    } catch (error) {
-      console.error(
-        "Failed to activate category:",
-        error
-      );
-
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to activate category"
-      );
-    }
-  };
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Failed to activate category."
+    );
+  }
+};
 
   return (
     <div className="categories-page">
+
+      {successMessage && (
+ <div
+  className={`categories-success-toast ${
+    successType === "danger" ? "categories-success-toast-danger" : ""
+  }`}
+  role="status"
+  aria-live="polite"
+>
+    <span className="categories-success-icon" aria-hidden="true">
+      ✓
+    </span>
+
+    <span>{successMessage}</span>
+  </div>
+)}
       <div className="categories-page-header">
         <div>
           <h1>Categories</h1>
@@ -280,7 +341,7 @@ function CategoriesPage() {
         </button>
       </div>
 
-      {errorMessage && !isModalOpen && (
+     {errorMessage && !isModalOpen && !categoryToDeactivate && (
         <div className="categories-error">
           {errorMessage}
         </div>
@@ -571,6 +632,102 @@ function CategoriesPage() {
           </div>
         </div>
       )}
+
+      
+      
+      {categoryToDeactivate && (
+        <div
+          className="category-deactivate-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeDeactivateModal();
+            }
+          }}
+        >
+          <div
+            className="category-deactivate-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="category-deactivate-title"
+            aria-describedby="category-deactivate-description"
+          >
+            <div className="category-deactivate-header">
+              <div className="category-deactivate-heading">
+                <div className="category-deactivate-icon" aria-hidden="true">
+                  !
+                </div>
+
+                <div className="category-deactivate-heading-copy">
+                  <h2 id="category-deactivate-title">
+                    Deactivate category
+                  </h2>
+                  <p>Confirm this change before continuing.</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="category-deactivate-close"
+                onClick={closeDeactivateModal}
+                disabled={isDeactivating}
+                aria-label="Close dialog"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="category-deactivate-content">
+              <p
+                id="category-deactivate-description"
+                className="category-deactivate-message"
+              >
+                Are you sure you want to deactivate this category?
+              </p>
+
+              <div className="category-deactivate-selected">
+                <span className="category-deactivate-selected-label">
+                  Category
+                </span>
+                <span className="category-deactivate-selected-name">
+                  {categoryToDeactivate.name}
+                </span>
+              </div>
+
+              <p className="category-deactivate-note">
+                This category will be removed from the Active list.
+                You can reactivate it later.
+              </p>
+
+              {errorMessage && (
+                <div className="category-deactivate-error" role="alert">
+                  {errorMessage}
+                </div>
+              )}
+            </div>
+
+            <div className="category-deactivate-actions">
+              <button
+                type="button"
+                className="category-deactivate-cancel"
+                onClick={closeDeactivateModal}
+                disabled={isDeactivating}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="category-deactivate-confirm"
+                onClick={confirmDeactivate}
+                disabled={isDeactivating}
+              >
+                {isDeactivating ? "Deactivating..." : "Deactivate category"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
