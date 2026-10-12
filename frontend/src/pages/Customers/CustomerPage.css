@@ -1911,3 +1911,104 @@
     font-size: 12px;
   }
 }
+
+
+
+
+/* Professional customer notification toast */
+.customer-toast {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 15px 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #344054;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.16);
+  animation: customer-toast-enter 220ms ease-out;
+}
+
+.customer-toast-error {
+  border-left: 4px solid #e04444;
+}
+
+.customer-toast-success {
+  border-left: 4px solid #16a36a;
+}
+
+.customer-toast-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #feecec;
+  color: #c62828;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.customer-toast-success .customer-toast-icon {
+  background: #e7f8ef;
+  color: #15803d;
+}
+
+.customer-toast-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.customer-toast-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #667085;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.customer-toast-close:hover {
+  background: #f2f4f7;
+  color: #101828;
+}
+
+@keyframes customer-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-toast {
+    top: 12px;
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-toast {
+    animation: none;
+  }
+}

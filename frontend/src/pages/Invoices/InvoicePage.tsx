@@ -134,6 +134,24 @@ function InvoicePage() {
   const [sharingInvoice, setSharingInvoice] =
     useState(false);
 
+
+    const [shareToast, setShareToast] = useState<{
+  type: "success" | "info";
+  title: string;
+  message: string;
+} | null>(null);
+
+
+ useEffect(() => {
+  if (!shareToast) return;
+
+  const timer = window.setTimeout(() => {
+    setShareToast(null);
+  }, 5000);
+
+  return () => window.clearTimeout(timer);
+}, [shareToast]);
+
   async function loadInvoices() {
     try {
       setLoading(true);
@@ -183,6 +201,7 @@ function InvoicePage() {
   useEffect(() => {
   let mounted = true;
 
+
   async function loadBusinessInfo() {
     try {
       const [
@@ -227,6 +246,19 @@ function InvoicePage() {
     mounted = false;
   };
 }, []);
+
+
+useEffect(() => {
+  if (!shareToast) return;
+
+  const timer = window.setTimeout(() => {
+    setShareToast(null);
+  }, 5000);
+
+  return () => window.clearTimeout(timer);
+}, [shareToast]);
+
+
 
   function openInvoice(invoice: Invoice) {
     setSelectedInvoice(invoice);
@@ -285,83 +317,70 @@ function InvoicePage() {
     }
   }
 
-  async function handleShare() {
-  if (
-    !selectedInvoice ||
-    sharingInvoice
-  ) {
+
+async function handleShare() {
+  if (!selectedInvoice || sharingInvoice) {
     return;
   }
 
   try {
     setSharingInvoice(true);
     setError(null);
+    setShareToast(null);
 
     const shareText = [
       "Invoice",
       `Bill No: ${selectedInvoice.invoiceNumber}`,
-      `Date: ${formatDateTime(
-        selectedInvoice.createdAt
-      )}`,
+      `Date: ${formatDateTime(selectedInvoice.createdAt)}`,
       `Payment: ${getPaymentMethodLabel(
         selectedInvoice.paymentMethod
       )}`,
       `Status: ${selectedInvoice.paymentStatus}`,
-      `Subtotal: ${formatCurrency(
-        selectedInvoice.subtotal
-      )}`,
-      `Discount: ${formatCurrency(
-        selectedInvoice.discount
-      )}`,
-      `GST / Tax: ${formatCurrency(
-        selectedInvoice.tax
-      )}`,
-      `Total: ${formatCurrency(
-        selectedInvoice.total
-      )}`,
+      `Subtotal: ${formatCurrency(selectedInvoice.subtotal)}`,
+      `Discount: ${formatCurrency(selectedInvoice.discount)}`,
+      `GST / Tax: ${formatCurrency(selectedInvoice.tax)}`,
+      `Total: ${formatCurrency(selectedInvoice.total)}`,
       "",
       "Thank you for your purchase.",
     ].join("\n");
 
     try {
-      await invoiceService.shareInvoice(
-        shareText
-      );
+      await invoiceService.shareInvoice(shareText);
 
       try {
-        await navigator.clipboard.writeText(
-          shareText
-        );
+        await navigator.clipboard.writeText(shareText);
       } catch {
-        // Clipboard is only a fallback.
+        // WhatsApp sharing can still proceed if clipboard access fails.
       }
 
-      window.alert(
-        "WhatsApp Web has been opened with the invoice details."
-      );
+      setShareToast({
+        type: "success",
+        title: "WhatsApp is ready",
+        message: `Invoice ${selectedInvoice.invoiceNumber} has been prepared in WhatsApp Web. Select the customer chat and send the message when you're ready.`,
+      });
+
+      window.setTimeout(() => {
+  setShareToast(null);
+}, 5000);
+
     } catch (shareError) {
-      console.error(
-        "WhatsApp sharing failed:",
-        shareError
-      );
+      console.error("WhatsApp sharing failed:", shareError);
 
       try {
-        await navigator.clipboard.writeText(
-          shareText
-        );
+        await navigator.clipboard.writeText(shareText);
 
-        window.alert(
-          "Invoice details were copied successfully. Paste them into WhatsApp, email, or another messaging app."
-        );
+        setShareToast({
+          type: "info",
+          title: "Invoice details copied",
+          message:
+            "WhatsApp could not be opened. Your invoice details have been copied so you can paste them into WhatsApp or another messaging app.",
+        });
       } catch {
         throw shareError;
       }
     }
   } catch (err) {
-    console.error(
-      "Failed to share invoice:",
-      err
-    );
+    console.error("Failed to share invoice:", err);
 
     setError(
       err instanceof Error
@@ -372,6 +391,7 @@ function InvoicePage() {
     setSharingInvoice(false);
   }
 }
+
 
   function handleNewBill() {
     navigate("/billing");
@@ -420,6 +440,40 @@ function InvoicePage() {
           {error}
         </div>
       )}
+
+      {shareToast && (
+  <div
+    className={`invoice-toast invoice-toast-${shareToast.type}`}
+    role="status"
+    aria-live="polite"
+  >
+    <div className="invoice-toast-icon" aria-hidden="true">
+      {shareToast.type === "success" ? "✓" : "i"}
+    </div>
+
+    <div className="invoice-toast-content">
+      <strong>{shareToast.title}</strong>
+      <p>{shareToast.message}</p>
+    </div>
+
+    <button
+      type="button"
+      className="invoice-toast-close"
+      aria-label="Dismiss notification"
+      onClick={() => setShareToast(null)}
+    >
+      ×
+    </button>
+
+    <span
+      className="invoice-toast-progress"
+      aria-hidden="true"
+    />
+  </div>
+)}
+
+
+
 
       <div className="invoice-layout">
         <div className="invoice-history-card">
@@ -582,13 +636,7 @@ function InvoicePage() {
                       : "Share"}
                   </button>
 
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={handleNewBill}
-                  >
-                    New Bill
-                  </button>
+                
                 </div>
               </div>
 
@@ -782,12 +830,6 @@ function InvoicePage() {
                 <div className="invoice-total-section">
              
 <div className="invoice-total-notes">
-  {/* <div
-    className="invoice-thank-you-icon"
-    aria-hidden="true"
-  >
-    ✓
-  </div> */}
 
   <div className="invoice-thank-you-copy">
     <span className="invoice-thank-you-label">

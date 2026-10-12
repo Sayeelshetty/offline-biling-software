@@ -79,6 +79,24 @@ export default function CustomerPage() {
     loadCustomers();
   }, [searchTerm]);
 
+
+  
+useEffect(() => {
+  if (!errorMessage && !successMessage) {
+    return;
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    setErrorMessage("");
+    setSuccessMessage("");
+  }, 4000);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [errorMessage, successMessage]);
+
+
   function openAddForm() {
     setEditingCustomer(null);
 
@@ -248,17 +266,49 @@ export default function CustomerPage() {
         </button>
       </div>
 
-      {successMessage && (
-        <div className="customer-alert customer-alert-success">
-          {successMessage}
-        </div>
-      )}
+      
+{successMessage && (
+  <div
+    className="customer-toast customer-toast-success"
+    role="status"
+    aria-live="polite"
+  >
+    <span className="customer-toast-icon" aria-hidden="true">
+      ✓
+    </span>
+    <span className="customer-toast-text">{successMessage}</span>
+    <button
+      type="button"
+      className="customer-toast-close"
+      aria-label="Dismiss notification"
+      onClick={() => setSuccessMessage("")}
+    >
+      ×
+    </button>
+  </div>
+)}
 
-      {errorMessage && (
-        <div className="customer-alert customer-alert-error">
-          {errorMessage}
-        </div>
-      )}
+{errorMessage && (
+  <div
+    className="customer-toast customer-toast-error"
+    role="alert"
+    aria-live="assertive"
+  >
+    <span className="customer-toast-icon" aria-hidden="true">
+      !
+    </span>
+    <span className="customer-toast-text">{errorMessage}</span>
+    <button
+      type="button"
+      className="customer-toast-close"
+      aria-label="Dismiss notification"
+      onClick={() => setErrorMessage("")}
+    >
+      ×
+    </button>
+  </div>
+)}
+
 
       <div className="customer-summary-grid">
         <div className="customer-summary-card">
@@ -507,12 +557,6 @@ export default function CustomerPage() {
                   />
                 </div>
               </div>
-
-              {errorMessage && (
-                <div className="customer-form-error">
-                  {errorMessage}
-                </div>
-              )}
 
               <div className="customer-modal-footer">
                 <button
