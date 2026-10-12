@@ -81,17 +81,59 @@ function formatDate(value: string | null | undefined): string {
   });
 }
 
+
+
+function formatWeekRange(value: string): string {
+  const start = new Date(`${value.slice(0, 10)}T00:00:00`);
+
+  if (Number.isNaN(start.getTime())) {
+    return value;
+  }
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+
+  const formatDayMonth = new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+  });
+
+  const formatDayMonthYear = new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const startLabel =
+    start.getFullYear() === end.getFullYear()
+      ? formatDayMonth.format(start)
+      : formatDayMonthYear.format(start);
+
+  return `${startLabel} – ${formatDayMonthYear.format(end)}`;
+}
+
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function getToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return formatLocalDate(new Date());
 }
 
 function getFirstDayOfMonth(): string {
-  const date = new Date();
+  const now = new Date();
 
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
+  return formatLocalDate(
+    new Date(now.getFullYear(), now.getMonth(), 1)
+  );
 }
+
+
 
 export default function ReportsPage() {
   const [mainTab, setMainTab] = useState<MainTab>("SALES");
@@ -303,6 +345,7 @@ export default function ReportsPage() {
             id="reports-from-date"
             type="date"
             value={fromDate}
+            max={toDate || undefined}
             onChange={(event) =>
               setFromDate(event.target.value)
             }
@@ -318,6 +361,7 @@ export default function ReportsPage() {
             id="reports-to-date"
             type="date"
             value={toDate}
+            min={fromDate || undefined}
             onChange={(event) =>
               setToDate(event.target.value)
             }
@@ -596,8 +640,8 @@ export default function ReportsPage() {
                         </tr>
                       ) : (
                         weeklySales.map((row) => (
-                          <tr key={row.week}>
-                            <td>{row.week}</td>
+                          <tr key={formatWeekRange(row.week)}>
+                            <td>{formatWeekRange(row.week)}</td>
                             <td>{row.billCount}</td>
                             <td>
                               {formatCurrency(

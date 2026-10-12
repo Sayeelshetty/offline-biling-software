@@ -225,9 +225,9 @@ function getDailySales(options = {}) {
  * Grouping uses:
  * YYYY-WW
  */
+
 function getWeeklySales(options = {}) {
-  const { from, to } =
-    normalizeDateRange(options);
+  const { from, to } = normalizeDateRange(options);
 
   const values = [];
 
@@ -244,42 +244,41 @@ function getWeeklySales(options = {}) {
     )
   );
 
+  const weekStartExpression = `
+    date(
+      i.created_at,
+      '-' ||
+      (
+        (
+          CAST(strftime('%w', i.created_at) AS INTEGER) + 6
+        ) % 7
+      ) ||
+      ' days'
+    )
+  `;
+
   const rows = db
     .prepare(
       `
       SELECT
-        strftime(
-          '%Y-%W',
-          i.created_at
-        ) AS week,
-
+        ${weekStartExpression} AS week_start,
         COUNT(*) AS bill_count,
-
-        COALESCE(
-          SUM(i.total),
-          0
-        ) AS total_sales
-
+        COALESCE(SUM(i.total), 0) AS total_sales
       FROM invoices i
-
       WHERE ${conditions.join(" AND ")}
-
-      GROUP BY strftime(
-        '%Y-%W',
-        i.created_at
-      )
-
-      ORDER BY week DESC
+      GROUP BY week_start
+      ORDER BY week_start DESC
       `
     )
     .all(...values);
 
   return rows.map((row) => ({
-    week: row.week,
+    week: row.week_start,
     billCount: Number(row.bill_count || 0),
     totalSales: roundMoney(row.total_sales || 0),
   }));
 }
+
 
 /**
  * Monthly sales report.
