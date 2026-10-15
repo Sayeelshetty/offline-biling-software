@@ -25,6 +25,11 @@ Main capabilities include:
 - Cloud synchronization
 - Responsive/mobile-friendly interface
 
+Pending local changes are synchronized automatically when internet connectivity
+returns. The application also uploads a full local database backup when it
+starts online or reconnects. If the cloud service is temporarily unavailable,
+the backup is retried while the application remains online.
+
 ---
 
 ## 2. Starting the Application

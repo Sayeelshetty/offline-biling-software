@@ -384,37 +384,49 @@ function authenticateUser(
   return mapUser(row);
 }
 
-/**
- * Create the initial local administrator.
- *
- * This runs only when the users table
- * does not already contain a user.
- */
-function initializeDefaultAdmin() {
-  const database =
-    getDatabase();
-
-  const existingUser =
-    database
-      .prepare(`
-        SELECT id
-        FROM users
-        LIMIT 1
-      `)
-      .get();
-
-  if (existingUser) {
-    return false;
-  }
-
-  createUser({
+const DEFAULT_USERS = [
+  {
     name: "Administrator",
     email: "admin@offlinebilling.local",
     password: "admin123",
     role: "ADMIN",
-  });
+  },
+  {
+    name: "Cashier",
+    email: "cashier@offlinebilling.local",
+    password: "cashier123",
+    role: "CASHIER",
+  },
+  {
+    name: "Manager",
+    email: "manager@offlinebilling.local",
+    password: "manager123",
+    role: "MANAGER",
+  },
+];
 
-  return true;
+/**
+ * Ensure that a local account exists for each role required by the MVP.
+ * Existing accounts are never overwritten, including their passwords.
+ */
+function initializeDefaultUsers() {
+  const createdUsers = [];
+
+  for (const user of DEFAULT_USERS) {
+    if (findUserByEmail(user.email)) {
+      continue;
+    }
+
+    createdUsers.push(createUser(user));
+  }
+
+  return createdUsers;
+}
+
+function initializeDefaultAdmin() {
+  return initializeDefaultUsers().some(
+    (user) => user.role === "ADMIN"
+  );
 }
 
 /**
@@ -453,6 +465,7 @@ module.exports = {
   findUserById,
   createUser,
   authenticateUser,
+  initializeDefaultUsers,
   initializeDefaultAdmin,
   getAllUsers,
 };

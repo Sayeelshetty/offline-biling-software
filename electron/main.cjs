@@ -106,8 +106,8 @@ function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
-    minWidth: 1100,
-    minHeight: 700,
+    minWidth: 320,
+    minHeight: 480,
 
     webPreferences: {
       preload: path.join(
@@ -124,7 +124,8 @@ function createMainWindow() {
 
   if (isDevelopment) {
     mainWindow.loadURL(
-      "http://127.0.0.1:5173"
+      process.env.VITE_DEV_SERVER_URL ||
+        "http://127.0.0.1:5173"
     );
   } else {
     mainWindow.loadFile(
@@ -2341,7 +2342,7 @@ ipcMain.handle("auth:get-current-user", () => {
 app.whenReady().then(() => {
   try {
     runMigrations();
-    userRepository.initializeDefaultAdmin();
+    userRepository.initializeDefaultUsers();
 
     console.log(
       "================================="

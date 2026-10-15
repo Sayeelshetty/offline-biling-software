@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   HashRouter,
   Link,
+  NavLink,
   Route,
   Routes,
 } from "react-router-dom";
@@ -28,13 +29,23 @@ import {
   getLogoData,
 } from "./services/settings.service";
 
+
+
+import productService from "./services/product.service";
+import paymentService from "./services/payment.service";
+
+import {
+  getDailySales,
+  getLowStock,
+} from "./services/report.service";
+
+
 import type {
   SyncConnectionStatus,
   SyncEngineStatus,
 } from "../../shared/types/sync";
 
 
-import { getLowStock } from "./services/report.service";
 import invoiceService from "./services/invoice.service";
 
 import "./App.css";
@@ -102,120 +113,96 @@ function loadStoredUser(): AuthenticatedUser | null {
   }
 }
 
+
 function DashboardPage() {
   const [sales, setSales] = useState({
     totalBills: 0,
     totalSales: 0,
-    totalRevenue: 0,
   });
 
-  const [pendingPayments, setPendingPayments] =
-    useState(0);
+  const [productsCount, setProductsCount] = useState(0);
 
-  const [lowStockCount, setLowStockCount] =
-    useState(0);
+  const [pendingPayments, setPendingPayments] = useState(0);
 
-  const [lowStockProducts, setLowStockProducts] =
-    useState<any[]>([]);
+  const [lowStockCount, setLowStockCount] = useState(0);
 
-  const [recentBills, setRecentBills] =
-    useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+
+  const [recentBills, setRecentBills] = useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadDashboardData() {
       try {
+        // Build today's date using the computer's local calendar date.
+        // This avoids duplicate "today" variables and UTC date shifts.
+        const now = new Date();
+
+        const todayKey = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+
         const [
           recentInvoices,
-          lowStockProducts,
+          lowStockResult,
           paymentSummary,
+          products,
+          todaySalesRows,
         ] = await Promise.all([
-          invoiceService.getRecentInvoices(500),
+          invoiceService.getRecentInvoices(50),
           getLowStock(),
-          window.desktopAPI.payments.getSummary(),
+          paymentService.getPaymentSummary(),
+          productService.getAllProducts({
+            includeInactive: false,
+          }),
+          getDailySales({
+            from: todayKey,
+            to: todayKey,
+          }),
         ]);
 
         if (!mounted) {
           return;
         }
 
-        /*
-         * Convert the current local date to YYYY-MM-DD.
-         * Invoice createdAt values are stored as ISO timestamps.
-         */
-        const today =
-          new Date().toLocaleDateString("en-CA");
+        // Today's sales and bill count come from the SQLite-backed
+        // daily sales report instead of filtering only recent invoices.
+        const todayBillCount = todaySalesRows.reduce(
+          (total, row) => total + Number(row.billCount || 0),
+          0
+        );
 
-        const todaysInvoices =
-          recentInvoices.filter((invoice) => {
-            if (
-              invoice.paymentStatus ===
-              "CANCELLED"
-            ) {
-              return false;
-            }
-
-            const invoiceDate =
-              new Date(
-                invoice.createdAt
-              ).toLocaleDateString("en-CA");
-
-            return invoiceDate === today;
-          });
-
-        const todaysSales =
-          todaysInvoices.reduce(
-            (total, invoice) =>
-              total +
-              Number(invoice.total || 0),
-            0
-          );
-
-        const todaysRevenue =
-          todaysInvoices.reduce(
-            (total, invoice) =>
-              total +
-              Number(invoice.subtotal || 0) -
-              Number(invoice.discount || 0),
-            0
-          );
+        const todaySalesAmount = todaySalesRows.reduce(
+          (total, row) => total + Number(row.totalSales || 0),
+          0
+        );
 
         setSales({
-          totalBills: todaysInvoices.length,
-          totalSales: todaysSales,
-          totalRevenue: todaysRevenue,
+          totalBills: todayBillCount,
+          totalSales: todaySalesAmount,
         });
+
+        setProductsCount(products.length);
+
+        setPendingPayments(
+          Number(paymentSummary.totalOutstanding ?? 0)
+        );
+
+        setLowStockProducts(lowStockResult);
+        setLowStockCount(lowStockResult.length);
 
         setRecentBills(
           recentInvoices
             .filter(
-              (invoice) =>
-                invoice.paymentStatus !==
-                "CANCELLED"
+              (invoice) => invoice.paymentStatus !== "CANCELLED"
             )
             .slice(0, 5)
         );
-
-        
-setLowStockProducts(
-  lowStockProducts
-);
-
-setLowStockCount(
-  lowStockProducts.length
-);
-
-        setPendingPayments(
-          Number(
-            paymentSummary.totalOutstanding ?? 0
-          )
-        );
       } catch (error) {
-        console.error(
-          "Failed to load dashboard data:",
-          error
-        );
+        console.error("Failed to load dashboard data:", error);
 
         if (!mounted) {
           return;
@@ -224,69 +211,64 @@ setLowStockCount(
         setSales({
           totalBills: 0,
           totalSales: 0,
-          totalRevenue: 0,
         });
 
+        setProductsCount(0);
         setPendingPayments(0);
         setLowStockCount(0);
-
-        setRecentBills([]);
         setLowStockProducts([]);
+        setRecentBills([]);
       }
     }
 
-    loadDashboardData();
+    void loadDashboardData();
 
     return () => {
       mounted = false;
     };
   }, []);
 
+  const formatCurrency = (amount: number) =>
+    `₹${amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+
   return (
     <section className="page dashboard-page">
-<div className="dashboard-header">
-  <div className="dashboard-header-content">
-    <div className="dashboard-eyebrow">
-      <span className="dashboard-eyebrow-mark">◈</span>
-      <span>Business Overview</span>
-    </div>
+      <div className="dashboard-header">
+        <div className="dashboard-header-content">
+          <div className="dashboard-eyebrow">
+            <span className="dashboard-eyebrow-mark">◈</span>
+            <span>Business Overview</span>
+          </div>
 
-    <h1>Dashboard</h1>
+          <h1>Dashboard</h1>
 
-    <p className="dashboard-header-description">
-      Monitor today&apos;s sales, bills, inventory alerts, and outstanding payments.
-    </p>
-  </div>
+          <p className="dashboard-header-description">
+            Monitor today's sales, bills, inventory and outstanding payments.
+          </p>
+        </div>
 
-  <Link
-    to="/billing"
-    className="dashboard-new-bill-button"
-  >
-    <span className="dashboard-new-bill-icon">+</span>
-    <span>Create New Bill</span>
-  </Link>
-</div>
+        <Link
+          to="/billing"
+          className="dashboard-new-bill-button"
+        >
+          <span className="dashboard-new-bill-icon">+</span>
+          <span>Create New Bill</span>
+        </Link>
+      </div>
 
+      {/* Four dashboard summary cards */}
       <div className="dashboard-grid">
         <div className="dashboard-card dashboard-card-primary">
           <div className="dashboard-card-top">
             <span>Today's Sales</span>
           </div>
 
-          <strong>
-            {"\u20B9"}
-            {sales.totalSales.toLocaleString(
-              "en-IN",
-              {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2,
-              }
-            )}
-          </strong>
+          <strong>{formatCurrency(sales.totalSales)}</strong>
 
-          <small>
-            Total amount billed today
-          </small>
+          <small>Total amount billed today</small>
         </div>
 
         <div className="dashboard-card">
@@ -295,33 +277,22 @@ setLowStockCount(
           </div>
 
           <strong>
-            {sales.totalBills}
+            {sales.totalBills.toLocaleString("en-IN")}
           </strong>
 
-          <small>
-            Bills created today
-          </small>
+          <small>Bills created today</small>
         </div>
 
         <div className="dashboard-card">
           <div className="dashboard-card-top">
-            <span>Today's Revenue</span>
+            <span>Products</span>
           </div>
 
           <strong>
-            {"\u20B9"}
-            {sales.totalRevenue.toLocaleString(
-              "en-IN",
-              {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2,
-              }
-            )}
+            {productsCount.toLocaleString("en-IN")}
           </strong>
 
-          <small>
-            Net sales before tax
-          </small>
+          <small>Active products</small>
         </div>
 
         <div className="dashboard-card">
@@ -329,32 +300,19 @@ setLowStockCount(
             <span>Pending Payments</span>
           </div>
 
-          <strong>
-            {"\u20B9"}
-            {pendingPayments.toLocaleString(
-              "en-IN",
-              {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2,
-              }
-            )}
-          </strong>
+          <strong>{formatCurrency(pendingPayments)}</strong>
 
-          <small>
-            Amount currently outstanding
-          </small>
+          <small>Amount currently outstanding</small>
         </div>
       </div>
 
+      {/* Keep the existing Low Stock and Recent Bills sections */}
       <div className="dashboard-content-grid">
         <section className="dashboard-section-card">
           <div className="dashboard-section-header">
             <div>
               <h2>Low Stock</h2>
-
-              <p>
-                Products that need attention
-              </p>
+              <p>Products that need attention</p>
             </div>
 
             <span className="dashboard-section-count">
@@ -365,13 +323,10 @@ setLowStockCount(
           <div className="dashboard-list dashboard-low-stock-list">
             {lowStockProducts.length === 0 ? (
               <div className="dashboard-empty-state">
-              <strong>
-  Inventory Up to Date
-</strong>
-
-<span>
-  No products need restocking at the moment.
-</span>
+                <strong>Inventory Up to Date</strong>
+                <span>
+                  No products need restocking at the moment.
+                </span>
               </div>
             ) : (
               lowStockProducts.map((product) => (
@@ -380,27 +335,24 @@ setLowStockCount(
                   key={
                     product.productId ??
                     product.id ??
-                    product.productName
+                    product._id ??
+                    product.productName ??
+                    product.name
                   }
                 >
                   <div>
                     <strong>
-                      {product.productName ??
-                        product.name}
+                      {product.productName ?? product.name ?? "Unnamed product"}
                     </strong>
 
                     <span>
                       Minimum stock:{" "}
-                      {Number(
-                        product.minimumStock ?? 0
-                      )}
+                      {Number(product.minimumStock ?? 0)}
                     </span>
                   </div>
 
                   <span className="dashboard-stock-warning">
-                    {Number(
-                      product.currentStock ?? 0
-                    )}{" "}
+                    {Number(product.currentStock ?? 0)}{" "}
                     {product.unit || "PCS"} left
                   </span>
                 </div>
@@ -413,10 +365,7 @@ setLowStockCount(
           <div className="dashboard-section-header">
             <div>
               <h2>Recent Bills</h2>
-
-              <p>
-                Latest billing transactions
-              </p>
+              <p>Latest billing transactions</p>
             </div>
 
             <Link
@@ -430,20 +379,16 @@ setLowStockCount(
           <div className="dashboard-list">
             {recentBills.length === 0 ? (
               <div className="dashboard-empty-state">
-                <strong>
-                  No recent bills
-                </strong>
-
+                <strong>No recent bills</strong>
                 <span>
-                  Completed invoices will appear
-                  here.
+                  Completed invoices will appear here.
                 </span>
               </div>
             ) : (
               recentBills.map((invoice) => (
                 <div
                   className="dashboard-list-row"
-                  key={invoice.id}
+                  key={invoice.id ?? invoice.invoiceNumber}
                 >
                   <div>
                     <strong>
@@ -453,27 +398,15 @@ setLowStockCount(
                     <span>
                       {new Date(
                         invoice.createdAt
-                      ).toLocaleTimeString(
-                        "en-IN",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
+                      ).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
 
                   <strong className="dashboard-bill-amount">
-                    {"\u20B9"}
-                    {Number(
-                      invoice.total ?? 0
-                    ).toLocaleString(
-                      "en-IN",
-                      {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
+                    {formatCurrency(Number(invoice.total ?? 0))}
                   </strong>
                 </div>
               ))
@@ -484,6 +417,7 @@ setLowStockCount(
     </section>
   );
 }
+
 
 type AppLayoutProps = {
   user: AuthenticatedUser;
@@ -644,113 +578,81 @@ function AppLayout({
           </div>
         </div>
 
-        <nav className="navigation">
-          <Link to="/">Dashboard</Link>
-          <Link to="/products">Products</Link>
-          <Link to="/categories">Categories</Link>
-          <Link to="/billing">Billing</Link>
-          <Link to="/inventory">Inventory</Link>
-          <Link to="/customers">Customers</Link>
-          <Link to="/payments">Payments</Link>
-          <Link to="/invoices">Invoices</Link>
-          <Link to="/reports">Reports</Link>
-          <Link to="/settings">Settings</Link>
+        <nav className="navigation" aria-label="Main navigation">
+          <span className="navigation-heading">Workspace</span>
+          <NavLink to="/" end>Dashboard</NavLink>
+          <NavLink to="/products">Products</NavLink>
+          <NavLink to="/categories">Categories</NavLink>
+          <NavLink to="/billing">Billing</NavLink>
+          <NavLink to="/inventory">Inventory</NavLink>
+          <NavLink to="/customers">Customers</NavLink>
+          <NavLink to="/payments">Payments</NavLink>
+          <NavLink to="/invoices">Invoices</NavLink>
+          <NavLink to="/reports">Reports</NavLink>
+          <NavLink to="/settings">Settings</NavLink>
         </nav>
 
-        <div
-          className="sidebar-user"
-          style={{
-            marginTop: "auto",
-            padding: "16px",
-            borderTop:
-              "1px solid rgba(148, 163, 184, 0.18)",
-          }}
-        >
-          <div style={{ marginBottom: "10px" }}>
-            <strong
-              style={{
-                display: "block",
-                fontSize: "13px",
-              }}
-            >
-              {user.name}
-            </strong>
-
-            <span
-              style={{
-                display: "block",
-                marginTop: "4px",
-                fontSize: "11px",
-                opacity: 0.7,
-              }}
-            >
-              {user.role}
+        <div className="sidebar-user">
+          <div className="account-identity">
+            <span className="account-avatar" aria-hidden="true">
+              {user.name
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((part) => part.charAt(0))
+                .join("")
+                .toUpperCase() || "U"}
             </span>
-
-            {user.email && (
-              <span
-                style={{
-                  display: "block",
-                  marginTop: "3px",
-                  fontSize: "11px",
-                  opacity: 0.7,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {user.email}
-              </span>
-            )}
+            <div className="account-details">
+              <strong>{user.name}</strong>
+              <span className="account-role">{user.role}</span>
+              {user.email && (
+                <span className="account-email">{user.email}</span>
+              )}
+            </div>
           </div>
 
           <button
             type="button"
             onClick={onLogout}
-            style={{
-              width: "100%",
-              padding: "9px 12px",
-              borderRadius: "8px",
-              border:
-                "1px solid rgba(148, 163, 184, 0.3)",
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: "12px",
-              fontWeight: 600,
-            }}
+            className="logout-button"
+            aria-label={`Sign out ${user.name}`}
           >
-            Logout
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M8 3H4.75A1.75 1.75 0 0 0 3 4.75v10.5A1.75 1.75 0 0 0 4.75 17H8" />
+              <path d="M11.5 6.5 15 10l-3.5 3.5M15 10H7" />
+            </svg>
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
 
 
-            <nav className="mobile-bottom-nav">
-        <Link to="/" aria-label="Home">
+      <nav className="mobile-bottom-nav" aria-label="Quick navigation">
+        <NavLink to="/" end aria-label="Home">
           <span>⌂</span>
           <span>Home</span>
-        </Link>
+        </NavLink>
 
-        <Link to="/billing" aria-label="Billing">
+        <NavLink to="/billing" aria-label="Billing">
           <span>▣</span>
           <span>Billing</span>
-        </Link>
+        </NavLink>
 
-        <Link to="/products" aria-label="Products">
+        <NavLink to="/products" aria-label="Products">
           <span>□</span>
           <span>Products</span>
-        </Link>
+        </NavLink>
 
-        <Link to="/reports" aria-label="Reports">
+        <NavLink to="/reports" aria-label="Reports">
           <span>▤</span>
           <span>Reports</span>
-        </Link>
+        </NavLink>
 
-        <Link to="/settings" aria-label="More">
+        <NavLink to="/settings" aria-label="More">
           <span>⋯</span>
           <span>More</span>
-        </Link>
+        </NavLink>
       </nav>
 
       
@@ -787,6 +689,34 @@ function AppLayout({
             >
               {getSyncLabel()}
             </div>
+          </div>
+
+          <div className="mobile-account">
+            <span className="account-avatar" aria-hidden="true">
+              {user.name
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((part) => part.charAt(0))
+                .join("")
+                .toUpperCase() || "U"}
+            </span>
+            <div className="account-details">
+              <strong>{user.name}</strong>
+              <span className="account-role">{user.role}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="logout-button"
+              aria-label={`Sign out ${user.name}`}
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M8 3H4.75A1.75 1.75 0 0 0 3 4.75v10.5A1.75 1.75 0 0 0 4.75 17H8" />
+                <path d="M11.5 6.5 15 10l-3.5 3.5M15 10H7" />
+              </svg>
+              <span>Sign out</span>
+            </button>
           </div>
         </header>
 

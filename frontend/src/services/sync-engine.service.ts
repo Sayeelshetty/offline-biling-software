@@ -26,6 +26,15 @@ class SyncEngineService {
     ReturnType<typeof setInterval> | null =
       null;
 
+  private cloudBackupPending = false;
+
+  private cloudBackupInProgress = false;
+
+  private lastCloudBackupAttemptAt = 0;
+
+  private readonly cloudBackupRetryIntervalMs =
+    60_000;
+
   private status: SyncEngineStatus = {
     connection:
       connectionService.getConnectionStatus(),
@@ -120,9 +129,19 @@ class SyncEngineService {
       return;
     }
 
+    this.status = {
+      ...this.status,
+      connection:
+        connectionService.getConnectionStatus(),
+    };
+
     this.unsubscribeConnection =
       connectionService.subscribeToConnectionChanges(
         async (connection) => {
+          const becameOnline =
+            this.status.connection !== "ONLINE" &&
+            connection === "ONLINE";
+
           this.status = {
             ...this.status,
 
@@ -131,8 +150,11 @@ class SyncEngineService {
 
           this.notify();
 
-          if (connection === "ONLINE") {
+          if (becameOnline) {
+            this.cloudBackupPending = true;
+
             await this.syncPending();
+            await this.tryAutomaticCloudBackup();
           }
         }
       );
@@ -166,13 +188,64 @@ class SyncEngineService {
         ) {
           await this.syncPending();
         }
+
+        if (
+          connectionService.getConnectionStatus() ===
+          "ONLINE"
+        ) {
+          await this.tryAutomaticCloudBackup();
+        }
       }, 1500);
 
     if (
       this.status.connection ===
       "ONLINE"
     ) {
+      this.cloudBackupPending = true;
+
       await this.syncPending();
+      await this.tryAutomaticCloudBackup();
+    }
+  }
+
+  private async tryAutomaticCloudBackup(): Promise<void> {
+    if (
+      !this.cloudBackupPending ||
+      this.cloudBackupInProgress ||
+      connectionService.getConnectionStatus() ===
+        "OFFLINE" ||
+      Date.now() - this.lastCloudBackupAttemptAt <
+        this.cloudBackupRetryIntervalMs
+    ) {
+      return;
+    }
+
+    this.cloudBackupInProgress = true;
+    this.lastCloudBackupAttemptAt = Date.now();
+
+    try {
+      const result =
+        await window.desktopAPI.settings.cloudBackup();
+
+      if (!result.success) {
+        throw new Error(
+          result.error ||
+            "Automatic cloud backup failed."
+        );
+      }
+
+      this.cloudBackupPending = false;
+
+      console.info(
+        "[BACKUP] Automatic cloud backup completed."
+      );
+    } catch (error) {
+      console.error(
+        "[BACKUP] Automatic cloud backup failed; it will be retried while online:",
+        error
+      );
+    } finally {
+      this.cloudBackupInProgress = false;
     }
   }
 

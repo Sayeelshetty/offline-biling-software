@@ -1268,6 +1268,8 @@ body,
 
 
 
+
+
 /* =====================================================
    OFFLINE BILLING — PREMIUM SIDEBAR REFINEMENT
    CSS only: preserves existing navigation and logout.
@@ -2872,5 +2874,829 @@ body,
   .dashboard-low-stock-list
   .dashboard-empty-state::before {
     transition: none;
+  }
+}
+
+
+
+
+
+/* =========================================
+   SIDEBAR — CLEAN, RESPONSIVE LAYOUT
+   ========================================= */
+
+.sidebar {
+  box-sizing: border-box;
+  padding: 12px 10px;
+  background: #ffffff;
+  border-right: 1px solid #d5dce6;
+  overflow-x: hidden;
+}
+
+/* Business branding */
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 12px;
+  padding: 8px 4px 14px;
+  border-bottom: 1px solid #e1e6ed;
+}
+
+.sidebar .brand > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar .brand strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sidebar .brand span {
+  display: inline-block;
+  margin-top: 5px;
+  color: #667085;
+  font-size: 10px;
+}
+
+/* Logo */
+.sidebar .brand-icon {
+  flex-shrink: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+}
+
+/* Navigation */
+.sidebar .navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+/* Remove the decorative dots from the previous styling */
+.sidebar .navigation a::before {
+  content: none !important;
+  display: none !important;
+}
+
+.sidebar .navigation a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 0 11px;
+  box-sizing: border-box;
+
+  color: #344054;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.sidebar .navigation a:hover {
+  color: #172033;
+  background: #f4f6f9;
+  border-color: #e1e6ed;
+}
+
+.sidebar .navigation a:focus-visible {
+  outline: 2px solid #94a9c5;
+  outline-offset: 2px;
+}
+
+/* Admin profile and logout */
+.sidebar > .sidebar-user {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+
+  margin: auto 0 8px !important;
+  padding: 12px 10px !important;
+
+  background: #ffffff;
+  border: 1px solid #d0d8e3 !important;
+  border-radius: 10px;
+
+  box-shadow: 0 2px 5px rgba(16, 24, 40, 0.04);
+  text-align: center;
+}
+
+.sidebar .sidebar-user strong {
+  display: block;
+  color: #172033;
+  font-size: 12px !important;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.sidebar .sidebar-user span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #667085;
+  font-size: 10px !important;
+  text-overflow: ellipsis;
+}
+
+.sidebar .sidebar-user button {
+  width: 100% !important;
+  min-height: 36px;
+  padding: 8px 10px !important;
+
+  color: #344054 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.sidebar .sidebar-user button:hover {
+  background: #f3f5f8 !important;
+  border-color: #98a2b3 !important;
+}
+
+.sidebar .sidebar-user button:focus-visible {
+  outline: 2px solid #94a9c5;
+  outline-offset: 2px;
+}
+
+/* Short laptop windows */
+@media (max-height: 720px) {
+  .sidebar {
+    overflow-y: auto;
+  }
+
+  .sidebar > .sidebar-user {
+    margin-top: 14px !important;
+  }
+
+  .sidebar .navigation a {
+    min-height: 36px;
+  }
+}
+
+/* Laptop and tablet */
+@media (max-width: 900px) {
+  .sidebar {
+    padding: 10px 8px;
+  }
+
+  .sidebar .navigation a {
+    padding: 0 9px;
+    font-size: 11.5px;
+  }
+}
+
+/* Keep the existing mobile navigation behavior */
+@media (max-width: 760px) {
+  .sidebar .sidebar-user {
+    padding: 10px 8px !important;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar *,
+  .sidebar *::before,
+  .sidebar *::after {
+    transition: none !important;
+  }
+}
+
+
+
+/* Sidebar: balanced spacing and consistent alignment */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100vh;
+  min-height: 0;
+  padding: 10px 10px 12px !important;
+  overflow: hidden;
+  background: #ffffff;
+  border-right: 1px solid #d5dce6;
+}
+
+/* Brand */
+.sidebar .brand {
+  flex: 0 0 auto;
+  margin-bottom: 8px !important;
+  padding: 8px 4px 12px !important;
+  border-bottom: 1px solid #e1e6ed;
+}
+
+/* Navigation uses available space instead of leaving one large gap */
+.sidebar .navigation {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 3px;
+  min-height: 0;
+  width: 100%;
+  padding: 8px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Consistent navigation rows */
+.sidebar .navigation a {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: 37px;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #344054;
+  font-size: 12px;
+  text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+/* Simple hover */
+.sidebar .navigation a:hover {
+  background: #f4f6f9;
+  border-color: #e1e6ed;
+}
+
+/* Admin profile stays at the bottom */
+.sidebar > .sidebar-user {
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 8px 0 0 !important;
+  padding: 12px 10px !important;
+  border: 1px solid #d0d8e3 !important;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(16, 24, 40, 0.04);
+}
+
+/* Logout alignment */
+.sidebar .sidebar-user button {
+  width: 100% !important;
+  min-height: 36px;
+}
+
+/* Short laptop screens: compact navigation with scrolling */
+@media (max-height: 700px) {
+  .sidebar .navigation {
+    justify-content: flex-start;
+    gap: 3px;
+  }
+
+  .sidebar .navigation a {
+    min-height: 35px;
+  }
+
+  .sidebar .sidebar-user {
+    margin-top: 8px !important;
+  }
+}
+
+/* Reduced sidebar padding in narrow windows */
+@media (max-width: 900px) {
+  .sidebar {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+  }
+
+  .sidebar .navigation a {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .navigation a {
+    transition: none;
+  }
+}
+
+
+
+/* ==========================================
+   SIDEBAR — CLEAN BUSINESS APP LAYOUT
+   ========================================== */
+
+.sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box;
+
+  height: 100vh;
+  min-height: 0;
+  padding: 12px 10px !important;
+
+  background: #ffffff !important;
+  border-right: 1px solid #d5dce6 !important;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Brand */
+.sidebar .brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+  margin: 0 0 10px !important;
+  padding: 8px 4px 14px !important;
+
+  border-bottom: 1px solid #e1e6ed !important;
+}
+
+.sidebar .brand > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar .brand strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sidebar .brand span {
+  display: inline-block;
+  margin-top: 5px;
+  color: #667085;
+  font-size: 10px;
+}
+
+/* Navigation — compact, evenly aligned rows */
+.sidebar .navigation {
+  display: flex !important;
+  flex: 0 1 auto !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch;
+
+  gap: 3px !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 0 10px !important;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Hide decorative dots, if an earlier rule added them */
+.sidebar .navigation a::before {
+  content: none !important;
+  display: none !important;
+}
+
+.sidebar .navigation a {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 0 11px !important;
+  box-sizing: border-box;
+
+  color: #344054 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+/* Hover */
+.sidebar .navigation a:hover {
+  color: #172033 !important;
+  background: #f4f6f9 !important;
+  border-color: #e1e6ed !important;
+}
+
+/* Current route, when the router provides aria-current */
+.sidebar .navigation a[aria-current="page"] {
+  color: #172033 !important;
+  background: #eef2f7 !important;
+  border-color: #d6dfeb !important;
+  font-weight: 650;
+}
+
+.sidebar .navigation a:focus-visible {
+  outline: 2px solid #94a9c5;
+  outline-offset: 1px;
+}
+
+/* Admin profile stays near the bottom */
+.sidebar > .sidebar-user {
+  display: block;
+  flex: 0 0 auto;
+
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+
+  margin: auto 0 0 !important;
+  padding: 12px 10px !important;
+
+  background: #ffffff;
+  border: 1px solid #d0d8e3 !important;
+  border-radius: 10px;
+
+  box-shadow: 0 2px 5px rgba(16, 24, 40, 0.04);
+  text-align: center;
+}
+
+.sidebar .sidebar-user strong {
+  display: block;
+  color: #172033;
+  font-size: 12px !important;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.sidebar .sidebar-user span {
+  display: block;
+  max-width: 100%;
+  color: #667085;
+  font-size: 10px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Logout */
+.sidebar .sidebar-user button {
+  width: 100% !important;
+  min-height: 36px;
+  margin-top: 2px;
+
+  padding: 8px 10px !important;
+
+  color: #344054 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 7px !important;
+
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.sidebar .sidebar-user button:hover {
+  background: #f3f5f8 !important;
+  border-color: #98a2b3 !important;
+}
+
+.sidebar .sidebar-user button:focus-visible {
+  outline: 2px solid #94a9c5;
+  outline-offset: 2px;
+}
+
+/* Short laptop windows */
+@media (max-height: 700px) {
+  .sidebar {
+    overflow-y: auto;
+  }
+
+  .sidebar .navigation a {
+    min-height: 35px;
+  }
+
+  .sidebar > .sidebar-user {
+    margin-top: 12px !important;
+  }
+}
+
+/* Narrow windows */
+@media (max-width: 900px) {
+  .sidebar {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+  }
+
+  .sidebar .navigation a {
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar * {
+    transition: none !important;
+  }
+}
+
+
+/* Final responsive app-shell overrides */
+.sidebar {
+  width: 252px;
+  padding: 18px 14px 14px !important;
+}
+
+.sidebar .navigation {
+  flex: 1 1 auto !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  padding: 4px 0 12px !important;
+}
+
+.navigation-heading {
+  padding: 8px 12px 5px;
+  color: #98a2b3;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sidebar .navigation a {
+  min-height: 43px;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  font-size: 13px;
+}
+
+.sidebar .navigation a[aria-current="page"] {
+  color: #172033 !important;
+  background: #eef3f9 !important;
+  border-color: #e0e8f2 !important;
+  box-shadow: inset 3px 0 #344d70;
+}
+
+.sidebar .sidebar-user {
+  display: grid !important;
+  gap: 13px;
+  margin: auto 0 0 !important;
+  padding: 14px !important;
+  border: 1px solid #e0e7ef !important;
+  border-radius: 14px;
+  background: #fbfcfe !important;
+  text-align: left !important;
+}
+
+.sidebar .sidebar-user > .account-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.account-avatar {
+  display: inline-grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  color: #344256;
+  background: #e9eef5;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sidebar .sidebar-user > .account-identity > .account-avatar {
+  display: inline-grid !important;
+  flex-basis: 38px;
+  width: 38px;
+  height: 38px;
+  color: #344256 !important;
+}
+
+.account-details {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+
+.sidebar .account-details strong,
+.mobile-account .account-details strong {
+  overflow: hidden;
+  color: #172033 !important;
+  font-size: 12px !important;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .account-details .account-role,
+.mobile-account .account-details .account-role {
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #667085 !important;
+  background: #f0f3f8;
+  font-size: 9px !important;
+  font-weight: 750;
+}
+
+.sidebar .account-details .account-email {
+  overflow: hidden;
+  color: #7b8798 !important;
+  font-size: 10px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .logout-button,
+.mobile-account .logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 12px !important;
+  border: 1px solid #dce3ec !important;
+  border-radius: 10px !important;
+  color: #344256 !important;
+  background: #fff !important;
+  font: inherit;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.sidebar .logout-button svg,
+.mobile-account .logout-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.sidebar .logout-button:hover,
+.mobile-account .logout-button:hover {
+  border-color: #f0c8c8 !important;
+  color: #a33a3a !important;
+  background: #fff7f7 !important;
+}
+
+.sidebar .logout-button:focus-visible,
+.mobile-account .logout-button:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.25);
+  outline-offset: 2px;
+}
+
+.mobile-account {
+  display: none !important;
+}
+
+.mobile-bottom-nav a[aria-current="page"] {
+  color: #243b5b;
+  background: #eef3f9;
+}
+
+@media (min-width: 801px) and (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 224px minmax(0, 1fr) !important;
+  }
+
+  .sidebar {
+    width: 224px !important;
+    padding-right: 11px !important;
+    padding-left: 11px !important;
+  }
+}
+
+@media (max-width: 800px) {
+  .app-layout {
+    display: block !important;
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .app-layout > .main-area {
+    width: 100%;
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+
+  .main-area > .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 68px;
+    padding: 12px 18px;
+    gap: 10px 14px;
+  }
+
+  .mobile-account {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid #edf0f4;
+  }
+
+  .mobile-account .logout-button {
+    flex: 0 0 auto;
+    min-width: 104px;
+  }
+
+  .mobile-bottom-nav {
+    display: grid !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .page-container {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 420px) {
+  .main-area > .topbar {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .mobile-account {
+    gap: 8px;
+  }
+
+  .mobile-account .logout-button {
+    min-width: 92px;
+    padding-right: 9px !important;
+    padding-left: 9px !important;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 801px) {
+  .sidebar {
+    overflow-y: auto;
+  }
+
+  .sidebar .navigation {
+    flex: 0 1 auto !important;
+  }
+
+  .sidebar .navigation a {
+    min-height: 38px;
   }
 }

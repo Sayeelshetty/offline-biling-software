@@ -15,6 +15,9 @@ import type {
   PrinterSettings,
 } from "../../../shared/types/settings";
 
+
+
+
 import "./SettingsPage.css";
 
 const PAYMENT_METHOD_OPTIONS = [
@@ -58,6 +61,38 @@ function SettingsPage() {
 
   const [message, setMessage] =
     useState<string | null>(null);
+
+    const [backupSuccessPath, setBackupSuccessPath] =
+  useState<string | null>(null);
+
+  const [cloudBackupDetails, setCloudBackupDetails] = useState<{
+  fileName: string;
+  fileSize: number;
+} | null>(null);
+
+
+const [restoreConfirmOpen, setRestoreConfirmOpen] =
+  useState(false);
+
+const [restoreDialog, setRestoreDialog] = useState<{
+  type: "success" | "error";
+  message: string;
+} | null>(null);
+
+
+const [syncStatusInfoOpen, setSyncStatusInfoOpen] = useState(false);
+
+const [exportSuccessDetails, setExportSuccessDetails] = useState<{
+  path: string;
+  count: number;
+} | null>(null);
+
+const [importResultDetails, setImportResultDetails] = useState<{
+  type: "success" | "warning" | "error";
+  count: number;
+  errors: string[];
+  message: string;
+} | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -280,16 +315,10 @@ async function handleBackup() {
       return;
     }
 
-    if (
-      result.success &&
-      result.filePath
-    ) {
-      window.alert(
-        `Local database backup created successfully.\n\nSaved to:\n${result.filePath}`
-      );
-
-      return;
-    }
+   if (result.success && result.filePath) {
+  setBackupSuccessPath(result.filePath);
+  return;
+}
 
     window.alert(
       result.error ||
@@ -309,36 +338,26 @@ async function handleBackup() {
   }
 }
 
-
 async function handleExportProducts() {
   try {
-    const result =
-      await window.desktopAPI.products.exportCsv();
+    const result = await window.desktopAPI.products.exportCsv();
 
     if (result.canceled) {
       return;
     }
 
-    if (
-      result.success &&
-      result.path
-    ) {
-      window.alert(
-        `Products exported successfully.\n\nSaved to:\n${result.path}\n\nTotal products: ${result.count ?? 0}`
-      );
+    if (result.success && result.path) {
+      setExportSuccessDetails({
+        path: result.path,
+        count: Number(result.count) || 0,
+      });
 
       return;
     }
 
-    window.alert(
-      result.error ||
-        "Failed to export products."
-    );
+    window.alert(result.error || "Failed to export products.");
   } catch (error) {
-    console.error(
-      "Product export failed:",
-      error
-    );
+    console.error("Product export failed:", error);
 
     window.alert(
       error instanceof Error
@@ -353,16 +372,13 @@ async function handleCloudBackup() {
     const result =
       await window.desktopAPI.settings.cloudBackup();
 
-    if (
-      result.success &&
-      result.backup
-    ) {
-      window.alert(
-        `Cloud backup completed successfully.\n\nFile:\n${result.backup.fileName}\n\nSize: ${result.backup.fileSize} bytes`
-      );
-
-      return;
-    }
+   if (result.success && result.backup) {
+  setCloudBackupDetails({
+    fileName: result.backup.fileName,
+    fileSize: Number(result.backup.fileSize) || 0,
+  });
+  return;
+}
 
     window.alert(
       result.error ||
@@ -385,103 +401,101 @@ async function handleCloudBackup() {
 
 async function handleImportProducts() {
   try {
-    const result =
-      await window.desktopAPI.products.importCsv();
+    const result = await window.desktopAPI.products.importCsv();
 
     if (result.canceled) {
       return;
     }
 
     if (result.success) {
-      const importedCount =
-        result.count ?? 0;
-
-      const importErrors =
-        result.errors ?? [];
+      const importedCount = result.count ?? 0;
+      const importErrors = result.errors ?? [];
 
       if (importErrors.length > 0) {
-        window.alert(
-          `Product import completed with errors.\n\nImported products: ${importedCount}\n\nErrors:\n${importErrors.join(
-            "\n"
-          )}`
-        );
+        setImportResultDetails({
+          type: "warning",
+          count: importedCount,
+          errors: importErrors,
+          message:
+            "The import finished, but some products could not be imported. Review the details below.",
+        });
 
         return;
       }
 
-      window.alert(
-        `Products imported successfully.\n\nImported products: ${importedCount}`
-      );
+      setImportResultDetails({
+        type: "success",
+        count: importedCount,
+        errors: [],
+        message:
+          "Your product data has been imported successfully.",
+      });
 
       return;
     }
 
-    window.alert(
-      result.error ||
-        "Failed to import products."
-    );
+    setImportResultDetails({
+      type: "error",
+      count: 0,
+      errors: [],
+      message: result.error || "Failed to import products.",
+    });
   } catch (error) {
-    console.error(
-      "Product import failed:",
-      error
-    );
+    console.error("Product import failed:", error);
 
-    window.alert(
-      error instanceof Error
-        ? error.message
-        : "Failed to import products."
-    );
+    setImportResultDetails({
+      type: "error",
+      count: 0,
+      errors: [],
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to import products.",
+    });
   }
 }
 
 
-async function handleRestore() {
-  const confirmed =
-    window.confirm(
-      "Restore a database backup?\n\nThis will replace the current local billing data. A safety backup will be created automatically before restore."
-    );
+function handleRestore() {
+  setRestoreConfirmOpen(true);
+}
 
-  if (!confirmed) {
-    return;
-  }
+async function confirmRestore() {
+  setRestoreConfirmOpen(false);
 
   try {
-    const result =
-      await window.desktopAPI.settings.restore();
+    const result = await window.desktopAPI.settings.restore();
 
     if (result.canceled) {
       return;
     }
 
-    if (
-      result.success &&
-      result.filePath
-    ) {
-      window.alert(
-        "Database restored successfully.\n\nThe application will restart automatically to load the restored data."
-      );
+    if (result.success && result.filePath) {
+      setRestoreDialog({
+        type: "success",
+        message:
+          "Your database backup has been restored successfully. Your billing data has been updated.",
+      });
 
       return;
     }
 
-    window.alert(
-      result.error ||
-        "Failed to restore database."
-    );
+    setRestoreDialog({
+      type: "error",
+      message: result.error || "Failed to restore the database.",
+    });
   } catch (error) {
-    console.error(
-      "Database restore failed:",
-      error
-    );
+    console.error("Database restore failed:", error);
 
-    window.alert(
-      error instanceof Error
-        ? error.message
-        : "Failed to restore database."
-    );
+    setRestoreDialog({
+      type: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to restore the database.",
+    });
   }
 }
-
 
   async function handleReset() {
     const confirmed = window.confirm(
@@ -1186,16 +1200,9 @@ async function handleRestore() {
         <section className="settings-card settings-data-card">
           <div className="settings-card-header">
             <div>
-              <p className="settings-card-eyebrow">
-                DATA
-              </p>
 
               <h2>Data & Backup</h2>
 
-              <p>
-                Database backup, restore, sync,
-                import and export tools.
-              </p>
             </div>
           </div>
 
@@ -1245,24 +1252,19 @@ async function handleRestore() {
     </span>
   </button>
 
-  <button
-    type="button"
-    className="settings-data-action"
-    onClick={() =>
-      window.alert(
-        "Use the Sync status in the application header to monitor synchronization."
-      )
-    }
-  >
-    <strong>
-      Sync Status
-    </strong>
+ <button
+  type="button"
+  className="settings-data-action"
+  onClick={() => setSyncStatusInfoOpen(true)}
+>
+  <strong>Sync Status</strong>
 
-    <span>
-      Monitor pending and synchronized
-      records.
-    </span>
-  </button>
+  <span>
+    Monitor pending and synchronized
+    records.
+  </span>
+</button>
+
 <button
   type="button"
   className="settings-data-action"
@@ -1293,6 +1295,568 @@ async function handleRestore() {
 </div>
         </section>
       </div>
+      {backupSuccessPath && (
+  <div className="backup-success-overlay">
+    <section
+      className="backup-success-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="backup-success-title"
+      aria-describedby="backup-success-message"
+    >
+      <button
+        type="button"
+        className="backup-success-close"
+        aria-label="Close dialog"
+        onClick={() => setBackupSuccessPath(null)}
+      >
+        ×
+      </button>
+
+      <div className="backup-success-icon" aria-hidden="true">
+        ✓
+      </div>
+
+      <span className="backup-success-label">
+        BACKUP COMPLETE
+      </span>
+
+      <h2 id="backup-success-title">
+        Backup Created Successfully
+      </h2>
+
+      <p id="backup-success-message">
+        Your local database backup has been created successfully.
+        Your saved backup file is ready to use.
+      </p>
+
+      <div className="backup-success-file">
+        <span>Saved file location</span>
+        <code>{backupSuccessPath}</code>
+      </div>
+
+      <button
+        type="button"
+        className="backup-success-done"
+        onClick={() => setBackupSuccessPath(null)}
+      >
+        Done
+      </button>
+    </section>
+  </div>
+)}
+
+
+{cloudBackupDetails && (
+  <div className="backup-success-overlay">
+    <section
+      className="backup-success-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cloud-backup-success-title"
+      aria-describedby="cloud-backup-success-message"
+    >
+      <button
+        type="button"
+        className="backup-success-close"
+        aria-label="Close dialog"
+        onClick={() => setCloudBackupDetails(null)}
+      >
+        ×
+      </button>
+
+      <div className="backup-success-icon" aria-hidden="true">
+        ✓
+      </div>
+
+      <span className="backup-success-label">
+        CLOUD BACKUP COMPLETE
+      </span>
+
+      <h2 id="cloud-backup-success-title">
+        Cloud Backup Successful
+      </h2>
+
+      <p id="cloud-backup-success-message">
+        Your cloud backup has been created successfully.
+        Your backup file is ready.
+      </p>
+
+      <div className="backup-success-file">
+        <span>Backup file</span>
+        <code>{cloudBackupDetails.fileName}</code>
+      </div>
+
+      <div className="backup-success-file cloud-backup-size">
+        <span>Backup size</span>
+        <code>
+          {(cloudBackupDetails.fileSize / 1024).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })} KB
+          {" "}({cloudBackupDetails.fileSize.toLocaleString("en-IN")} bytes)
+        </code>
+      </div>
+
+      <button
+        type="button"
+        className="backup-success-done"
+        onClick={() => setCloudBackupDetails(null)}
+      >
+        Done
+      </button>
+    </section>
+  </div>
+)}
+
+
+{/* Restore confirmation modal */}
+{restoreConfirmOpen && (
+  <div className="restore-dialog-overlay">
+    <section
+      className="restore-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="restore-confirm-title"
+      aria-describedby="restore-confirm-description"
+    >
+      <button
+        type="button"
+        className="restore-dialog-close"
+        aria-label="Close dialog"
+        onClick={() => setRestoreConfirmOpen(false)}
+      >
+        ×
+      </button>
+
+      <div className="restore-dialog-icon restore-warning-icon">
+        !
+      </div>
+
+      <span className="restore-dialog-eyebrow">
+        DATABASE RESTORE
+      </span>
+
+      <h2 id="restore-confirm-title">
+        Restore database backup?
+      </h2>
+
+      <p id="restore-confirm-description">
+        This will replace your current local billing data with
+        the selected backup.
+      </p>
+
+      <div className="restore-dialog-notice">
+        <span className="restore-notice-icon">✓</span>
+        <div>
+          <strong>Your data is protected</strong>
+          <p>
+            A safety backup of your current database will be
+            created automatically before restoration.
+          </p>
+        </div>
+      </div>
+
+      <div className="restore-dialog-actions">
+        <button
+          type="button"
+          className="restore-cancel-button"
+          onClick={() => setRestoreConfirmOpen(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          className="restore-confirm-button"
+          onClick={() => void confirmRestore()}
+        >
+          Choose Backup & Restore
+        </button>
+      </div>
+    </section>
+  </div>
+)}
+
+{/* Restore result modal */}
+{restoreDialog && (
+  <div className="restore-dialog-overlay">
+    <section
+      className="restore-dialog restore-result-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="restore-result-title"
+      aria-describedby="restore-result-message"
+    >
+      <button
+        type="button"
+        className="restore-dialog-close"
+        aria-label="Close dialog"
+        onClick={() => setRestoreDialog(null)}
+      >
+        ×
+      </button>
+
+      <div
+        className={`restore-dialog-icon ${
+          restoreDialog.type === "success"
+            ? "restore-success-icon"
+            : "restore-error-icon"
+        }`}
+        aria-hidden="true"
+      >
+        {restoreDialog.type === "success" ? "✓" : "!"}
+      </div>
+
+      <span
+        className={`restore-dialog-eyebrow ${
+          restoreDialog.type === "error"
+            ? "restore-error-text"
+            : ""
+        }`}
+      >
+        {restoreDialog.type === "success"
+          ? "RESTORE COMPLETE"
+          : "RESTORE FAILED"}
+      </span>
+
+      <h2 id="restore-result-title">
+        {restoreDialog.type === "success"
+          ? "Database Restored Successfully"
+          : "Unable to Restore Database"}
+      </h2>
+
+      <p id="restore-result-message">
+        {restoreDialog.message}
+      </p>
+
+      <button
+        type="button"
+        className={
+          restoreDialog.type === "success"
+            ? "restore-result-done"
+            : "restore-result-error-button"
+        }
+        onClick={() => setRestoreDialog(null)}
+      >
+        Done
+      </button>
+
+    </section>
+  </div>
+)}
+
+{/* Sync Status information modal */}
+{syncStatusInfoOpen && (
+  <div className="sync-info-overlay">
+    <section
+      className="sync-info-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sync-info-title"
+      aria-describedby="sync-info-description"
+    >
+      <button
+        type="button"
+        className="sync-info-close"
+        aria-label="Close dialog"
+        onClick={() => setSyncStatusInfoOpen(false)}
+      >
+        ×
+      </button>
+
+      <div className="sync-info-icon" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20 7v5h-5" />
+          <path d="M4 17v-5h5" />
+          <path d="M5.6 9a7 7 0 0 1 11.6-2L20 12" />
+          <path d="M18.4 15a7 7 0 0 1-11.6 2L4 12" />
+        </svg>
+      </div>
+
+      <span className="sync-info-eyebrow">
+        DATA SYNCHRONIZATION
+      </span>
+
+      <h2 id="sync-info-title">Sync Status</h2>
+
+      <p id="sync-info-description">
+        Keep track of pending and synchronized records from your
+        application header.
+      </p>
+
+      <div className="sync-info-note">
+        <span className="sync-info-note-icon" aria-hidden="true">
+          i
+        </span>
+
+        <p>
+          Use the Sync Status indicator in the application header
+          to monitor synchronization progress.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className="sync-info-done"
+        onClick={() => setSyncStatusInfoOpen(false)}
+      >
+        Got it
+      </button>
+    </section>
+  </div>
+)}
+
+{/* Product export success modal */}
+{exportSuccessDetails && (
+  <div className="export-success-overlay">
+    <section
+      className="export-success-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="export-success-title"
+      aria-describedby="export-success-message"
+    >
+      <button
+        type="button"
+        className="export-success-close"
+        aria-label="Close dialog"
+        onClick={() => setExportSuccessDetails(null)}
+      >
+        ×
+      </button>
+
+      <div className="export-success-icon" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </div>
+
+      <span className="export-success-eyebrow">
+        EXPORT COMPLETE
+      </span>
+
+      <h2 id="export-success-title">
+        Products Exported Successfully
+      </h2>
+
+      <p id="export-success-message">
+        Your product data has been exported successfully.
+        Your CSV file is ready to use.
+      </p>
+
+      <div className="export-success-file">
+        <div className="export-success-file-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="M8 13h8M8 17h8M8 9h2" />
+          </svg>
+        </div>
+
+        <div className="export-success-file-details">
+          <span className="export-success-file-label">
+            Exported CSV file
+          </span>
+
+          <strong>
+            {exportSuccessDetails.path.split(/[\\/]/).pop()}
+          </strong>
+
+          <span className="export-success-file-type">
+            CSV spreadsheet
+          </span>
+        </div>
+
+        <span className="export-success-format">CSV</span>
+      </div>
+
+      <div className="export-success-location">
+        <span>Saved file location</span>
+        <code>{exportSuccessDetails.path}</code>
+      </div>
+
+      <div className="export-success-count">
+        <div>
+          <span className="export-success-count-label">
+            Total products exported
+          </span>
+          <strong>
+            {exportSuccessDetails.count}
+          </strong>
+        </div>
+
+        <span className="export-success-count-caption">
+          Products
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="export-success-done"
+        onClick={() => setExportSuccessDetails(null)}
+      >
+        Done
+      </button>
+    </section>
+  </div>
+)}
+
+{/* Product import result modal */}
+{importResultDetails && (
+  <div className="import-result-overlay">
+    <section
+      className="import-result-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-result-title"
+      aria-describedby="import-result-message"
+    >
+      <button
+        type="button"
+        className="import-result-close"
+        aria-label="Close dialog"
+        onClick={() => setImportResultDetails(null)}
+      >
+        ×
+      </button>
+
+      <div
+        className={`import-result-icon import-result-icon-${importResultDetails.type}`}
+        aria-hidden="true"
+      >
+        {importResultDetails.type === "success" ? (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        ) : importResultDetails.type === "warning" ? (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 3 22 20H2L12 3Z" />
+            <path d="M12 9v4" />
+            <path d="M12 16h.01" />
+          </svg>
+        ) : (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        )}
+      </div>
+
+      <span
+        className={`import-result-eyebrow import-result-eyebrow-${importResultDetails.type}`}
+      >
+        {importResultDetails.type === "success"
+          ? "IMPORT COMPLETE"
+          : importResultDetails.type === "warning"
+            ? "IMPORT NEEDS ATTENTION"
+            : "IMPORT FAILED"}
+      </span>
+
+      <h2 id="import-result-title">
+        {importResultDetails.type === "success"
+          ? "Products Imported Successfully"
+          : importResultDetails.type === "warning"
+            ? "Import Completed with Errors"
+            : "Unable to Import Products"}
+      </h2>
+
+      <p id="import-result-message">
+        {importResultDetails.message}
+      </p>
+
+      {importResultDetails.type !== "error" && (
+        <div className="import-result-count">
+          <div className="import-result-count-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+
+          <div className="import-result-count-details">
+            <span>Products imported</span>
+            <strong>
+              {importResultDetails.count.toLocaleString("en-IN")}
+            </strong>
+          </div>
+        </div>
+      )}
+
+      {importResultDetails.errors.length > 0 && (
+        <div className="import-result-errors">
+          <strong>Import errors</strong>
+
+          <ul>
+            {importResultDetails.errors.map((error, index) => (
+              <li key={`${index}-${error}`}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className={`import-result-done import-result-done-${importResultDetails.type}`}
+        onClick={() => setImportResultDetails(null)}
+      >
+        Done
+      </button>
+    </section>
+  </div>
+)}
+
     </section>
   );
 }
