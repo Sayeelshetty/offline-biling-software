@@ -6,6 +6,7 @@ import {
   NavLink,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
 
 import type { AuthenticatedUser } from "../../shared/auth";
@@ -254,7 +255,6 @@ function DashboardPage() {
           to="/billing"
           className="dashboard-new-bill-button"
         >
-          <span className="dashboard-new-bill-icon">+</span>
           <span>Create New Bill</span>
         </Link>
       </div>
@@ -428,6 +428,15 @@ function AppLayout({
   user,
   onLogout,
 }: AppLayoutProps) {
+  const location = useLocation();
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const isMoreSectionActive = ![
+    "/",
+    "/billing",
+    "/products",
+    "/reports",
+  ].includes(location.pathname);
+
   const [
     connectionStatus,
     setConnectionStatus,
@@ -451,6 +460,24 @@ function AppLayout({
     businessLogo,
     setBusinessLogo,
   ] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isMobileMoreOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMobileMoreOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMobileMoreOpen]);
 
   useEffect(() => {
     const unsubscribeConnection =
@@ -649,11 +676,46 @@ function AppLayout({
           <span>Reports</span>
         </NavLink>
 
-        <NavLink to="/settings" aria-label="More">
+        <button
+          type="button"
+          className="mobile-more-toggle"
+          aria-label="More navigation options"
+          aria-expanded={isMobileMoreOpen}
+          aria-controls="mobile-more-menu"
+          data-active={isMoreSectionActive}
+          onClick={() => setIsMobileMoreOpen((open) => !open)}
+        >
           <span>⋯</span>
           <span>More</span>
-        </NavLink>
+        </button>
       </nav>
+
+      {isMobileMoreOpen && (
+        <nav
+          id="mobile-more-menu"
+          className="mobile-more-menu"
+          aria-label="More pages"
+        >
+          <NavLink to="/categories" onClick={() => setIsMobileMoreOpen(false)}>
+            Categories
+          </NavLink>
+          <NavLink to="/inventory" onClick={() => setIsMobileMoreOpen(false)}>
+            Inventory
+          </NavLink>
+          <NavLink to="/customers" onClick={() => setIsMobileMoreOpen(false)}>
+            Customers
+          </NavLink>
+          <NavLink to="/payments" onClick={() => setIsMobileMoreOpen(false)}>
+            Payments
+          </NavLink>
+          <NavLink to="/invoices" onClick={() => setIsMobileMoreOpen(false)}>
+            Invoices
+          </NavLink>
+          <NavLink to="/settings" onClick={() => setIsMobileMoreOpen(false)}>
+            Settings
+          </NavLink>
+        </nav>
+      )}
 
       
 
