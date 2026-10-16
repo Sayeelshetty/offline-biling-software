@@ -487,3 +487,20 @@ The UI design focuses on:
 **Fast Billing + Simple Navigation + Offline Operation + Responsive Experience**
 
 The interface is intended for practical daily use in retail environments where users need to search products, generate bills, manage inventory, record payments and access reports with minimal friction.
+
+## 24. Implemented runtime and verification boundaries
+
+The current UI is delivered inside Electron. Its responsive layouts and mobile
+navigation are implemented in [App.tsx](../frontend/src/App.tsx) and
+[App.css](../frontend/src/App.css); page-specific behavior and styles live with
+their corresponding pages under [frontend/src](../frontend/src).
+
+The UI is not currently a standalone web or native Android/iOS application:
+data operations call the Electron `window.desktopAPI` bridge. The barcode
+scanner uses the device camera where Electron grants camera permission, but
+this alone does not establish compatibility on every mobile device.
+
+The narrow layouts describe implemented CSS behavior, not device QA results.
+Verify the packaged desktop application, tablet-sized windows, camera
+permissions, touch targets, and screen-reader behavior on the target hardware
+before treating those platforms as fully accepted.

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Billing Software - Deliverables Review</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #18263c;
+      background: #fff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-size: 10pt; line-height: 1.48; }
+    @page { size: A4; margin: 15mm 15mm 17mm; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: 30pt; line-height: 1.08; letter-spacing: -.7px; }
+    h2 { margin: 0 0 11px; font-size: 19pt; color: #132747; }
+    h3 { margin: 0; font-size: 12pt; }
+    a { color: #1759a6; text-decoration: underline; text-underline-offset: 2px; }
+    .cover {
+      min-height: 245mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      padding: 16mm 12mm;
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(145deg, #112544, #1e4f7f);
+    }
+    .cover a { color: #bfe2ff; }
+    .eyebrow { margin-bottom: 16px; font-size: 9pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #a9d8ff; }
+    .subtitle { max-width: 520px; font-size: 13pt; color: #e0ecf7; }
+    .cover-card { padding: 15px 17px; border: 1px solid #ffffff35; border-radius: 12px; background: #ffffff12; }
+    .cover-card p:last-child { margin-bottom: 0; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 24px 0; }
+    .metric { padding: 13px; border-radius: 10px; background: #ffffff12; }
+    .metric strong { display: block; font-size: 20pt; }
+    .metric span { font-size: 8.5pt; color: #d8e7f5; }
+    .section { margin-bottom: 15px; padding: 13px 14px; border: 1px solid #dbe4ef; border-radius: 11px; page-break-inside: avoid; }
+    .section-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 7px; }
+    .number { flex: 0 0 27px; height: 27px; display: grid; place-items: center; border-radius: 8px; color: white; background: #234b76; font-weight: 700; }
+    .heading { flex: 1; padding-top: 3px; }
+    .status { flex: 0 0 auto; padding: 4px 8px; border-radius: 99px; font-size: 8pt; font-weight: 700; }
+    .provided { color: #14643b; background: #e4f5eb; }
+    .partial { color: #875311; background: #fff1d7; }
+    .notprovided { color: #7b2f36; background: #ffeaec; }
+    .section p { margin: 6px 0; }
+    .sources { margin: 7px 0 0; padding: 0; list-style: none; font-size: 8.5pt; }
+    .sources li { display: inline; }
+    .sources li + li::before { content: "  |  "; color: #9aa8b8; }
+    .page-title { margin-bottom: 16px; padding-bottom: 9px; border-bottom: 2px solid #dbe4ef; }
+    .page-title p { margin: 0; color: #596b82; }
+    .callout { margin: 12px 0; padding: 12px 14px; border-left: 4px solid #d68b1f; border-radius: 6px; background: #fff7e8; }
+    .callout.positive { border-color: #288454; background: #eef8f2; }
+    .callout.negative { border-color: #ad4650; background: #fff0f1; }
+    .validation { width: 100%; border-collapse: collapse; margin: 10px 0 15px; font-size: 9pt; }
+    .validation th, .validation td { padding: 8px 9px; border: 1px solid #dbe4ef; text-align: left; vertical-align: top; }
+    .validation th { color: #183454; background: #edf3f9; }
+    .small { font-size: 8.5pt; color: #596b82; }
+    .footer-note { margin-top: 20px; padding-top: 9px; border-top: 1px solid #dbe4ef; font-size: 8pt; color: #69798d; }
+    @media print {
+      .cover { border-radius: 0; }
+      a { color: #174f91; }
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div>
+      <p class="eyebrow">Project handoff · 16 October 2026</p>
+      <h1>Offline Billing<br>Software</h1>
+      <p class="subtitle">Deliverables review, implementation evidence, build verification, and Windows installer handoff.</p>
+      <div class="metrics">
+        <div class="metric"><strong>11</strong><span>deliverables reviewed</span></div>
+        <div class="metric"><strong>3</strong><span>database tests passed</span></div>
+        <div class="metric"><strong>1</strong><span>packaged app startup smoke test</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="cover-card">
+        <p><strong>Windows installer</strong></p>
+        <p><a href="../dist/offline-biling-software%20Setup%201.0.0.exe">Download Offline Billing Software Setup 1.0.0.exe</a></p>
+        <p class="small" style="color:#d8e7f5">Build completed from the current source. The packaged application opened successfully in an isolated smoke test. Installer is not digitally signed; Windows may show an unknown-publisher warning.</p>
+      </div>
+      <p style="margin:16px 0 0"><a href="https://github.com/Sayeelshetty/offline-biling-software">Source repository</a> · <a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/docs">Documentation folder</a></p>
+    </div>
+  </section>
+
+  <main>
+    <header class="page-title">
+      <h2>Deliverables: one-by-one review</h2>
+      <p>Evidence links point to source files and project documentation in this checkout.</p>
+    </header>
+
+    <article class="section">
+      <div class="section-head"><span class="number">1</span><h3 class="heading">Complete source code</h3><span class="status provided">PROVIDED</span></div>
+      <p>Application source is present for the Electron main process and IPC bridge, React/TypeScript user interface, local data repositories, optional cloud server, and shared contracts. The Windows installer is a packaged build, not a replacement for the source repository.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/electron">Electron source</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/frontend/src">UI source</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/server">Cloud server</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/shared">Shared contracts</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">2</span><h3 class="heading">Database schema</h3><span class="status provided">PROVIDED</span></div>
+      <p>Separate schemas are supplied for local SQLite and cloud PostgreSQL. SQLite startup migrations evolve existing local databases; the database restart test covers transaction and stock persistence.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/schema.sql">SQLite schema</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/server/db/schema.sql">PostgreSQL schema</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/migrations.cjs">SQLite migrations</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/offline-billing-restart.test.cjs">Restart test</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">3</span><h3 class="heading">UI design</h3><span class="status provided">PROVIDED</span></div>
+      <p>The application implements dashboard, products, categories, billing, inventory, customers, payments, invoices, reports, and settings screens. Design notes document navigation, responsive intent, touch considerations, and UI boundaries.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/UI-DESIGN.md">UI design documentation</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/App.tsx">App navigation/layout</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/frontend/src/pages">Application pages</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">4</span><h3 class="heading">Responsive web/desktop application</h3><span class="status partial">PARTIAL</span></div>
+      <p>The deliverable is an Electron desktop application and its UI adapts to smaller windows. It is not a standalone browser application: application data calls require the Electron preload bridge. A separate browser runtime and data adapter are still needed for a true web deliverable.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/preload.cjs">Desktop API bridge</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/App.tsx">Routes and layout</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/UI-DESIGN.md">Responsive UI notes</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">5</span><h3 class="heading">Mobile-responsive implementation</h3><span class="status partial">PARTIAL</span></div>
+      <p>Responsive styles, mobile bottom navigation, touch-oriented screens, and camera barcode scanning exist. This does not provide a native Android/iOS application or prove real-device compatibility; the camera and complete billing flow still require validation on target phones/tablets.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/App.tsx">Mobile navigation</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/App.css">Responsive app styles</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/components/BarcodeScanner.tsx">Camera scanner</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">6</span><h3 class="heading">Offline database implementation</h3><span class="status provided">PROVIDED</span></div>
+      <p>Electron uses local SQLite with WAL mode, repository-based data access, and transaction-backed invoice/payment/stock updates. A restart test verifies a bill and inventory change remain stored and transaction sync work can be re-queued after restart. Tests do not exercise every machine failure or restore scenario.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/connection.cjs">SQLite connection</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/schema.sql">SQLite schema</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/tree/main/electron/database/repositories">Repositories</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/offline-billing-restart.test.cjs">Persistence test</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">7</span><h3 class="heading">Synchronization mechanism</h3><span class="status partial">PARTIAL</span></div>
+      <p>Local changes are queued, pushed when connectivity is available, retried after failures, and deduplicated by the server. Product/category/customer conflict resolution uses server-side last-write-wins snapshots; invoice/payment/stock changes use transaction events. The desktop client does not pull cloud changes into local SQLite, so multi-device bidirectional sync is incomplete.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/services/sync-engine.service.ts">Sync engine</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/services/cloud-sync.service.ts">Cloud client</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/server/routes/sync.routes.js">Sync API</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/CONFLICT-RESOLUTION.md">Conflict policy</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">8</span><h3 class="heading">API documentation</h3><span class="status provided">PROVIDED</span></div>
+      <p>Documentation now describes the renderer IPC surface and implemented REST routes, request/response shapes, limits, and operational caveats. Cloud endpoints currently have no authentication middleware; do not expose them on an untrusted network.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/API.md">API guide</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/preload.cjs">IPC bridge</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/server/routes/sync.routes.js">Sync endpoints</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/server/routes/backup.routes.js">Backup endpoint</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">9</span><h3 class="heading">Installation/build instructions</h3><span class="status provided">PROVIDED</span></div>
+      <p>Windows development setup, optional PostgreSQL/cloud setup, tests, frontend build, app launch, and installer commands are documented. The installer was rebuilt successfully from the current source during this handoff.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/INSTALLATION.md">Installation guide</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/package.json">Root build/test scripts</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/scripts/dev.cjs">Development launcher</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">10</span><h3 class="heading">Test data</h3><span class="status partial">PARTIAL</span></div>
+      <p>A ten-row product CSV supports product import practice. A separate synthetic benchmark generates 10,000 products and 50,000 invoices, but it uses a simplified schema and is not a production-flow test dataset for invoice items, payments, customers, or multi-device sync.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/test-data/products.csv">Product CSV sample</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/scripts/performance-benchmark.cjs">Synthetic benchmark</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/pending-transaction-backfill.test.cjs">Database test fixtures</a></li></ul>
+    </article>
+
+    <article class="section">
+      <div class="section-head"><span class="number">11</span><h3 class="heading">Basic user documentation</h3><span class="status provided">PROVIDED</span></div>
+      <p>The user guide covers first-run/demo sign-in, setup, catalog entry, billing, stock, sync status, backup/restore, and troubleshooting. It warns that fixed demo credentials are not suitable for production and that user administration is not yet implemented.</p>
+      <ul class="sources"><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/docs/USER-GUIDE.md">User guide</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/electron/database/repositories/user.repository.cjs">Demo account implementation</a></li><li><a href="https://github.com/Sayeelshetty/offline-biling-software/blob/main/frontend/src/pages/SettingsPage.tsx">Settings UI</a></li></ul>
+    </article>
+
+    <h2 style="margin-top:24px">Build and runtime verification</h2>
+    <table class="validation">
+      <thead><tr><th>Check</th><th>Result</th><th>Scope / caveat</th></tr></thead>
+      <tbody>
+        <tr><td>Windows installer build</td><td><strong>Passed</strong></td><td><code>npm.cmd run dist</code> completed; creates the installer linked on the cover.</td></tr>
+        <tr><td>Packaged app startup</td><td><strong>Passed</strong></td><td>Unpacked packaged executable opened its main window in an isolated temporary user-data environment and was then closed.</td></tr>
+        <tr><td>SQLite database tests</td><td><strong>3 passed</strong></td><td>Offline bill/restart persistence, sync-queue backfill, idempotency. Not live cloud integration.</td></tr>
+        <tr><td>Code signing</td><td><strong>Unsigned</strong></td><td>Authenticode reports NotSigned; Windows may display an unknown-publisher warning. No signing certificate is configured.</td></tr>
+        <tr><td>Installer SHA-256</td><td colspan="2"><code style="overflow-wrap:anywhere">68CC4F889E5837E46C185589F54A33ED2EEDEF0E295B1EE85159B9D1ADFF2CDE</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout positive">
+      <strong>Installer artifact:</strong>
+      <a href="../dist/offline-biling-software%20Setup%201.0.0.exe">offline-biling-software Setup 1.0.0.exe</a>.
+      It is approximately 122 MB and was rebuilt on 16 October 2026. Open it to install; the smoke test validated the packaged app startup, not a full interactive installer installation.
+    </div>
+
+    <div class="callout negative">
+      <strong>Before production use:</strong> add cloud authentication and business-level authorization; replace fixed demo accounts with managed credentials; implement and test cloud-to-device reconciliation if multiple devices must share edits; validate the mobile flow on target hardware.
+    </div>
+
+    <p class="footer-note">This report describes the repository and artifacts at the review date. “Provided” refers to source/artifact presence; “Partial” identifies explicit scope or verification gaps. A successful build and startup smoke test do not constitute complete business acceptance, security certification, or load testing.</p>
+  </main>
+</body>
+</html>
