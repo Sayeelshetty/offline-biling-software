@@ -292,9 +292,11 @@ useEffect(() => {
       }
 
       if (result?.filePath) {
-        window.alert(
-          `Invoice PDF saved successfully.\n\n${result.filePath}`
-        );
+        setShareToast({
+          type: "success",
+          title: "Invoice PDF saved",
+          message: `Saved to ${result.filePath}`,
+        });
         return;
       }
 

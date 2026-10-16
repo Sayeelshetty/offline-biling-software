@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   HashRouter,
@@ -12,15 +17,34 @@ import {
 import type { AuthenticatedUser } from "../../shared/auth";
 
 import LoginPage from "./pages/LoginPage.tsx";
-import ProductsPage from "./pages/ProductsPage.tsx";
-import CategoriesPage from "./pages/Categories/CategoriesPage.tsx";
-import InventoryPage from "./pages/Inventory/InventoryPage.tsx";
-import CustomerPage from "./pages/Customers/CustomerPage.tsx";
-import BillingPage from "./pages/BillingPage";
-import PaymentsPage from "./pages/Payments/PaymentsPage";
-import InvoicePage from "./pages/Invoices/InvoicePage";
-import ReportsPage from "./pages/ReportsPage";
-import SettingsPage from "./pages/SettingsPage";
+
+const ProductsPage = lazy(
+  () => import("./pages/ProductsPage.tsx")
+);
+const CategoriesPage = lazy(
+  () => import("./pages/Categories/CategoriesPage.tsx")
+);
+const InventoryPage = lazy(
+  () => import("./pages/Inventory/InventoryPage.tsx")
+);
+const CustomerPage = lazy(
+  () => import("./pages/Customers/CustomerPage.tsx")
+);
+const BillingPage = lazy(
+  () => import("./pages/BillingPage")
+);
+const PaymentsPage = lazy(
+  () => import("./pages/Payments/PaymentsPage")
+);
+const InvoicePage = lazy(
+  () => import("./pages/Invoices/InvoicePage")
+);
+const ReportsPage = lazy(
+  () => import("./pages/ReportsPage")
+);
+const SettingsPage = lazy(
+  () => import("./pages/SettingsPage")
+);
 
 import connectionService from "./services/connection.service";
 import syncEngineService from "./services/sync-engine.service";
@@ -785,57 +809,65 @@ function AppLayout({
         
 
         <main className="page-container">
-          <Routes>
-            <Route
-              path="/"
-              element={<DashboardPage />}
-            />
+          <Suspense
+            fallback={
+              <div className="route-loading" role="status">
+                Loading page...
+              </div>
+            }
+          >
+            <Routes>
+              <Route
+                path="/"
+                element={<DashboardPage />}
+              />
 
-            <Route
-              path="/products"
-              element={<ProductsPage />}
-            />
+              <Route
+                path="/products"
+                element={<ProductsPage />}
+              />
 
-            <Route
-              path="/categories"
-              element={<CategoriesPage />}
-            />
+              <Route
+                path="/categories"
+                element={<CategoriesPage />}
+              />
 
-            <Route
-              path="/billing"
-              element={<BillingPage />}
-            />
+              <Route
+                path="/billing"
+                element={<BillingPage />}
+              />
 
-            <Route
-              path="/inventory"
-              element={<InventoryPage />}
-            />
+              <Route
+                path="/inventory"
+                element={<InventoryPage />}
+              />
 
-            <Route
-              path="/customers"
-              element={<CustomerPage />}
-            />
+              <Route
+                path="/customers"
+                element={<CustomerPage />}
+              />
 
-            <Route
-              path="/payments"
-              element={<PaymentsPage />}
-            />
+              <Route
+                path="/payments"
+                element={<PaymentsPage />}
+              />
 
-            <Route
-              path="/invoices"
-              element={<InvoicePage />}
-            />
+              <Route
+                path="/invoices"
+                element={<InvoicePage />}
+              />
 
-            <Route
-              path="/reports"
-              element={<ReportsPage />}
-            />
+              <Route
+                path="/reports"
+                element={<ReportsPage />}
+              />
 
-            <Route
-              path="/settings"
-              element={<SettingsPage />}
-            />
-          </Routes>
+              <Route
+                path="/settings"
+                element={<SettingsPage />}
+              />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </div>

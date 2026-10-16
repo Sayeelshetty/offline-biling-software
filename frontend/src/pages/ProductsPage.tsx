@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   Product,
@@ -13,6 +18,8 @@ import { getAllCategories } from "../services/category.service";
 
 import ProductForm from "../pages/Products/ProductForm";
 import "../pages/Products/ProductsPage.css";
+
+const PRODUCT_PAGE_SIZE = 50;
 
 function ProductsPage() {
   const [products, setProducts] = useState<Product[]>(
@@ -30,6 +37,10 @@ function ProductsPage() {
   >("ACTIVE");
 
   const [categoryFilter, setCategoryFilter] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const productLoadRequest = useRef(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -135,21 +146,31 @@ useEffect(() => {
   |--------------------------------------------------------------------------
   */
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      loadProducts();
-    }, 250);
+  const pageCount = Math.max(
+    1,
+    Math.ceil(products.length / PRODUCT_PAGE_SIZE)
+  );
+  const visiblePage = Math.min(currentPage, pageCount);
+  const visibleProducts = products.slice(
+    (visiblePage - 1) * PRODUCT_PAGE_SIZE,
+    visiblePage * PRODUCT_PAGE_SIZE
+  );
+  const firstVisibleProduct =
+    products.length === 0
+      ? 0
+      : (visiblePage - 1) * PRODUCT_PAGE_SIZE + 1;
+  const lastVisibleProduct = Math.min(
+    visiblePage * PRODUCT_PAGE_SIZE,
+    products.length
+  );
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [
-    searchTerm,
-    statusFilter,
-    categoryFilter,
-  ]);
+  const loadProducts = useCallback(async (
+    requestId = ++productLoadRequest.current
+  ) => {
+    if (requestId !== productLoadRequest.current) {
+      return;
+    }
 
-  async function loadProducts() {
     try {
       setLoading(true);
       setError(null);
@@ -221,8 +242,17 @@ useEffect(() => {
         );
       }
 
+      if (requestId !== productLoadRequest.current) {
+        return;
+      }
+
       setProducts(result);
+      setCurrentPage(1);
     } catch (err) {
+      if (requestId !== productLoadRequest.current) {
+        return;
+      }
+
       console.error(
         "Failed to load products:",
         err
@@ -234,9 +264,26 @@ useEffect(() => {
           : "Failed to load products."
       );
     } finally {
-      setLoading(false);
+      if (requestId === productLoadRequest.current) {
+        setLoading(false);
+      }
     }
-  }
+  }, [categoryFilter, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    const requestId = ++productLoadRequest.current;
+
+    const timer = window.setTimeout(() => {
+      void loadProducts(requestId);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (productLoadRequest.current === requestId) {
+        productLoadRequest.current += 1;
+      }
+    };
+  }, [loadProducts]);
 
   /*
   |--------------------------------------------------------------------------
@@ -886,7 +933,7 @@ async function confirmDeactivate() {
               </thead>
 
               <tbody>
-                {products.map(
+                {visibleProducts.map(
                   (product) => (
                     <tr
                       key={product.id}
@@ -1021,6 +1068,40 @@ async function confirmDeactivate() {
         )}
       </div>
 
+      {!loading && products.length > PRODUCT_PAGE_SIZE && (
+        <nav
+          className="products-pagination"
+          aria-label="Product list pages"
+        >
+          <span>
+            Showing {firstVisibleProduct}–{lastVisibleProduct} of{" "}
+            {products.length.toLocaleString()} products
+          </span>
+          <div>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setCurrentPage((page) => page - 1)}
+              disabled={visiblePage <= 1}
+            >
+              Previous
+            </button>
+            <span aria-live="polite">
+              Page {visiblePage.toLocaleString()} of{" "}
+              {pageCount.toLocaleString()}
+            </span>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setCurrentPage((page) => page + 1)}
+              disabled={visiblePage >= pageCount}
+            >
+              Next
+            </button>
+          </div>
+        </nav>
+      )}
+
       {/* Product Form Modal */}
 
 
@@ -1130,7 +1211,7 @@ async function confirmDeactivate() {
         </div>
       )}
       </section>
-  );
+  );
 }
 
 export default ProductsPage;

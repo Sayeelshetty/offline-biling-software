@@ -705,7 +705,9 @@
 
   /* Hide the application shell */
   .sidebar,
-  .topbar {
+  .topbar,
+  .app-layout .mobile-bottom-nav,
+  .app-layout .mobile-more-menu {
     display: none !important;
   }
 

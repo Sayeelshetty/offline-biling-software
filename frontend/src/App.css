@@ -127,6 +127,15 @@ a {
   padding: 28px;
 }
 
+.route-loading {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .page {
   width: 100%;
 }
