@@ -215,6 +215,15 @@ function validateCreateInvoiceInput(input) {
       ? null
       : String(input.dueDate).trim();
 
+  if (
+    paymentMethod === "CREDIT" &&
+    !dueDate
+  ) {
+    throw new Error(
+      "Due date is required for credit payment."
+    );
+  }
+
   const items = input.items.map(
     (item, index) => {
       if (
