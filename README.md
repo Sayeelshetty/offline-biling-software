@@ -298,11 +298,6 @@ https://offline-billing-api.onrender.com/health
 https://offline-billing-api.onrender.com/api/sync/health
 ```
 
-The backup upload endpoint is:
-
-```text
-POST https://offline-billing-api.onrender.com/api/backup/upload
-```
 
 Free/demo hosting may sleep when inactive, so the first request can take longer. Availability depends on the hosting plan and deployment configuration.
 
