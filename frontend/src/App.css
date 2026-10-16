@@ -326,7 +326,7 @@ a {
   display: none;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   .mobile-bottom-nav {
     position: fixed;
     left: 0;
@@ -3716,6 +3716,19 @@ body,
 }
 
 @media (max-width: 800px) {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .app-layout {
     display: block !important;
     height: auto !important;
