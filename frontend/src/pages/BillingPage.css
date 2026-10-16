@@ -3219,8 +3219,130 @@
   }
 }
 
+/* Replace the wide cart grid with touch-friendly item cards on phones. */
+@media (max-width: 600px) {
+  .billing-page .billing-table-wrapper {
+    overflow: visible;
+    padding: 0 12px 12px;
+  }
 
+  .billing-page .billing-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
 
+  .billing-page .billing-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .billing-page .billing-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .billing-page .billing-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+    padding: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .billing-page .billing-table tbody td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    width: auto !important;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    padding: 7px 4px !important;
+    border-bottom: 1px solid #eef2f6;
+    text-align: left !important;
+    overflow-wrap: anywhere;
+  }
+
+  .billing-page .billing-table tbody td::before {
+    flex: 0 0 auto;
+    color: #64748b;
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  .billing-page .billing-table tbody td:first-child,
+  .billing-page .billing-table tbody td:nth-child(2),
+  .billing-page .billing-table tbody td:nth-child(6) {
+    grid-column: 1 / -1;
+  }
+
+  .billing-page .billing-table tbody td:first-child {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 52px;
+  }
+
+  .billing-page .billing-table tbody td:first-child::before {
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  .billing-page .billing-table tbody td:nth-child(6) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0;
+    font-size: 15px;
+  }
+
+  .billing-page .billing-table tbody td:last-child {
+    flex-direction: row;
+    justify-content: flex-end;
+    grid-column: 1 / -1;
+    border-bottom: 0;
+  }
+
+  .billing-page .quantity-control {
+    width: 132px;
+    height: 44px;
+  }
+
+  .billing-page .quantity-control button {
+    flex-basis: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .billing-page .quantity-control input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .billing-page .line-discount-input {
+    width: 88px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .billing-page .remove-line-button {
+    width: 44px;
+    height: 44px;
+  }
+}
 
 
 
@@ -4067,4 +4189,3 @@
     transition: none;
   }
 }
-

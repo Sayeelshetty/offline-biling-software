@@ -993,7 +993,7 @@ function BillingPage() {
                 const amount = calculateLineAmount(line);
                 return (<tr key={line.product.id}>
 
-                        <td>
+                        <td data-label="Product">
 
                           <div className="bill-product">
 
@@ -1014,7 +1014,7 @@ function BillingPage() {
 
                         </td>
 
-                        <td>
+                        <td data-label="Quantity">
 
                           <div className="quantity-control">
 
@@ -1052,14 +1052,14 @@ function BillingPage() {
 
                         </td>
 
-                        <td>
+                        <td data-label="Rate">
 
                           {formatCurrency(line.product
                         .sellingPrice)}
 
                         </td>
 
-                        <td>
+                        <td data-label="Discount">
 
                           <input className="line-discount-input" type="number" min="0" max={gross} step="0.01" value={line.discount} onChange={(event) => updateLineDiscount(line
                         .product
@@ -1069,7 +1069,7 @@ function BillingPage() {
 
                         </td>
 
-                        <td>
+                        <td data-label="GST">
 
                          {getEffectiveGstRate(line, taxEnabled, defaultGstRate)}
 
@@ -1077,7 +1077,7 @@ function BillingPage() {
 
                         </td>
 
-                        <td>
+                        <td data-label="Amount">
 
                           <strong>
 
@@ -1087,7 +1087,7 @@ function BillingPage() {
 
                         </td>
 
-                        <td>
+                        <td data-label="Actions">
 
                           <button type="button" className="remove-line-button" onClick={() => removeProduct(line
                         .product
