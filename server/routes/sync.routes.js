@@ -20,6 +20,12 @@ const ALLOWED_OPERATIONS = [
   "DELETE",
 ];
 
+const CANONICAL_ENTITY_TYPES = new Set([
+  "PRODUCT",
+  "CATEGORY",
+  "CUSTOMER",
+]);
+
 function generateServerId() {
   return crypto.randomUUID();
 }
@@ -130,6 +136,128 @@ async function findExistingSyncRecord(client, {
   }
 
   return null;
+}
+
+function compareEntityVersion(incoming, existing) {
+  const incomingTimestamp = Date.parse(
+    incoming.updatedAt
+  );
+  const existingTimestamp = Date.parse(
+    existing.updated_at
+  );
+
+  if (
+    !Number.isFinite(incomingTimestamp) ||
+    !Number.isFinite(existingTimestamp)
+  ) {
+    throw new Error(
+      "Canonical entity updates require a valid updatedAt timestamp."
+    );
+  }
+
+  if (incomingTimestamp !== existingTimestamp) {
+    return incomingTimestamp - existingTimestamp;
+  }
+
+  const compareStrings = (left, right) =>
+    left === right ? 0 : left > right ? 1 : -1;
+
+  const deviceOrder = compareStrings(
+    String(incoming.deviceId || ""),
+    String(existing.device_id || "")
+  );
+
+  if (deviceOrder !== 0) {
+    return deviceOrder;
+  }
+
+  return compareStrings(
+    String(incoming.queueId),
+    String(existing.queue_id)
+  );
+}
+
+async function upsertCanonicalEntity(client, item) {
+  if (!CANONICAL_ENTITY_TYPES.has(item.entityType)) {
+    return null;
+  }
+
+  const { payload, entityType, entityId, deviceId, queueId } = item;
+  const updatedAt = payload.updatedAt;
+
+  if (
+    typeof updatedAt !== "string" ||
+    !Number.isFinite(Date.parse(updatedAt))
+  ) {
+    throw new Error(
+      `${entityType} sync payload requires a valid updatedAt timestamp.`
+    );
+  }
+
+  const existingResult = await client.query(
+    `
+    SELECT server_id, payload, updated_at, device_id, queue_id
+    FROM sync_entities
+    WHERE entity_type = $1
+      AND entity_id = $2
+    FOR UPDATE
+    `,
+    [entityType, entityId]
+  );
+  const existing = existingResult.rows[0];
+
+  const canonicalPayload = { ...payload };
+  delete canonicalPayload.serverId;
+  delete canonicalPayload.syncStatus;
+
+  if (entityType === "PRODUCT") {
+    delete canonicalPayload.currentStock;
+  }
+
+  if (
+    !existing ||
+    compareEntityVersion(
+      { ...item, updatedAt },
+      existing
+    ) > 0
+  ) {
+    const serverId =
+      existing?.server_id || generateServerId();
+
+    await client.query(
+      `
+      INSERT INTO sync_entities (
+        server_id,
+        entity_type,
+        entity_id,
+        payload,
+        device_id,
+        updated_at,
+        queue_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (entity_type, entity_id)
+      DO UPDATE SET
+        payload = EXCLUDED.payload,
+        device_id = EXCLUDED.device_id,
+        updated_at = EXCLUDED.updated_at,
+        queue_id = EXCLUDED.queue_id
+      `,
+      [
+        serverId,
+        entityType,
+        entityId,
+        JSON.stringify(canonicalPayload),
+        deviceId,
+        updatedAt,
+        queueId,
+      ]
+    );
+
+    return serverId;
+  }
+
+  return existing.server_id;
 }
 
 router.get("/health", async (_req, res) => {
@@ -289,6 +417,17 @@ router.post("/push", async (req, res) => {
         );
       }
 
+      if (CANONICAL_ENTITY_TYPES.has(entityType)) {
+        await client.query(
+          `
+          SELECT pg_advisory_xact_lock(
+            hashtextextended($1, 0)
+          )
+          `,
+          [`${entityType}:${entityId}`]
+        );
+      }
+
       const existing = await findExistingSyncRecord(client, {
         queueId,
         entityType,
@@ -297,7 +436,15 @@ router.post("/push", async (req, res) => {
       });
 
       if (existing) {
-        const serverId = existing.server_id;
+        const serverId =
+          await upsertCanonicalEntity(client, {
+            ...item,
+            queueId,
+            entityType,
+            entityId,
+            deviceId,
+            payload,
+          }) || existing.server_id;
 
         results.push({
           queueId,
@@ -338,12 +485,23 @@ router.post("/push", async (req, res) => {
         ]
       );
 
+      const canonicalServerId =
+        await upsertCanonicalEntity(client, {
+          ...item,
+          queueId,
+          entityType,
+          entityId,
+          deviceId,
+          payload,
+        });
+
       results.push({
         queueId,
         entityType,
         entityId,
         status: "SYNCED",
-        serverId,
+        serverId:
+          canonicalServerId || serverId,
         error: null,
       });
 
@@ -371,6 +529,64 @@ router.post("/push", async (req, res) => {
     });
   } finally {
     client.release();
+  }
+});
+
+router.get("/entities", async (req, res) => {
+  const entityType = req.query.entityType;
+
+  if (
+    entityType &&
+    !CANONICAL_ENTITY_TYPES.has(entityType)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "entityType must be PRODUCT, CATEGORY, or CUSTOMER.",
+    });
+  }
+
+  const requestedLimit = Number(req.query.limit);
+  const limit =
+    Number.isInteger(requestedLimit) &&
+    requestedLimit > 0
+      ? Math.min(requestedLimit, 500)
+      : 100;
+
+  try {
+    const result = await query(
+      `
+      SELECT
+        server_id,
+        entity_type,
+        entity_id,
+        payload,
+        device_id,
+        updated_at
+      FROM sync_entities
+      WHERE ($1::text IS NULL OR entity_type = $1)
+      ORDER BY updated_at DESC, entity_type, entity_id
+      LIMIT $2
+      `,
+      [entityType || null, limit]
+    );
+
+    return res.json({
+      success: true,
+      count: result.rows.length,
+      entities: result.rows,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to retrieve canonical sync entities:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to retrieve canonical sync entities.",
+    });
   }
 });
 

@@ -1,6 +1,7 @@
 const { randomUUID } = require("crypto");
 
 const { getDatabase } = require("../connection.cjs");
+const { enqueueSyncRecord } = require("./sync-queue.cjs");
 
 /*
 |--------------------------------------------------------------------------
@@ -252,6 +253,35 @@ function createStockMovement({
           deviceId: deviceId.trim(),
         });
 
+      const movement = database
+        .prepare(`
+          SELECT
+            id,
+            server_id,
+            transaction_id,
+            product_id,
+            type,
+            quantity,
+            reference_type,
+            reference_id,
+            created_at,
+            updated_at,
+            sync_status,
+            device_id
+          FROM stock_movements
+          WHERE id = ?
+        `)
+        .get(id);
+
+      enqueueSyncRecord(database, {
+        entityType: "STOCK_MOVEMENT",
+        entityId: id,
+        operation: "CREATE",
+        payload: mapStockMovementRow(movement),
+        deviceId: deviceId.trim(),
+        timestamp: now,
+      });
+
       /*
       |--------------------------------------------------------------------------
       | Update Product Stock
@@ -273,31 +303,69 @@ function createStockMovement({
           productId
         );
 
+      const updatedProduct = database
+        .prepare(`
+          SELECT
+            id,
+            server_id,
+            name,
+            sku,
+            barcode,
+            category_id,
+            selling_price,
+            purchase_price,
+            gst_rate,
+            current_stock,
+            minimum_stock,
+            unit,
+            image_path,
+            status,
+            created_at,
+            updated_at,
+            sync_status,
+            device_id
+          FROM products
+          WHERE id = ?
+        `)
+        .get(productId);
+
+      if (!updatedProduct) {
+        throw new Error("Product could not be loaded after stock update.");
+      }
+
+      enqueueSyncRecord(database, {
+        entityType: "PRODUCT",
+        entityId: productId,
+        operation: "UPDATE",
+        payload: {
+          id: updatedProduct.id,
+          serverId: updatedProduct.server_id ?? null,
+          name: updatedProduct.name,
+          sku: updatedProduct.sku,
+          barcode: updatedProduct.barcode ?? null,
+          categoryId: updatedProduct.category_id ?? null,
+          sellingPrice: Number(updatedProduct.selling_price),
+          purchasePrice: Number(updatedProduct.purchase_price),
+          gstRate: Number(updatedProduct.gst_rate),
+          currentStock: Number(updatedProduct.current_stock),
+          minimumStock: Number(updatedProduct.minimum_stock),
+          unit: updatedProduct.unit,
+          imagePath: updatedProduct.image_path ?? null,
+          status: updatedProduct.status,
+          createdAt: updatedProduct.created_at,
+          updatedAt: updatedProduct.updated_at,
+          syncStatus: updatedProduct.sync_status,
+          deviceId: updatedProduct.device_id,
+        },
+        deviceId: deviceId.trim(),
+        timestamp: now,
+      });
+
       /*
       |--------------------------------------------------------------------------
       | Return Movement + New Stock
       |--------------------------------------------------------------------------
       */
-
-      const movement = database
-        .prepare(`
-          SELECT
-            id,
-            server_id,
-            transaction_id,
-            product_id,
-            type,
-            quantity,
-            reference_type,
-            reference_id,
-            created_at,
-            updated_at,
-            sync_status,
-            device_id
-          FROM stock_movements
-          WHERE id = ?
-        `)
-        .get(id);
 
       return {
         movement:

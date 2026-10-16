@@ -1,5 +1,79 @@
 const { randomUUID } = require("crypto");
 const { getDatabase } = require("../connection.cjs");
+const { enqueueSyncRecord } = require("./sync-queue.cjs");
+
+function queueProductChange(database, product, operation) {
+  enqueueSyncRecord(database, {
+    entityType: "PRODUCT",
+    entityId: product.id,
+    operation,
+    payload: product,
+    deviceId: product.deviceId,
+    timestamp: product.updatedAt,
+  });
+}
+
+function queueOpeningStock(database, product) {
+  if (
+    !Number.isFinite(product.currentStock) ||
+    product.currentStock <= 0
+  ) {
+    return;
+  }
+
+  const id = randomUUID();
+  const transactionId = `TXN-${randomUUID()}:OPENING_STOCK`;
+  const movement = {
+    id,
+    serverId: null,
+    transactionId,
+    productId: product.id,
+    type: "STOCK_IN",
+    quantity: product.currentStock,
+    referenceType: "OPENING_STOCK",
+    referenceId: product.id,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    syncStatus: "PENDING",
+    deviceId: product.deviceId,
+  };
+
+  database.prepare(`
+    INSERT INTO stock_movements (
+      id,
+      server_id,
+      transaction_id,
+      product_id,
+      type,
+      quantity,
+      reference_type,
+      reference_id,
+      created_at,
+      updated_at,
+      sync_status,
+      device_id
+    )
+    VALUES (?, NULL, ?, ?, 'STOCK_IN', ?, 'OPENING_STOCK', ?, ?, ?, 'PENDING', ?)
+  `).run(
+    id,
+    transactionId,
+    product.id,
+    product.currentStock,
+    product.id,
+    product.createdAt,
+    product.updatedAt,
+    product.deviceId
+  );
+
+  enqueueSyncRecord(database, {
+    entityType: "STOCK_MOVEMENT",
+    entityId: id,
+    operation: "CREATE",
+    payload: movement,
+    deviceId: product.deviceId,
+    timestamp: product.updatedAt,
+  });
+}
 
 function mapProductRow(row) {
   if (!row) {
@@ -154,28 +228,35 @@ function createProduct(productData) {
     )
   `);
 
-  statement.run({
-    id,
-    name: name.trim(),
-    sku: sku.trim(),
-    barcode: barcode
-      ? barcode.trim()
-      : null,
-    categoryId: categoryId || null,
-    sellingPrice: Number(sellingPrice),
-    purchasePrice: Number(purchasePrice),
-    gstRate: Number(gstRate),
-    currentStock: Number(currentStock),
-    minimumStock: Number(minimumStock),
-    unit: unit.trim(),
-    imagePath: imagePath || null,
-    status,
-    createdAt: now,
-    updatedAt: now,
-    deviceId: deviceId.trim(),
+  const transaction = database.transaction(() => {
+    statement.run({
+      id,
+      name: name.trim(),
+      sku: sku.trim(),
+      barcode: barcode
+        ? barcode.trim()
+        : null,
+      categoryId: categoryId || null,
+      sellingPrice: Number(sellingPrice),
+      purchasePrice: Number(purchasePrice),
+      gstRate: Number(gstRate),
+      currentStock: Number(currentStock),
+      minimumStock: Number(minimumStock),
+      unit: unit.trim(),
+      imagePath: imagePath || null,
+      status,
+      createdAt: now,
+      updatedAt: now,
+      deviceId: deviceId.trim(),
+    });
+
+    const product = findProductById(id);
+    queueProductChange(database, product, "CREATE");
+    queueOpeningStock(database, product);
+    return product;
   });
 
-  return findProductById(id);
+  return transaction();
 }
 
 /*
@@ -447,6 +528,15 @@ function importProducts(
         createdProducts.push(
           findProductById(id)
         );
+        const createdProduct =
+          createdProducts[createdProducts.length - 1];
+
+        queueProductChange(
+          database,
+          createdProduct,
+          "CREATE"
+        );
+        queueOpeningStock(database, createdProduct);
       }
 
       return createdProducts;
@@ -787,31 +877,37 @@ function updateProduct(id, data) {
     WHERE id = @id
   `);
 
-  statement.run({
-    id,
-    name: name.trim(),
-    sku: sku.trim(),
-    barcode: barcode
-      ? barcode.trim()
-      : null,
-    categoryId:
-      categoryId || null,
-    sellingPrice:
-      Number(sellingPrice),
-    purchasePrice:
-      Number(purchasePrice),
-    gstRate:
-      Number(gstRate),
-    minimumStock:
-      Number(minimumStock),
-    unit: unit.trim(),
-    imagePath:
-      imagePath || null,
-    status,
-    updatedAt: now,
+  const transaction = database.transaction(() => {
+    statement.run({
+      id,
+      name: name.trim(),
+      sku: sku.trim(),
+      barcode: barcode
+        ? barcode.trim()
+        : null,
+      categoryId:
+        categoryId || null,
+      sellingPrice:
+        Number(sellingPrice),
+      purchasePrice:
+        Number(purchasePrice),
+      gstRate:
+        Number(gstRate),
+      minimumStock:
+        Number(minimumStock),
+      unit: unit.trim(),
+      imagePath:
+        imagePath || null,
+      status,
+      updatedAt: now,
+    });
+
+    const product = findProductById(id);
+    queueProductChange(database, product, "UPDATE");
+    return product;
   });
 
-  return findProductById(id);
+  return transaction();
 }
 
 /*
@@ -841,8 +937,8 @@ function deactivateProduct(id) {
   const now =
     new Date().toISOString();
 
-  database
-    .prepare(`
+  const transaction = database.transaction(() => {
+    database.prepare(`
       UPDATE products
       SET
         status = 'INACTIVE',
@@ -850,9 +946,14 @@ function deactivateProduct(id) {
         sync_status = 'PENDING'
       WHERE id = ?
     `)
-    .run(now, id);
+      .run(now, id);
 
-  return findProductById(id);
+    const product = findProductById(id);
+    queueProductChange(database, product, "UPDATE");
+    return product;
+  });
+
+  return transaction();
 }
 
 /*
@@ -882,8 +983,8 @@ function activateProduct(id) {
   const now =
     new Date().toISOString();
 
-  database
-    .prepare(`
+  const transaction = database.transaction(() => {
+    database.prepare(`
       UPDATE products
       SET
         status = 'ACTIVE',
@@ -891,9 +992,14 @@ function activateProduct(id) {
         sync_status = 'PENDING'
       WHERE id = ?
     `)
-    .run(now, id);
+      .run(now, id);
 
-  return findProductById(id);
+    const product = findProductById(id);
+    queueProductChange(database, product, "UPDATE");
+    return product;
+  });
+
+  return transaction();
 }
 
 /*

@@ -103,6 +103,74 @@ async function initializeCloudDatabase() {
   `);
 
   await query(`
+    CREATE TABLE IF NOT EXISTS sync_entities (
+      server_id UUID NOT NULL UNIQUE,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      payload JSONB NOT NULL,
+      device_id TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL,
+      queue_id TEXT NOT NULL,
+      PRIMARY KEY (entity_type, entity_id)
+    )
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_sync_entities_updated_at
+    ON sync_entities(updated_at)
+  `);
+
+  await query(`
+    INSERT INTO sync_entities (
+      server_id,
+      entity_type,
+      entity_id,
+      payload,
+      device_id,
+      updated_at,
+      queue_id
+    )
+    SELECT DISTINCT ON (entity_type, entity_id)
+      server_id,
+      entity_type,
+      entity_id,
+      CASE
+        WHEN entity_type = 'PRODUCT'
+        THEN payload - 'currentStock' - 'serverId' - 'syncStatus'
+        ELSE payload - 'serverId' - 'syncStatus'
+      END,
+      device_id,
+      (payload->>'updatedAt')::timestamptz,
+      queue_id
+    FROM sync_records
+    WHERE entity_type IN ('PRODUCT', 'CATEGORY', 'CUSTOMER')
+      AND NULLIF(payload->>'updatedAt', '') IS NOT NULL
+    ORDER BY
+      entity_type,
+      entity_id,
+      (payload->>'updatedAt')::timestamptz DESC,
+      device_id COLLATE "C" DESC,
+      queue_id COLLATE "C" DESC
+    ON CONFLICT (entity_type, entity_id)
+    DO UPDATE SET
+      payload = EXCLUDED.payload,
+      device_id = EXCLUDED.device_id,
+      updated_at = EXCLUDED.updated_at,
+      queue_id = EXCLUDED.queue_id
+    WHERE
+      (
+        EXCLUDED.updated_at,
+        EXCLUDED.device_id COLLATE "C",
+        EXCLUDED.queue_id COLLATE "C"
+      ) >
+      (
+        sync_entities.updated_at,
+        sync_entities.device_id COLLATE "C",
+        sync_entities.queue_id COLLATE "C"
+      )
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS cloud_backups (
       id BIGSERIAL PRIMARY KEY,
       backup_id UUID NOT NULL UNIQUE,

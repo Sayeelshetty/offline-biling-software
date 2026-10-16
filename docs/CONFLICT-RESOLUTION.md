@@ -30,18 +30,24 @@ Example:
 
 ### Strategy
 
-Product updates use the `updatedAt` timestamp.
+Product, category, and customer snapshots are stored in the cloud
+`sync_entities` table and resolved using the `updatedAt` timestamp.
 
-The latest product update is treated as the current version.
+The latest snapshot is treated as the current version.
 
 This follows a basic Last Write Wins strategy.
 
 ### Rules
 
-- Every product update contains `updatedAt`.
-- The cloud compares the incoming update with the existing product.
-- The newer update is accepted.
-- An older update must not overwrite a newer product update.
+- Every snapshot contains `updatedAt`.
+- The cloud compares incoming data with the canonical snapshot while
+  holding a per-entity transaction lock.
+- The newer timestamp wins. Equal timestamps are resolved by device ID,
+  then queue ID, using lexicographic order.
+- An older snapshot is acknowledged but cannot overwrite the canonical
+  snapshot.
+- Product stock is excluded from product snapshots because inventory
+  changes are represented as stock-movement events.
 
 ---
 
@@ -81,7 +87,7 @@ Each stock movement contains:
 - Created timestamp
 - Device ID
 
-The cloud processes each unique stock movement once.
+The cloud sync-record store processes each unique stock movement once.
 
 ### Rules
 
@@ -145,11 +151,29 @@ If it has already been processed:
 If synchronization has not completed:
 
 - The record remains in the local sync queue.
-- It can be retried later.
+- Network-level failures stay pending and are retried with exponential
+  backoff (5 seconds initially, capped at 5 minutes).
+- Item-level failures stay in SQLite and are retried automatically on
+  startup/reconnect and at most once per minute while online. Users can
+  also request a manual retry.
 
 ---
 
-## 5. Device Identification
+## 5. Sync Scope and Direction
+
+Product/category/customer changes and stock movements are queued in the
+same SQLite transaction as the local change. Invoice creation and payment
+recording are also queued as transaction events; invoice payment state is
+represented by those payment events. Synchronization currently pushes
+local changes to the cloud. The cloud exposes canonical
+product/category/customer snapshots and a transaction event log, but
+cloud changes are not yet pulled into another device's local database.
+Last Write Wins therefore resolves the server's canonical snapshot; it
+does not automatically update other devices.
+
+---
+
+## 6. Device Identification
 
 Each synchronized record contains a `deviceId`.
 
@@ -158,12 +182,12 @@ synchronization tracking and troubleshooting.
 
 ---
 
-## 6. Conflict Resolution Summary
+## 7. Conflict Resolution Summary
 
 | Conflict | Strategy |
 |---|---|
-| Same product edited on multiple devices | Last Write Wins using `updatedAt` |
-| Inventory changed on multiple devices | Process stock movements/events |
+| Product/category/customer edited on multiple devices | Server-side Last Write Wins using `updatedAt`, device ID, then queue ID |
+| Inventory changed on multiple devices | Preserve independent movement events; do not overwrite product stock from product snapshots |
 | Duplicate transaction | Unique `transactionId` |
 | Repeated sync attempt | Idempotent processing |
 | Synchronization failure | Keep record locally and retry |
@@ -171,7 +195,7 @@ synchronization tracking and troubleshooting.
 
 ---
 
-## 7. Overall Synchronization Flow
+## 8. Overall Synchronization Flow
 
 Local SQLite
     ↓

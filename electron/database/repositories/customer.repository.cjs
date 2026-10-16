@@ -1,8 +1,20 @@
 const crypto = require("crypto");
 
 const { getDatabase } = require("../connection.cjs");
+const { enqueueSyncRecord } = require("./sync-queue.cjs");
 
 const db = getDatabase();
+
+function queueCustomerChange(customer, operation) {
+  enqueueSyncRecord(db, {
+    entityType: "CUSTOMER",
+    entityId: customer.id,
+    operation,
+    payload: customer,
+    deviceId: customer.deviceId,
+    timestamp: customer.updatedAt,
+  });
+}
 
 function createId() {
   return crypto.randomUUID();
@@ -488,18 +500,24 @@ function createCustomer(input) {
     `
   );
 
-  insert.run(
-    id,
-    customer.name,
-    customer.mobile,
-    customer.email,
-    customer.address,
-    now,
-    now,
-    customer.deviceId
-  );
+  const transaction = db.transaction(() => {
+    insert.run(
+      id,
+      customer.name,
+      customer.mobile,
+      customer.email,
+      customer.address,
+      now,
+      now,
+      customer.deviceId
+    );
 
-  return getCustomerById(id);
+    const createdCustomer = getCustomerById(id);
+    queueCustomerChange(createdCustomer, "CREATE");
+    return createdCustomer;
+  });
+
+  return transaction();
 }
 
 function updateCustomer(id, input) {
@@ -535,7 +553,8 @@ function updateCustomer(id, input) {
   const updatedAt =
     new Date().toISOString();
 
-  db.prepare(
+  const transaction = db.transaction(() => {
+    db.prepare(
     `
     UPDATE customers
     SET
@@ -547,16 +566,21 @@ function updateCustomer(id, input) {
       sync_status = 'PENDING'
     WHERE id = ?
     `
-  ).run(
-    customer.name,
-    customer.mobile,
-    customer.email,
-    customer.address,
-    updatedAt,
-    id
-  );
+    ).run(
+      customer.name,
+      customer.mobile,
+      customer.email,
+      customer.address,
+      updatedAt,
+      id
+    );
 
-  return getCustomerById(id);
+    const updatedCustomer = getCustomerById(id);
+    queueCustomerChange(updatedCustomer, "UPDATE");
+    return updatedCustomer;
+  });
+
+  return transaction();
 }
 
 function getAllCustomers() {
@@ -865,7 +889,8 @@ function updateCustomerFinancials(
   const updatedAt =
     new Date().toISOString();
 
-  db.prepare(
+  const transaction = db.transaction(() => {
+    db.prepare(
     `
     UPDATE customers
     SET
@@ -875,16 +900,19 @@ function updateCustomerFinancials(
       sync_status = 'PENDING'
     WHERE id = ?
     `
-  ).run(
-    financials.totalPurchases,
-    financials.outstandingAmount,
-    updatedAt,
-    customerId
-  );
+    ).run(
+      financials.totalPurchases,
+      financials.outstandingAmount,
+      updatedAt,
+      customerId
+    );
 
-  return getCustomerById(
-    customerId
-  );
+    const updatedCustomer = getCustomerById(customerId);
+    queueCustomerChange(updatedCustomer, "UPDATE");
+    return updatedCustomer;
+  });
+
+  return transaction();
 }
 
 module.exports = {

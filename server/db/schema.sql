@@ -31,6 +31,20 @@ ON sync_records(device_id);
 CREATE INDEX IF NOT EXISTS idx_sync_records_synced_at
 ON sync_records(synced_at);
 
+CREATE TABLE IF NOT EXISTS sync_entities (
+    server_id UUID NOT NULL UNIQUE,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    device_id TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    queue_id TEXT NOT NULL,
+    PRIMARY KEY (entity_type, entity_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_entities_updated_at
+ON sync_entities(updated_at);
+
 -- Cloud database backups
 CREATE TABLE IF NOT EXISTS cloud_backups (
     id BIGSERIAL PRIMARY KEY,

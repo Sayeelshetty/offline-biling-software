@@ -326,11 +326,14 @@ function markSyncItemFailed(
         UPDATE sync_queue
         SET
           status = 'FAILED',
+          retry_count = retry_count + 1,
+          last_error = ?,
           updated_at = ?
         WHERE id = ?
         `
       )
       .run(
+        message,
         now,
         queueId
       );

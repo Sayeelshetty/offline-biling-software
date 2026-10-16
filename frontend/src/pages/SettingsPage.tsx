@@ -757,8 +757,8 @@ async function confirmRestore() {
 
 
               <span className="settings-help">
-                Logo file selection will be connected
-                through Electron later.
+                Your selected logo is saved locally and
+                appears in the app branding and invoice PDFs.
               </span>
             </div>
           </div>
@@ -1188,9 +1188,10 @@ async function confirmRestore() {
             </strong>
 
             <span>
-              Printer discovery and direct printing
-              will be connected through Electron's
-              print APIs.
+              These printer preferences are saved, but are
+              not applied to printing yet. Invoice PDF
+              downloads currently use A4; printer discovery
+              and direct printing are not available.
             </span>
           </div>
         </section>
@@ -1275,7 +1276,7 @@ async function confirmRestore() {
   </strong>
 
   <span>
-    Export product data to a CSV file.
+    Export the product catalog to a CSV file.
   </span>
 </button>
 
@@ -1289,7 +1290,8 @@ async function confirmRestore() {
   </strong>
 
   <span>
-    Import product data from a CSV file.
+    Import products from a CSV file. Other records are
+    included in the database backup, not CSV import.
   </span>
 </button>
 </div>

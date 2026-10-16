@@ -32,6 +32,21 @@ class SyncEngineService {
 
   private lastCloudBackupAttemptAt = 0;
 
+  private lastAutomaticRetryAt = 0;
+
+  private readonly automaticRetryIntervalMs =
+    60_000;
+
+  private syncRetryCount = 0;
+
+  private nextSyncRetryAt = 0;
+
+  private readonly baseSyncRetryDelayMs =
+    5_000;
+
+  private readonly maxSyncRetryDelayMs =
+    300_000;
+
   private readonly cloudBackupRetryIntervalMs =
     60_000;
 
@@ -153,7 +168,8 @@ class SyncEngineService {
           if (becameOnline) {
             this.cloudBackupPending = true;
 
-            await this.syncPending();
+            await this.retryFailedSyncItems(true);
+            await this.syncPending(true);
             await this.tryAutomaticCloudBackup();
           }
         }
@@ -184,6 +200,14 @@ class SyncEngineService {
         if (
           connectionService.getConnectionStatus() ===
             "ONLINE" &&
+          this.status.failed > 0
+        ) {
+          await this.retryFailedSyncItems();
+        }
+
+        if (
+          connectionService.getConnectionStatus() ===
+            "ONLINE" &&
           this.status.pending > 0
         ) {
           await this.syncPending();
@@ -203,8 +227,32 @@ class SyncEngineService {
     ) {
       this.cloudBackupPending = true;
 
-      await this.syncPending();
+      await this.retryFailedSyncItems(true);
+      await this.syncPending(true);
       await this.tryAutomaticCloudBackup();
+    }
+  }
+
+  private async retryFailedSyncItems(
+    force = false
+  ): Promise<void> {
+    if (
+      connectionService.getConnectionStatus() !==
+        "ONLINE" ||
+      (!force &&
+        Date.now() - this.lastAutomaticRetryAt <
+          this.automaticRetryIntervalMs)
+    ) {
+      return;
+    }
+
+    this.lastAutomaticRetryAt = Date.now();
+
+    const retried =
+      await syncService.retryAllFailed(100);
+
+    if (retried > 0) {
+      await this.refreshCounts();
     }
   }
 
@@ -278,8 +326,22 @@ class SyncEngineService {
     return retryCount;
   }
 
-  async syncPending(): Promise<SyncBatchResult> {
+  async syncPending(
+    force = false
+  ): Promise<SyncBatchResult> {
     if (this.syncing) {
+      return {
+        processed: 0,
+        synced: 0,
+        failed: 0,
+        results: [],
+      };
+    }
+
+    if (
+      !force &&
+      Date.now() < this.nextSyncRetryAt
+    ) {
       return {
         processed: 0,
         synced: 0,
@@ -319,6 +381,8 @@ class SyncEngineService {
         await this.getPendingItems(100);
 
       if (pendingItems.length === 0) {
+        this.syncRetryCount = 0;
+        this.nextSyncRetryAt = 0;
         await this.refreshCounts();
 
         return {
@@ -337,6 +401,9 @@ class SyncEngineService {
         await cloudSyncService.pushSyncItems(
           pendingItems
         );
+
+      this.syncRetryCount = 0;
+      this.nextSyncRetryAt = 0;
 
       const results: SyncResult[] =
         cloudResult.results || [];
@@ -407,6 +474,15 @@ class SyncEngineService {
         "[SYNC] Cloud synchronization unavailable:",
         error
       );
+
+      this.syncRetryCount += 1;
+      const retryDelay = Math.min(
+        this.maxSyncRetryDelayMs,
+        this.baseSyncRetryDelayMs *
+          2 ** Math.min(this.syncRetryCount - 1, 6)
+      );
+      this.nextSyncRetryAt =
+        Date.now() + retryDelay;
 
       await this.refreshCounts();
 

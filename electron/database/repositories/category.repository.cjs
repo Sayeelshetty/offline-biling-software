@@ -1,5 +1,17 @@
 const { randomUUID } = require("crypto");
 const { getDatabase } = require("../connection.cjs");
+const { enqueueSyncRecord } = require("./sync-queue.cjs");
+
+function queueCategoryChange(database, category, operation) {
+  enqueueSyncRecord(database, {
+    entityType: "CATEGORY",
+    entityId: category.id,
+    operation,
+    payload: category,
+    deviceId: category.deviceId,
+    timestamp: category.updatedAt,
+  });
+}
 
 function mapCategoryRow(row) {
   if (!row) {
@@ -58,16 +70,22 @@ function createCategory({ name, description = "", deviceId }) {
     )
   `);
 
-  statement.run({
-    id,
-    name: name.trim(),
-    description: description.trim(),
-    createdAt: now,
-    updatedAt: now,
-    deviceId: deviceId.trim(),
+  const transaction = database.transaction(() => {
+    statement.run({
+      id,
+      name: name.trim(),
+      description: description.trim(),
+      createdAt: now,
+      updatedAt: now,
+      deviceId: deviceId.trim(),
+    });
+
+    const category = getCategoryById(id);
+    queueCategoryChange(database, category, "CREATE");
+    return category;
   });
 
-  return getCategoryById(id);
+  return transaction();
 }
 
 function getCategoryById(id) {
@@ -214,14 +232,20 @@ function updateCategory({
     WHERE id = @id
   `);
 
-  statement.run({
-    id,
-    name: name.trim(),
-    description: description.trim(),
-    updatedAt: now,
+  const transaction = database.transaction(() => {
+    statement.run({
+      id,
+      name: name.trim(),
+      description: description.trim(),
+      updatedAt: now,
+    });
+
+    const category = getCategoryById(id);
+    queueCategoryChange(database, category, "UPDATE");
+    return category;
   });
 
-  return getCategoryById(id);
+  return transaction();
 }
 
 function deactivateCategory(id) {
@@ -239,8 +263,8 @@ function deactivateCategory(id) {
 
   const now = new Date().toISOString();
 
-  database
-    .prepare(`
+  const transaction = database.transaction(() => {
+    database.prepare(`
       UPDATE categories
       SET
         status = 'INACTIVE',
@@ -248,9 +272,14 @@ function deactivateCategory(id) {
         sync_status = 'PENDING'
       WHERE id = ?
     `)
-    .run(now, id);
+      .run(now, id);
 
-  return getCategoryById(id);
+    const category = getCategoryById(id);
+    queueCategoryChange(database, category, "UPDATE");
+    return category;
+  });
+
+  return transaction();
 }
 
 function activateCategory(id) {
@@ -268,8 +297,8 @@ function activateCategory(id) {
 
   const now = new Date().toISOString();
 
-  database
-    .prepare(`
+  const transaction = database.transaction(() => {
+    database.prepare(`
       UPDATE categories
       SET
         status = 'ACTIVE',
@@ -277,9 +306,14 @@ function activateCategory(id) {
         sync_status = 'PENDING'
       WHERE id = ?
     `)
-    .run(now, id);
+      .run(now, id);
 
-  return getCategoryById(id);
+    const category = getCategoryById(id);
+    queueCategoryChange(database, category, "UPDATE");
+    return category;
+  });
+
+  return transaction();
 }
 
 module.exports = {

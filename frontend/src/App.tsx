@@ -592,6 +592,28 @@ function AppLayout({
     return "All synced";
   }
 
+  function getLastSyncedLabel() {
+    if (!syncStatus.lastSyncedAt) {
+      return "Never";
+    }
+
+    const timestamp = new Date(
+      syncStatus.lastSyncedAt
+    );
+
+    if (Number.isNaN(timestamp.getTime())) {
+      return "Unknown";
+    }
+
+    return timestamp.toLocaleTimeString(
+      undefined,
+      {
+        hour: "numeric",
+        minute: "2-digit",
+      }
+    );
+  }
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -774,6 +796,17 @@ function AppLayout({
               }`}
             >
               {getSyncLabel()}
+            </div>
+            <div
+              className="sync-last-synced"
+              aria-label={`Last synced ${getLastSyncedLabel()}`}
+            >
+              <span className="sync-last-synced-label">
+                Last synced
+              </span>
+              <time dateTime={syncStatus.lastSyncedAt ?? undefined}>
+                {getLastSyncedLabel()}
+              </time>
             </div>
           </div>
 
