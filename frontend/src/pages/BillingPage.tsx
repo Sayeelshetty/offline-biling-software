@@ -14,6 +14,7 @@ type BillingLine = {
     discount: number;
 };
 const BILLING_DRAFT_STORAGE_KEY = "offline-billing-draft-v1";
+const BILLING_PRODUCT_SEARCH_LIMIT = 50;
 type BillingDraft = {
     cart: BillingLine[];
     selectedCustomerId: string;
@@ -247,17 +248,25 @@ function BillingPage() {
     useEffect(() => {
         const trimmed = searchTerm.trim();
         if (!trimmed) {
-            setSearchResults([]);
             return;
         }
+        let active = true;
         const timer = window.setTimeout(async () => {
             try {
-                setLoadingProducts(true);
                 setError(null);
-                const products = await productService.searchProducts(trimmed, false);
-                setSearchResults(products);
+                const products = await productService.searchProducts(
+                    trimmed,
+                    false,
+                    BILLING_PRODUCT_SEARCH_LIMIT
+                );
+                if (active) {
+                    setSearchResults(products);
+                }
             }
             catch (err) {
+                if (!active) {
+                    return;
+                }
                 console.error("Failed to search products:", err);
                 setError(err instanceof Error
                     ? err.message
@@ -265,15 +274,15 @@ function BillingPage() {
                 setSearchResults([]);
             }
             finally {
-                setLoadingProducts(false);
+                if (active) {
+                    setLoadingProducts(false);
+                }
             }
         }, 150);
         return () => {
+            active = false;
             window.clearTimeout(timer);
         };
-    }, [searchTerm]);
-    useEffect(() => {
-        // product search logic...
     }, [searchTerm]);
     useEffect(() => {
         if (discountEnabled) {
@@ -347,6 +356,8 @@ function BillingPage() {
             const product = await productService.getProductByBarcode(barcode);
             if (!product) {
                 setSearchTerm(barcode);
+                setSearchResults([]);
+                setLoadingProducts(true);
                 setError(`No product found for barcode: ${barcode}`);
                 searchInputRef.current?.focus();
                 return;
@@ -368,6 +379,7 @@ function BillingPage() {
             setSuccessMessage(null);
             setSearchTerm("");
             setSearchResults([]);
+            setLoadingProducts(false);
             return;
         }
         setCart((current) => {
@@ -395,6 +407,7 @@ function BillingPage() {
         });
         setSearchTerm("");
         setSearchResults([]);
+        setLoadingProducts(false);
         searchInputRef.current?.focus();
     }
     function updateQuantity(productId: string, quantity: number) {
@@ -460,6 +473,7 @@ function BillingPage() {
         clearBill();
         setSearchTerm("");
         setSearchResults([]);
+        setLoadingProducts(false);
         setShowNewBillConfirm(false);
     }
     function getPaymentStatus(): PaymentStatus {
@@ -770,7 +784,13 @@ function BillingPage() {
     <div className="billing-search-wrapper">
 
   <input ref={searchInputRef} id="billing-product-search" type="text" value={searchTerm} onChange={(event) => {
-            setSearchTerm(event.target.value);
+            const value = event.target.value;
+            setSearchTerm(value);
+            setSearchResults([]);
+            setLoadingProducts(Boolean(value.trim()));
+            if (!value.trim()) {
+                setError(null);
+            }
         }} placeholder="Search by product name, SKU or barcode..." autoComplete="off"/>
 
   <span className="search-shortcut">
@@ -830,7 +850,9 @@ function BillingPage() {
               </span>
 
             </button>);
-            }))}
+            }))}{searchResults.length === BILLING_PRODUCT_SEARCH_LIMIT && (<div className="search-loading">
+          Showing up to {BILLING_PRODUCT_SEARCH_LIMIT} matches. Refine your search to find other products.
+        </div>)}
 
     </div>)}
 
@@ -1338,31 +1360,6 @@ function BillingPage() {
 
           </div>
 
-          {paymentMethod ===
-            "CREDIT" && (<div className="credit-section">
-
-              <div className="credit-note">
-
-                Credit payment requires a
-
-                customer and due date.
-
-              </div>
-
-              <div className="credit-field">
-
-                <label htmlFor="credit-due-date">
-
-                  Due Date
-
-                </label>
-
-                <input id="credit-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} disabled={generatingBill}/>
-
-              </div>
-
-            </div>)}
-
           <button type="button" className="generate-bill-button" onClick={handleGenerateBill} disabled={generatingBill ||
             cart.length === 0}>
 
@@ -1381,5 +1378,3 @@ function BillingPage() {
     </section>);
 }
 export default BillingPage;
-
-

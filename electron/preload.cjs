@@ -53,13 +53,15 @@ contextBridge.exposeInMainWorld("desktopAPI", {
 
     search: (
       searchTerm,
-      includeInactive = false
+      includeInactive = false,
+      limit
     ) =>
       ipcRenderer.invoke(
         "products:search",
         {
           searchTerm,
           includeInactive,
+          limit,
         }
       ),
 

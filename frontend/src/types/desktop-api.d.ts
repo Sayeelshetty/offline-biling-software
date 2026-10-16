@@ -218,7 +218,8 @@ interface DesktopAPI {
 
     search: (
       searchTerm: string,
-      includeInactive?: boolean
+      includeInactive?: boolean,
+      limit?: number
     ) => Promise<ProductListResponse>;
 
     getAll: (

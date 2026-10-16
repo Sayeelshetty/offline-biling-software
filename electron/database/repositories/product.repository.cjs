@@ -568,11 +568,22 @@ function findProductByBarcode(barcode) {
 
 function searchProducts(
   searchTerm = "",
-  includeInactive = false
+  includeInactive = false,
+  limit = null
 ) {
   const database = getDatabase();
 
   const search = `%${searchTerm.trim()}%`;
+  const safeLimit =
+    limit === null || limit === undefined
+      ? null
+      : Math.min(
+          Math.max(
+            Math.floor(Number(limit) || 1),
+            1
+          ),
+          1000
+        );
 
   let query = `
     SELECT
@@ -608,15 +619,33 @@ function searchProducts(
     query += ` AND status = 'ACTIVE' `;
   }
 
-  query += `
-    ORDER BY name COLLATE NOCASE ASC
-  `;
+  query += safeLimit === null
+    ? ` ORDER BY name COLLATE NOCASE ASC `
+    : `
+        ORDER BY
+          CASE
+            WHEN LOWER(sku) = LOWER(@exactSearch)
+              OR LOWER(COALESCE(barcode, '')) = LOWER(@exactSearch)
+            THEN 0
+            ELSE 1
+          END,
+          name COLLATE NOCASE ASC
+      `;
+
+  if (safeLimit !== null) {
+    query += ` LIMIT @limit `;
+  }
+
+  const parameters = { search };
+
+  if (safeLimit !== null) {
+    parameters.exactSearch = searchTerm.trim();
+    parameters.limit = safeLimit;
+  }
 
   const rows = database
     .prepare(query)
-    .all({
-      search,
-    });
+    .all(parameters);
 
   return rows.map(mapProductRow);
 }

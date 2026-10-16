@@ -70,12 +70,14 @@ export async function getProductByBarcode(
 
 export async function searchProducts(
   searchTerm: string,
-  includeInactive = false
+  includeInactive = false,
+  limit?: number
 ): Promise<Product[]> {
   const response =
     await window.desktopAPI.products.search(
       searchTerm,
-      includeInactive
+      includeInactive,
+      limit
     );
 
   if (!response.success) {

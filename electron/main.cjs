@@ -328,6 +328,7 @@ ipcMain.handle(
     {
       searchTerm = "",
       includeInactive = false,
+      limit = null,
     } = {}
   ) => {
     try {
@@ -336,7 +337,8 @@ ipcMain.handle(
         products:
           searchProducts(
             searchTerm,
-            includeInactive
+            includeInactive,
+            limit
           ),
       };
     } catch (error) {
