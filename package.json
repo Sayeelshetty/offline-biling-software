@@ -9,6 +9,7 @@
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
     "build": "npm run frontend:build",
+    "test": "node --test electron/database/*.test.cjs",
     "start": "electron electron/main.cjs",
     "dist": "npm run frontend:build && electron-builder"
   },

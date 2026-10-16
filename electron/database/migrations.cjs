@@ -2,6 +2,9 @@ const fs = require("fs");
 const path = require("path");
 
 const { getDatabase } = require("./connection.cjs");
+const {
+  backfillPendingTransactionSyncQueue,
+} = require("./pending-transaction-backfill.cjs");
 
 /*
 |--------------------------------------------------------------------------
@@ -263,6 +266,7 @@ function runMigrations() {
   }
 
   backfillPendingSyncQueue(database);
+  backfillPendingTransactionSyncQueue(database);
 
   /*
   |--------------------------------------------------------------------------

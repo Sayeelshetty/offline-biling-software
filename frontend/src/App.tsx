@@ -15,8 +15,10 @@ import {
 } from "react-router-dom";
 
 import type { AuthenticatedUser } from "../../shared/auth";
+import type { LowStockProductReport } from "../../shared/types/report";
 
 import LoginPage from "./pages/LoginPage.tsx";
+import type { Invoice } from "./types/invoice";
 
 const ProductsPage = lazy(
   () => import("./pages/ProductsPage.tsx")
@@ -151,9 +153,11 @@ function DashboardPage() {
 
   const [lowStockCount, setLowStockCount] = useState(0);
 
-  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<
+    LowStockProductReport[]
+  >([]);
 
-  const [recentBills, setRecentBills] = useState<any[]>([]);
+  const [recentBills, setRecentBills] = useState<Invoice[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -356,17 +360,11 @@ function DashboardPage() {
               lowStockProducts.map((product) => (
                 <div
                   className="dashboard-list-row"
-                  key={
-                    product.productId ??
-                    product.id ??
-                    product._id ??
-                    product.productName ??
-                    product.name
-                  }
+                  key={product.productId}
                 >
                   <div>
                     <strong>
-                      {product.productName ?? product.name ?? "Unnamed product"}
+                      {product.productName || "Unnamed product"}
                     </strong>
 
                     <span>

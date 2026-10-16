@@ -1864,6 +1864,37 @@
   accent-color: #172033;
 }
 
+.settings-page .settings-field-label {
+  display: block;
+  margin: 0 0 8px;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.settings-page .settings-logo-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-page .settings-logo-picker .settings-secondary-button {
+  min-height: 42px;
+  padding: 0 15px;
+}
+
+.settings-page .settings-logo-path {
+  min-width: 0;
+  max-width: 100%;
+  color: #526176;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Invoice preview ---------- */
 
 .settings-page .settings-preview,
@@ -2105,6 +2136,12 @@
 
   .settings-page .settings-field button {
     max-width: 100%;
+  }
+
+  .settings-page .settings-logo-picker {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 }
 

@@ -728,33 +728,31 @@ async function confirmRestore() {
                 placeholder="Enter GST number"
               />
             </div>
-<div className="settings-field full-width">
-  <label>
-    Business Logo
-  </label>
+            <div className="settings-field full-width">
+              <span className="settings-field-label">
+                Business Logo
+              </span>
 
-  <div className="settings-logo-picker">
-    <button
-      type="button"
-      className="secondary-button"
-      onClick={handleSelectLogo}
-    >
-      Choose Logo
-    </button>
+              <div className="settings-logo-picker">
+                <button
+                  type="button"
+                  className="settings-secondary-button"
+                  onClick={handleSelectLogo}
+                >
+                  Choose Logo
+                </button>
 
-    <div className="settings-logo-path">
-      {settings.business.logoPath ? (
-        <span>
-          {settings.business.logoPath}
-        </span>
-      ) : (
-        <span>
-          No logo selected
-        </span>
-      )}
-    </div>
-  </div>
-
+                <div
+                  className="settings-logo-path"
+                  role="status"
+                  aria-live="polite"
+                  title={settings.business.logoPath || undefined}
+                >
+                  {settings.business.logoPath
+                    ? settings.business.logoPath.split(/[\\/]/).pop()
+                    : "No logo selected"}
+                </div>
+              </div>
 
               <span className="settings-help">
                 Your selected logo is saved locally and
