@@ -1,5 +1,11 @@
 
-import { useEffect, useMemo, useRef, useState, } from "react";
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type KeyboardEvent,
+} from "react";
 import productService from "../services/product.service";
 import BarcodeScanner from "../components/BarcodeScanner";
 import type { Product } from "../types/product";
@@ -157,6 +163,7 @@ function BillingPage() {
     const [successMessage, setSuccessMessage,] = useState<string | null>(null);
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
+    const productCodeLookupRef = useRef(false);
     const totals = useMemo(() => {
         const subtotal = roundMoney(cart.reduce((sum, line) => sum + line.quantity * line.product.sellingPrice, 0));
         const itemDiscount = roundMoney(cart.reduce((sum, line) => sum + line.discount, 0));
@@ -253,7 +260,6 @@ function BillingPage() {
         let active = true;
         const timer = window.setTimeout(async () => {
             try {
-                setError(null);
                 const products = await productService.searchProducts(
                     trimmed,
                     false,
@@ -353,7 +359,9 @@ function BillingPage() {
         try {
             setShowBarcodeScanner(false);
             setError(null);
-            const product = await productService.getProductByBarcode(barcode);
+            const product =
+                (await productService.getProductByBarcode(barcode)) ??
+                (await productService.getProductBySku(barcode));
             if (!product) {
                 setSearchTerm(barcode);
                 setSearchResults([]);
@@ -371,9 +379,56 @@ function BillingPage() {
             searchInputRef.current?.focus();
         }
     }
+    async function handleProductCodeKeyDown(
+        event: KeyboardEvent<HTMLInputElement>
+    ) {
+        if (event.key !== "Enter") {
+            return;
+        }
+
+        const code = searchTerm.trim();
+        if (!code || productCodeLookupRef.current) {
+            return;
+        }
+
+        event.preventDefault();
+        productCodeLookupRef.current = true;
+        setLoadingProducts(true);
+        setError(null);
+
+        try {
+            const product =
+                (await productService.getProductBySku(code)) ??
+                (await productService.getProductByBarcode(code));
+
+            if (!product) {
+                setError(`No product found for code: ${code}`);
+                return;
+            }
+
+            addProduct(product);
+        } catch (err) {
+            console.error("Product code lookup failed:", err);
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Unable to look up this product code."
+            );
+        } finally {
+            productCodeLookupRef.current = false;
+            setLoadingProducts(false);
+        }
+    }
     function addProduct(product: Product) {
         setError(null);
         setSuccessMessage(null);
+        if (product.status !== "ACTIVE") {
+            setError(`${product.name} is inactive and cannot be added to a bill.`);
+            setSearchTerm("");
+            setSearchResults([]);
+            setLoadingProducts(false);
+            return;
+        }
         if (product.currentStock <= 0) {
             setError(`${product.name} is out of stock. Please restock it before adding it to a bill.`);
             setSuccessMessage(null);
@@ -783,19 +838,17 @@ function BillingPage() {
 
     <div className="billing-search-wrapper">
 
-  <input ref={searchInputRef} id="billing-product-search" type="text" value={searchTerm} onChange={(event) => {
+  <input ref={searchInputRef} id="billing-product-search" type="text" value={searchTerm} onKeyDown={handleProductCodeKeyDown} onChange={(event) => {
             const value = event.target.value;
             setSearchTerm(value);
             setSearchResults([]);
             setLoadingProducts(Boolean(value.trim()));
-            if (!value.trim()) {
-                setError(null);
-            }
-        }} placeholder="Search by product name, SKU or barcode..." autoComplete="off"/>
+            setError(null);
+        }} placeholder="Search name, product code, SKU or barcode..." autoComplete="off"/>
 
   <span className="search-shortcut">
 
-    Scanner / Enter
+    USB scanner / Enter code
 
   </span>
 

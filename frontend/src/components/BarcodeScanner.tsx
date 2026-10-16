@@ -21,9 +21,14 @@ const BarcodeScanner = ({
     useRef<HTMLVideoElement | null>(null);
 
   const detectedRef = useRef(false);
+  const onDetectedRef = useRef(onDetected);
 
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
+
+  useEffect(() => {
+    onDetectedRef.current = onDetected;
+  }, [onDetected]);
 
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
@@ -60,8 +65,15 @@ const BarcodeScanner = ({
         }
 
         controls =
-          await reader.decodeFromVideoDevice(
-            undefined,
+          await reader.decodeFromConstraints(
+            {
+              audio: false,
+              video: {
+                facingMode: {
+                  ideal: "environment",
+                },
+              },
+            },
             videoRef.current,
             (result) => {
               if (
@@ -83,12 +95,14 @@ const BarcodeScanner = ({
 
               controls?.stop();
 
-              onDetected(value);
+              onDetectedRef.current(value);
             }
           );
 
         if (mounted) {
           setStarting(false);
+        } else {
+          controls.stop();
         }
       } catch (scannerError) {
         console.error(
@@ -140,7 +154,7 @@ const BarcodeScanner = ({
 
       controls?.stop();
     };
-  }, [onDetected]);
+  }, []);
 
   return (
     <div className="scanner-overlay">
@@ -148,7 +162,7 @@ const BarcodeScanner = ({
         <div className="scanner-header">
           <div>
             <p className="scanner-eyebrow">
-              BARCODE SCANNER
+              BARCODE / QR SCANNER
             </p>
 
             <h2>Scan Product</h2>
@@ -201,7 +215,7 @@ const BarcodeScanner = ({
 
         <div className="scanner-instructions">
           <strong>
-            Position the barcode inside the
+            Position the barcode or QR code inside the
             frame
           </strong>
 

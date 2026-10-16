@@ -102,6 +102,25 @@ const isDevelopment = !app.isPackaged;
 
 let mainWindow = null;
 
+function isTrustedApplicationUrl(requestUrl) {
+  try {
+    const request = new URL(requestUrl);
+
+    if (isDevelopment) {
+      const developmentUrl = new URL(
+        process.env.VITE_DEV_SERVER_URL ||
+          "http://127.0.0.1:5173"
+      );
+
+      return request.origin === developmentUrl.origin;
+    }
+
+    return request.protocol === "file:";
+  } catch {
+    return false;
+  }
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
@@ -121,6 +140,24 @@ function createMainWindow() {
 
     show: false,
   });
+
+  mainWindow.webContents.session.setPermissionRequestHandler(
+    (webContents, permission, callback, details) => {
+      const requestingUrl =
+        details?.requestingUrl ||
+        webContents.getURL();
+      const requestsCamera =
+        permission === "media" &&
+        details?.mediaTypes?.includes("video");
+
+      callback(
+        Boolean(
+          requestsCamera &&
+            isTrustedApplicationUrl(requestingUrl)
+        )
+      );
+    }
+  );
 
   if (isDevelopment) {
     mainWindow.loadURL(
