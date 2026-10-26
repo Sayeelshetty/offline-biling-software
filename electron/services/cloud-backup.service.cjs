@@ -1,9 +1,11 @@
+const { app } = require("electron");
 const fs = require("fs");
 const path = require("path");
 
 const CLOUD_API_URL = (
-  process.env.CLOUD_API_URL ||
-  "http://localhost:5000"
+  app.isPackaged
+    ? "https://offline-billing-api.onrender.com"
+    : (process.env.CLOUD_API_URL || "http://localhost:5000")
 ).replace(/\/+$/, "");
 
 async function uploadDatabaseBackup(
